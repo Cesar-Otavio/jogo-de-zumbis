@@ -41,6 +41,8 @@ namespace Combat
         {
             public string Id;
             public string DisplayName;
+            [Tooltip("Optional: otherwise the icon comes from the weapon, the quick item or the item catalog")]
+            public Sprite Icon;
             [TextArea] public string Description;
             public ShopCategory Category;
             public ShopItemKind Kind;

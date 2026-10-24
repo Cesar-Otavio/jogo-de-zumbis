@@ -35,4 +35,7 @@ MonoBehaviour:
   CreditsIcon: {fileID: 21300000, guid: c0f6964bc4112a246af6c9aba94777c9, type: 3}
   HealthIcon: {fileID: 21300000, guid: 8fde974ba09f42d448e02a910e7732f1, type: 3}
   ArmorIcon: {fileID: 21300000, guid: 5aa9feb3d3bb3db4c9c14df2ef2fac1f, type: 3}
+  UpgradeIcon: {fileID: 21300000, guid: afe2ad88072a89c4a9d90c644bc6b86f, type: 3}
+  StaminaIcon: {fileID: 21300000, guid: 0539699093bd41d49b7e6b6a34a73a60, type: 3}
+  CapacityIcon: {fileID: 21300000, guid: 3db8448c706716f40a174aabbc77f594, type: 3}
   FallbackIcon: {fileID: 21300000, guid: 1aebfa4d41749ed4397bf40422993b68, type: 3}

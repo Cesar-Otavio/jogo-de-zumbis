@@ -15,6 +15,10 @@ namespace Combat
         public Sprite CreditsIcon;
         public Sprite HealthIcon;
         public Sprite ArmorIcon;
+        [Header("Shop services")]
+        public Sprite UpgradeIcon;
+        public Sprite StaminaIcon;
+        public Sprite CapacityIcon;
         [Tooltip("Shown for anything without its own icon, so a missing sprite is obvious but not broken")]
         public Sprite FallbackIcon;
 
@@ -50,6 +54,23 @@ namespace Combat
             }
 
             return catalog._byId.TryGetValue(id, out ItemDefinition found) ? found : null;
+        }
+
+        // the item a story document belongs to (the black box, a note, the evacuation codes...)
+        public static ItemDefinition FindByStory(string storyId)
+        {
+            ItemCatalog catalog = Instance;
+            if (catalog == null || string.IsNullOrEmpty(storyId)) return null;
+            foreach (ItemDefinition item in catalog.Items)
+            {
+                if (item == null || item.StoryIds == null) continue;
+                foreach (string story in item.StoryIds)
+                {
+                    if (story == storyId) return item;
+                }
+            }
+
+            return null;
         }
 
         public static Sprite IconOf(string id)

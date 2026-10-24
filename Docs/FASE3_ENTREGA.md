@@ -7,7 +7,7 @@ Branch `fase3-imersao`, sobre o checkpoint `25b0b31` (`main`, estado após o Pro
 | Área | Entregue | Status |
 |---|---|---|
 | Iluminação | lanterna tática no peito (feixe com cookie, preenchimento, balanço, íris, ignora o jogador), pós-processamento mais legível, ambiente mais claro, atlas de sombras 4096 | concluído e testado |
-| Ícones | 22 ícones de itens + 6 de armas (renderizados dos modelos), catálogo de itens (ScriptableObjects), barra rápida com ícones | concluído e testado |
+| Ícones | 25 ícones de itens + 6 de armas (renderizados dos modelos), catálogo de itens (ScriptableObjects), barra rápida, loja e leitor de documentos com ícones e descrições | concluído e testado |
 | Feed de coleta | ícone + nome + quantidade, agrupado, animado | concluído e testado |
 | Armas | guardar/sacar/trocar/pegar do chão com sockets (quadril, costas, peito) e IK, sem teletransporte nem duplicata; troca enfileirada; recarga cancelada sem dar munição | concluído e testado |
 | Inclinação | Q/E mirando, com limite de parede; sem conflito com trocar/interagir | concluído e testado |
@@ -32,7 +32,7 @@ Assets/SourceFiles/Scripts/Combat/WeaponHolder.Gear.cs
 Assets/SourceFiles/Scripts/Combat/Items/ItemDefinition.cs, ItemCatalog.cs, PickupFeed.cs, PickupFeedView.cs
 Assets/SourceFiles/Scripts/Combat/Narrative/DialogueLibrary.cs, DialogueDirector.cs, DialogueSubtitleView.cs, RadioSounds.cs
 Assets/SourceFiles/Scripts/Combat/Editor/CombatSetup.Phase3.cs, CombatSetup.Narrative.cs, CombatSetup.Animation.cs
-Assets/SourceFiles/UI/Icons/Items/*.png (22), UI/Icons/Weapons/*.png (6)
+Assets/SourceFiles/UI/Icons/Items/*.png (25), UI/Icons/Weapons/*.png (6)
 Assets/SourceFiles/Combat/Items/Item_*.asset (19)
 Assets/SourceFiles/Resources/ItemCatalog.asset, DialogueLibrary.asset
 ```
@@ -48,7 +48,8 @@ Assets/SourceFiles/Resources/ItemCatalog.asset, DialogueLibrary.asset
 | `WeaponData.cs` | `Class`, `Icon`, `AmmoName`, `AmmoIcon` |
 | `WeaponPickup.cs` | `VisualPose` |
 | `CombatHUD.cs` | cartões, ícone de arma e de vida, avisos menores |
-| `Campaign/CampaignHUD.cs` | quick bar com ícones, feed, cartão da missão |
+| `Campaign/CampaignHUD.cs` | quick bar com ícones, feed, cartão da missão, leitor com ícone do item e contagem de documentos |
+| `Campaign/ShopManager.cs`, `ShopCatalog.cs` | ícones, cores de categoria e descrições do catálogo nas linhas; painel opaco |
 | `Campaign/InventoryManager.cs`, `MissionPickup.cs`, `ConsumablePickup.cs`, `LootCrate.cs` | coletas pelo feed; LB não usa item enquanto inclina |
 | `Campaign/MissionDevice.cs` | nomes de itens pelo catálogo |
 | `Campaign/Story.cs` | rádio pelo diretor (textos movidos para a biblioteca) |
@@ -91,7 +92,6 @@ Assets/SourceFiles/Resources/ItemCatalog.asset, DialogueLibrary.asset
 ## 7. Pendências conhecidas
 
 - **Animações**: strafe, ré, partida/parada, agachar andando, prone, interações físicas com clipe, inimigos especiais com movimento próprio, soldados com clipes de arma (dependem de assets).
-- **Ícones na UI da loja** e no leitor de documentos.
 - **Hub/menu principal** não foi redesenhado.
 - **Localização** (pacote não instalado; chaves `dlg.*` prontas).
 - **Efeitos de impacto por material** (metal, concreto, madeira, terra, água): o sistema de marcas e partículas existente foi mantido, sem novas definições por superfície.
@@ -105,4 +105,3 @@ Assets/SourceFiles/Resources/ItemCatalog.asset, DialogueLibrary.asset
 3. Fazer um build Windows e medir com o Profiler numa onda de 30+ inimigos; se faltar desempenho:
    - reduzir as sombras dos postes distantes;
    - reduzir a distância de sombra (50 m).
-4. Ligar ícones e descrições do catálogo na loja.

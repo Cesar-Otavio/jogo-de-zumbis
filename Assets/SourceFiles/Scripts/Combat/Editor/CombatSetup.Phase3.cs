@@ -126,6 +126,7 @@ namespace Combat.EditorTools
                 item.Rarity = row.rarity;
                 item.MaxStack = row.stack;
                 item.Icon = Icon(row.icon);
+                item.StoryIds = StoryIdsOf(row.id);
                 EditorUtility.SetDirty(item);
                 items.Add(item);
             }
@@ -143,11 +144,32 @@ namespace Combat.EditorTools
             catalog.HealthIcon = Icon("health");
             catalog.ArmorIcon = Icon("armor");
             catalog.FallbackIcon = Icon("unknown");
+            catalog.UpgradeIcon = Icon("upgrade");
+            catalog.StaminaIcon = Icon("stamina");
+            catalog.CapacityIcon = Icon("capacity");
             EditorUtility.SetDirty(catalog);
 
             SetupWeaponPresentation();
             AssetDatabase.SaveAssets();
             Debug.Log($"Item catalog: {items.Count} items");
+        }
+
+        // which story documents each item is or brings (the reader shows the item with the text)
+        private static string[] StoryIdsOf(string itemId)
+        {
+            switch (itemId)
+            {
+                case "shift_log": return new[] { "doc_shift_log" };
+                case "memo": return new[] { "doc_generator_memo" };
+                case "note_armory": return new[] { "doc_armory_code" };
+                case "lab_doc": return new[] { "doc_lab_notes", "doc_e07_report" };
+                case "lab_procedure": return new[] { "doc_containment" };
+                case "blackbox": return new[] { "doc_blackbox" };
+                case "evac_codes": return new[] { "doc_evac_codes" };
+                // the intercepted order arrives through the repaired radio
+                case "radio_module": return new[] { "doc_radio_order" };
+                default: return new string[0];
+            }
         }
 
         private static Sprite Icon(string name) => AssetDatabase.LoadAssetAtPath<Sprite>($"{IconFolder}/{name}.png");

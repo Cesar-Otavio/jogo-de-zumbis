@@ -47,6 +47,8 @@ namespace Combat
         private float _radioStarted = -100.0f;
         private GameObject _reader;
         private TextMeshProUGUI _readerTitle;
+        private Image _readerIcon;
+        private TextMeshProUGUI _readerItem;
         private TextMeshProUGUI _readerBody;
         private float _timeScaleBeforeReader = 1.0f;
         private GameObject _choice;
@@ -152,10 +154,21 @@ namespace Combat
 
             // the document reader on its own canvas above everything, the game paused behind it
             RectTransform readerRoot = UiKit.Canvas("Reader", transform, 130);
-            Image reader = UiKit.Panel("Document", readerRoot, new Vector2(0.25f, 0.12f), new Vector2(0.75f, 0.88f), new Color(0.86f, 0.82f, 0.72f, 0.97f));
-            _readerTitle = UiKit.Text(reader.rectTransform, "", 34, new Vector2(0.06f, 0.84f), new Vector2(0.94f, 0.96f), TextAlignmentOptions.TopLeft, new Color(0.15f, 0.1f, 0.05f), true);
+            Image reader = UiKit.Panel("Document", readerRoot, new Vector2(0.25f, 0.12f), new Vector2(0.75f, 0.88f), new Color(0.86f, 0.82f, 0.72f, 1.0f));
+            // the item the document is (or came with), as an ink stamp beside the title
+            _readerIcon = new GameObject("ItemIcon", typeof(RectTransform), typeof(Image)).GetComponent<Image>();
+            _readerIcon.rectTransform.SetParent(reader.rectTransform, false);
+            _readerIcon.rectTransform.anchorMin = new Vector2(0.05f, 0.84f);
+            _readerIcon.rectTransform.anchorMax = new Vector2(0.15f, 0.96f);
+            _readerIcon.rectTransform.offsetMin = _readerIcon.rectTransform.offsetMax = Vector2.zero;
+            _readerIcon.preserveAspect = true;
+            _readerIcon.raycastTarget = false;
+            _readerIcon.color = new Color(0.22f, 0.16f, 0.1f, 0.85f);
+            _readerItem = UiKit.Text(reader.rectTransform, "", 18, new Vector2(0.17f, 0.8f), new Vector2(0.94f, 0.85f), TextAlignmentOptions.TopLeft, new Color(0.35f, 0.27f, 0.18f));
+            _readerItem.outlineWidth = 0.0f;
+            _readerTitle = UiKit.Text(reader.rectTransform, "", 34, new Vector2(0.17f, 0.84f), new Vector2(0.94f, 0.96f), TextAlignmentOptions.TopLeft, new Color(0.15f, 0.1f, 0.05f), true);
             _readerTitle.outlineWidth = 0.0f;
-            _readerBody = UiKit.Text(reader.rectTransform, "", 24, new Vector2(0.06f, 0.1f), new Vector2(0.94f, 0.82f), TextAlignmentOptions.TopLeft, new Color(0.12f, 0.1f, 0.08f));
+            _readerBody = UiKit.Text(reader.rectTransform, "", 24, new Vector2(0.06f, 0.1f), new Vector2(0.94f, 0.78f), TextAlignmentOptions.TopLeft, new Color(0.12f, 0.1f, 0.08f));
             _readerBody.outlineWidth = 0.0f;
             _readerBody.textWrappingMode = TextWrappingModes.Normal;
             TextMeshProUGUI close = UiKit.Text(reader.rectTransform, "[E] ou [Esc] fechar", 20, new Vector2(0.06f, 0.02f), new Vector2(0.94f, 0.08f), TextAlignmentOptions.Right, new Color(0.3f, 0.25f, 0.2f));
@@ -184,6 +197,11 @@ namespace Combat
         private void OnDocument(string id, Story.Entry entry)
         {
             _readerTitle.text = entry.Title;
+            ItemDefinition item = ItemCatalog.FindByStory(id);
+            _readerIcon.sprite = item != null && item.Icon != null ? item.Icon : ItemCatalog.IconOf("lab_doc");
+            _readerIcon.enabled = _readerIcon.sprite != null;
+            string found = $"Documentos encontrados: {Progression.DocumentsFound}/{Story.Documents.Count}";
+            _readerItem.text = item != null ? $"{item.DisplayName.ToUpperInvariant()}  ·  {found}" : found;
             _readerBody.text = $"<i>{entry.Author}</i>\n\n{entry.Text}";
             _reader.SetActive(true);
             ReaderOpen = true;

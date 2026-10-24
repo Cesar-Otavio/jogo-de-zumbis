@@ -41,7 +41,14 @@ Fonte: Liberation Sans (TMP padrão), com contorno escuro de 15% para legibilida
   - barra rápida (ícone, tecla e quantidade; acinzentado sem estoque);
   - feed de coleta;
   - cartão da arma e da arma reserva.
-- **Pendente**: ícones nas linhas da loja e no leitor de documentos. Os dados já existem no catálogo; falta só ligar à UI da loja.
+- **Loja**: cada linha tem ícone com a cor da categoria.
+  - Armas mostram "classe · calibre — descrição".
+  - Munição usa o ícone da munição da arma atual.
+  - Consumíveis usam o nome e a descrição do catálogo.
+  - Proteção, vida e melhorias (upgrade, fôlego, capacidade) têm ícones próprios.
+  - `ShopCatalog.Entry.Icon` permite trocar o ícone de uma linha.
+  - O painel é opaco, para o banner de intervalo e as legendas não vazarem.
+- **Leitor de documentos**: carimbo com o ícone do item ligado ao documento (`ItemDefinition.StoryIds`, busca por `ItemCatalog.FindByStory`), o nome do item e "Documentos encontrados: X/9". Sem item ligado, usa o ícone de documento de laboratório. O papel também é opaco.
 
 ## 4. Feed de coleta (`PickupFeed` + `PickupFeedView`)
 

@@ -20,3 +20,5 @@ MonoBehaviour:
   Icon: {fileID: 21300000, guid: 403631dd5a689a243b32b043af21ebd6, type: 3}
   UnavailableIcon: {fileID: 0}
   MaxStack: 1
+  StoryIds:
+  - doc_blackbox

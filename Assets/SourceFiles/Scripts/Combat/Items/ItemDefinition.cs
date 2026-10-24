@@ -39,5 +39,7 @@ namespace Combat
         [Tooltip("Shown instead of the icon when the item can't be used right now (optional)")]
         public Sprite UnavailableIcon;
         public int MaxStack = 1;
+        [Tooltip("Story documents this item is (or carries): the document reader shows the item's icon and name")]
+        public string[] StoryIds = new string[0];
     }
 }

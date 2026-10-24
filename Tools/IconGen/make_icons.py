@@ -229,6 +229,25 @@ def armor():
     plates = U(box(36, 56, 8, 14, 2), box(64, 56, 8, 14, 2), box(50, 76, 22, 3, 1))
     return S(vest, neck, plates)
 
+def upgrade():
+    # a wrench across a gear
+    gear = S(U(circle(42, 58, 22), *[box(42 + 26 * math.cos(math.radians(k * 45)), 58 + 26 * math.sin(math.radians(k * 45)), 6, 6, 1.5, k * 45) for k in range(8)]), circle(42, 58, 9))
+    handle = box(66, 34, 6, 26, 3, 45)
+    head = S(circle(80, 20, 13), box(86, 14, 6, 7, 0, 45))
+    return U(gear, handle, head)
+
+def stamina():
+    # a lightning bolt
+    return poly([(56, 8), (28, 54), (46, 54), (38, 92), (72, 40), (54, 40), (64, 8)])
+
+def capacity():
+    # a backpack with a plus
+    bag = U(box(50, 58, 28, 32, 9), box(50, 30, 16, 8, 4))
+    straps = U(box(40, 26, 3, 8), box(60, 26, 3, 8))
+    pocket = box(50, 70, 18, 12, 4)
+    plus = U(box(50, 52, 9, 2.6, 1), box(50, 52, 2.6, 9, 1))
+    return U(S(bag, pocket, plus), straps)
+
 def unknown():
     q = S(ring(50, 38, 15, 5), box(36, 46, 9, 12))
     return U(S(box(50, 50, 38, 38, 8), q, capsule(50, 54, 50, 62, 4.5), circle(50, 76, 5)))
@@ -239,6 +258,7 @@ ICONS = {
     "blackbox": blackbox, "case": case,
     "ammo_pistol": ammo_pistol, "ammo_rifle": ammo_rifle, "ammo_sniper": ammo_sniper, "ammo_shotgun": ammo_shotgun, "ammo_box": ammo_box,
     "credits": credits, "health": health, "armor": armor, "unknown": unknown,
+    "upgrade": upgrade, "stamina": stamina, "capacity": capacity,
 }
 
 os.makedirs(OUT, exist_ok=True)
