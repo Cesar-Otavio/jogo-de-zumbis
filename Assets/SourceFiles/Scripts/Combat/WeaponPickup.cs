@@ -22,6 +22,8 @@ namespace Combat
 
         public bool Highlighted { get; set; }
         public Vector3 Center => _visual != null ? _visual.position : transform.position;
+        // where the model is right now, so the hands can take it from there
+        public Pose VisualPose => _visual != null ? new Pose(_visual.position, _visual.rotation) : new Pose(transform.position, transform.rotation);
 
         private Transform _visual;
         private Light _glow;

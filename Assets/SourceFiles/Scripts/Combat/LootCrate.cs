@@ -125,6 +125,8 @@ namespace Combat
 
             // a chest found pays a few credits too
             RunState.AddCredits(15, "baú");
+            ItemCatalog catalog = ItemCatalog.Instance;
+            PickupFeed.Report("credits", catalog != null ? catalog.CreditsIcon : null, "Créditos militares", 15, PickupFeed.TintOf(ItemCategory.Currency));
         }
 
         // a new wave: shut and restock

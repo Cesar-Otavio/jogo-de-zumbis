@@ -15,6 +15,10 @@ MonoBehaviour:
   DisplayName: AK-74
   Model: {fileID: 1487774384131766, guid: ee329c3cd08e58645834d20702d7f6c6, type: 3}
   Hold: 1
+  Class: 3
+  Icon: {fileID: 21300000, guid: 899e243c3b7a9a64b8c56025b2ae9cfc, type: 3}
+  AmmoName: 5,45 mm
+  AmmoIcon: {fileID: 21300000, guid: 0addcff468bbe164e8e7d0015b5d0e95, type: 3}
   Mode: 1
   FireInterval: 0.1
   Damage: 26

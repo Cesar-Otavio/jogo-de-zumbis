@@ -138,12 +138,15 @@ namespace StarterAssets
         [Tooltip("Scales the sprint speed, e.g. lowered when badly hurt")]
         public float SprintLimit = 1.0f;
 
+        // extra offset of the camera target, e.g. leaning around a corner (local to the camera target's parent)
+        [System.NonSerialized] public Vector3 CameraTargetOffset;
         public bool IsCrouching { get; private set; }
         public float CrouchBlend { get; private set; }
 
         public float Stamina { get; private set; }
         public bool Exhausted { get; private set; }
         public bool IsRolling { get; private set; }
+        private Quaternion _rollTurnFrom = Quaternion.identity;
         public bool IsSprinting { get; private set; }
 
         // raised when a roll starts, so the combat code can grant invulnerability
@@ -366,7 +369,7 @@ public bool IsRespawning { get; set; } = false;
 
             if (_cameraTargetLocalSet)
             {
-                CinemachineCameraTarget.transform.localPosition = _cameraTargetLocal + Vector3.down * (CrouchCameraDrop * blend);
+                CinemachineCameraTarget.transform.localPosition = _cameraTargetLocal + Vector3.down * (CrouchCameraDrop * blend) + CameraTargetOffset;
             }
         }
 
@@ -449,8 +452,9 @@ public bool IsRespawning { get; set; } = false;
                 _rollDirection = transform.forward;
             }
 
-            transform.rotation = Quaternion.LookRotation(_rollDirection);
-            _targetRotation = transform.eulerAngles.y;
+            // the body swings round to the roll direction over the first moments instead of snapping
+            _rollTurnFrom = transform.rotation;
+            _targetRotation = Quaternion.LookRotation(_rollDirection).eulerAngles.y;
             if (IsCrouching) SetCrouch(false, true);
             IsRolling = true;
             _rollTime = 0.0f;
@@ -471,6 +475,7 @@ public bool IsRespawning { get; set; } = false;
             float travelled = RollEase(progress) - RollEase(previous);
             _verticalVelocity = Grounded ? -2.0f : _verticalVelocity + Gravity * Time.deltaTime;
             _controller.Move(_rollDirection * (travelled * RollDistance) + Vector3.up * (_verticalVelocity * Time.deltaTime));
+            transform.rotation = Quaternion.Slerp(_rollTurnFrom, Quaternion.LookRotation(_rollDirection), Mathf.SmoothStep(0.0f, 1.0f, Mathf.Clamp01(_rollTime / 0.12f)));
 
             // spin the model a full turn around its middle
             if (RollVisual != null)

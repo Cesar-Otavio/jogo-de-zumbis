@@ -128,7 +128,7 @@ namespace Combat
             if (OnlyWhileNeeded && MissionManager.Instance != null && !MissionManager.Instance.IsNeeded(ItemId)) return;
 
             RunState.AddItem(ItemId);
-            if (player != null) player.ShowNotice($"<color=#7FE0FF>{DisplayName}</color> obtido");
+            PickupFeed.Item(ItemId, 1);
             if (CombatEffects.Instance != null) CombatEffects.Instance.PlayUI(CombatEffects.Instance.PickupSound, 0.8f);
             if (!string.IsNullOrEmpty(StoryId)) Story.Open(StoryId);
             PickedUp?.Invoke(this);

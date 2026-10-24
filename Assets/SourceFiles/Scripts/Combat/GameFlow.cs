@@ -95,6 +95,7 @@ namespace Combat
         private int _gameCameraMask;
         private Camera _menuCamera;
         private AudioSource _music;
+        private float _musicLevel;
         private float _baseRegen;
 
         private GameObject _menuPanel;
@@ -156,6 +157,7 @@ namespace Combat
 
         private void Start()
         {
+            AudioListener.volume = GameSettings.MasterVolume;
             _player = FindAnyObjectByType<PlayerCombat>();
             _input = _player != null ? _player.GetComponent<StarterAssetsInputs>() : null;
             _spawner = FindAnyObjectByType<EnemySpawner>();
@@ -192,7 +194,8 @@ namespace Combat
             _music = gameObject.AddComponent<AudioSource>();
             _music.loop = true;
             _music.spatialBlend = 0.0f;
-            _music.volume = MusicVolume;
+            _music.volume = MusicVolume * GameSettings.MusicVolume;
+            _musicLevel = MusicVolume;
 
             EnsureEventSystem();
             FindGrade();
@@ -224,16 +227,17 @@ namespace Combat
             {
                 UpdateAmbience();
                 // the music swells in a fight and drops back in quiet moments
-                if (_music != null && _music.clip == GameMusic)
-                {
-                    _music.volume = Mathf.MoveTowards(_music.volume, MusicVolume * TensionDirector.MusicScale, Time.deltaTime * 0.15f);
-                }
-
                 // a boss fight has its own music
                 AudioClip bossMusic = CampaignAssets.Clip(a => a.BossMusic);
                 bool boss = BossAI.AnyAlive && bossMusic != null;
                 PlayMusic(boss ? bossMusic : _gameMusic);
-                if (boss) _music.volume = MusicVolume;
+                if (_music != null)
+                {
+                    float level = boss ? MusicVolume : MusicVolume * TensionDirector.MusicScale;
+                    _musicLevel = Mathf.MoveTowards(_musicLevel, level, Time.deltaTime * (boss ? 1.0f : 0.15f));
+                    // dialogue ducks it; the player's music volume scales it
+                    _music.volume = _musicLevel * DialogueDirector.MusicDuck * GameSettings.MusicVolume;
+                }
             }
 
             if (_input != null && _input.pause)
@@ -287,6 +291,8 @@ namespace Combat
             RunState.Reset(mode);
             if (MissionManager.Instance != null) MissionManager.Instance.Clear();
             if (ShopManager.Instance != null) ShopManager.Instance.ResetForRun();
+            if (DialogueDirector.Instance != null) DialogueDirector.Instance.ResetAll();
+            PickupFeed.Clear();
             _player.Controller.MaxStamina = _baseStamina;
             _player.Health.Armor = 0.0f;
             _player.GetComponent<InventoryManager>()?.ResetForRun();

@@ -29,6 +29,10 @@ namespace StarterAssets
 		// held while aiming a throw, released to throw
 		public bool useItem;
 		public bool nextItem;
+		public bool flashlight;
+		// held; they only lean while aiming, otherwise the same keys keep their usual job
+		public bool leanLeft;
+		public bool leanRight;
 
 		[Header("Movement Settings")]
 		public bool analogMovement;
@@ -136,6 +140,21 @@ namespace StarterAssets
 		public void OnNextItem(InputValue value)
 		{
 			if (value.isPressed) nextItem = true;
+		}
+
+		public void OnFlashlight(InputValue value)
+		{
+			if (value.isPressed) flashlight = true;
+		}
+
+		public void OnLeanLeft(InputValue value)
+		{
+			leanLeft = value.isPressed;
+		}
+
+		public void OnLeanRight(InputValue value)
+		{
+			leanRight = value.isPressed;
 		}
 #endif
 

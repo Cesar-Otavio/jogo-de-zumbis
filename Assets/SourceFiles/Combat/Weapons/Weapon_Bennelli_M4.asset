@@ -15,6 +15,10 @@ MonoBehaviour:
   DisplayName: Benelli M4
   Model: {fileID: 1236257789494122, guid: 8b0b86b42def11849a8eba21f4a6a684, type: 3}
   Hold: 1
+  Class: 2
+  Icon: {fileID: 21300000, guid: dc932711f6aced24d86d7c02a4219d49, type: 3}
+  AmmoName: calibre 12
+  AmmoIcon: {fileID: 21300000, guid: 5bbc2c68b39384a4ba96afe3dc15a894, type: 3}
   Mode: 0
   FireInterval: 0.85
   Damage: 13

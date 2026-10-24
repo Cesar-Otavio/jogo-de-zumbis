@@ -15,6 +15,10 @@ MonoBehaviour:
   DisplayName: Uzi
   Model: {fileID: 1095254202041702, guid: 6273e2936e9d6a24e9f64c7c70d6bd19, type: 3}
   Hold: 1
+  Class: 1
+  Icon: {fileID: 21300000, guid: 9ce3dd8cf099220479a0b393735a10e9, type: 3}
+  AmmoName: 9 mm
+  AmmoIcon: {fileID: 21300000, guid: 49143fad789e05648b81eab4cf28480a, type: 3}
   Mode: 1
   FireInterval: 0.065
   Damage: 14

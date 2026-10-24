@@ -98,12 +98,12 @@ namespace Combat
             _counts[(int)item] += added;
             if (added > 0)
             {
-                if (notify && _player != null) _player.ShowNotice($"+{added} {Names[(int)item]}");
+                if (notify) PickupFeed.Quick(item, added);
                 Changed?.Invoke();
             }
             else if (notify && _player != null)
             {
-                _player.ShowNotice($"{Names[(int)item]}: sem espaço");
+                PickupFeed.Full(ItemCatalog.NameOf(ItemCatalog.IdOf(item), Names[(int)item]), ItemCatalog.IconOf(item));
             }
 
             return added;
@@ -164,6 +164,8 @@ namespace Combat
             }
 
             bool throwable = IsThrowable(Selected);
+            // on a gamepad LB also leans while aiming a gun: then it isn't an item
+            if (LeanController.Player != null && LeanController.Player.Holding) _input.useItem = false;
             if (_input.useItem)
             {
                 if (throwable && Count(Selected) > 0)

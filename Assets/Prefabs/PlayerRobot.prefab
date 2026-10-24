@@ -3041,6 +3041,8 @@ GameObject:
   - component: {fileID: 4948090835042026262}
   - component: {fileID: 4978316486931755235}
   - component: {fileID: 3013498419000336834}
+  - component: {fileID: 3351837674461691030}
+  - component: {fileID: 5392897464183383961}
   m_Layer: 8
   m_Name: Robot
   m_TagString: Player
@@ -3214,6 +3216,9 @@ MonoBehaviour:
   swapShoulder: 0
   useItem: 0
   nextItem: 0
+  flashlight: 0
+  leanLeft: 0
+  leanRight: 0
   analogMovement: 0
   cursorLocked: 1
   cursorInputForLook: 1
@@ -3433,6 +3438,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3cfea7fc5420e134a964981dc2a72c88, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Combat.WeaponHolder
+  StowTime: 0.32
+  DrawTime: 0.4
+  GrabTime: 0.6
+  HolsterOffset: {x: 0.2, y: -0.06, z: 0.02}
+  BackOffset: {x: 0, y: 0.02, z: -0.2}
+  SubmachineGunOnChest: 1
+  ChestOffset: {x: 0, y: -0.12, z: 0.2}
   ShoulderHeight: 1.47
   ShoulderSide: 0.16
   RifleHipGrip: {x: 0.05, y: -0.16, z: 0.3}
@@ -3483,9 +3495,6 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 93597baab90fe724b987200da102faeb, type: 3}
   DeathSound: {fileID: 8300000, guid: ba4ed6b6f628bbb4d9aeffeec81b2ec5, type: 3}
   FlashlightOn: 1
-  FlashlightIntensity: 30
-  FlashlightRange: 35
-  FlashlightAngle: 58
   FlashlightSound: {fileID: 8300000, guid: c2076fab7b55afe4f8bdf4cc4f70f350, type: 3}
 --- !u!114 &9059026408633971720
 MonoBehaviour:
@@ -3656,6 +3665,51 @@ MonoBehaviour:
   ThrowSpeed: 15
   ThrowLift: 3.5
   PreviewTime: 2.5
+--- !u!114 &3351837674461691030
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5633379113638269974}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 27fe978d3f68c574a9ce732105990379, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Combat.TacticalFlashlight
+  Intensity: 320
+  Range: 40
+  OuterAngle: 54
+  InnerAngle: 26
+  BeamColor: {r: 1, g: 0.95, b: 0.84, a: 1}
+  ShadowNearPlane: 0.35
+  SpillIntensity: 4.5
+  SpillRange: 8
+  SpillAhead: 1
+  FullPowerDistance: 11
+  ChestOffset: {x: 0.16, y: 0.08, z: 0.26}
+  FollowSharpness: 11
+  AimFollowSharpness: 26
+  WalkSway: 0.8
+  SprintSway: 2.4
+  AimSway: 0.15
+--- !u!114 &5392897464183383961
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5633379113638269974}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99c14c97a5b100e469c3ff553891fcce, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Combat.LeanController
+  Distance: 0.42
+  SpineAngle: 16
+  ViewRoll: 7
+  Speed: 7
+  ProbeRadius: 0.22
 --- !u!1 &5666995299913766148
 GameObject:
   m_ObjectHideFlags: 0

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace Combat
 {
     /* The story of Protocolo Aurora, told through documents, military logs and radio
-     * transmissions rather than cutscenes. Documents open in the reader (the game pauses while
+     * transmissions rather than cutscenes (the spoken lines are in the DialogueLibrary asset). Documents open in the reader (the game pauses while
      * reading); radio lines play over the action. Found documents are kept by Progression.
      */
     public static class Story
@@ -91,25 +91,6 @@ namespace Combat
             }
         };
 
-        public static readonly Dictionary<string, string> Radio = new Dictionary<string, string>
-        {
-            ["radio_wake"] = "...está me ouvindo? Aqui é Duarte. Se você está vivo, pegue uma arma. Eles chegam com o barulho.",
-            ["radio_power"] = "O setor perdeu energia. Sem luz, eles ficam mais ousados. Ache o gerador e os fusíveis.",
-            ["radio_signal"] = "...tchhh... estação de comunicação... módulo... repetindo... protocolo... tchhh...",
-            ["radio_signal_ok"] = "Sinal limpo! Escute: o comando não vem nos salvar. Eles mandaram nos conter.",
-            ["radio_armory"] = "O arsenal fica trancado por cartão. O intendente deixou um perto das torres.",
-            ["radio_e07"] = "Algo enorme rompeu a contenção do laboratório. Experimento 07. Faça ele bater em algo pesado e acerte quando cambalear.",
-            ["radio_e07_dead"] = "Você derrubou o 07... Isso não foi um acidente. Foi um teste.",
-            ["radio_tower"] = "Ligue os refletores da torre. A luz segura eles por um tempo.",
-            ["radio_lab"] = "Os registros do laboratório explicam tudo. Recupere a caixa-preta.",
-            ["radio_contain"] = "Os dutos estão abrindo! Feche as válvulas na ordem certa ou a base inteira vira um ninho.",
-            ["radio_evac"] = "Consegui contato com um piloto. Prepare o heliponto e acenda o farol. Ele chega em minutos.",
-            ["radio_final"] = "Aurora está vindo. Use a luz contra ela. Aguente até o helicóptero tocar o chão!",
-            ["radio_alarm"] = "O alarme disparou sozinho e está chamando a horda. Desligue os painéis!",
-            ["radio_supply"] = "Tem um depósito de suprimentos no fundo da base. Arriscado, mas cheio de munição.",
-            ["radio_gates"] = "Os portões estão abertos. Feche-os e reforce as passagens para ganhar tempo."
-        };
-
         public static void Open(string id)
         {
             if (id == null || !Documents.TryGetValue(id, out Entry entry)) return;
@@ -117,11 +98,14 @@ namespace Combat
             DocumentOpened?.Invoke(id, entry);
         }
 
+        /* Radio lines live in the DialogueLibrary (with their speaker, voice clip and timing) and are played
+         * by the DialogueDirector. Without a director in the scene the text still reaches the HUD's radio box. */
         public static void PlayRadio(string id)
         {
             if (id == null) return;
-            string text = Radio.TryGetValue(id, out string line) ? line : id;
-            RadioReceived?.Invoke(id, text);
+            if (DialogueDirector.Instance != null && DialogueDirector.Instance.Play(id)) return;
+            DialogueLine line = DialogueLibrary.Instance != null ? DialogueLibrary.Instance.Find(id) : null;
+            RadioReceived?.Invoke(id, line != null ? line.Text : id);
         }
     }
 }

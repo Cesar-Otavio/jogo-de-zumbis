@@ -29,9 +29,21 @@ namespace Combat
         public static float Flashes { get => Get("Flashes", 1.0f); set => Set("Flashes", value); }
         // red screen edges and pulses when hurt, 0..1
         public static float InjuryEffects { get => Get("Injury", 1.0f); set => Set("Injury", value); }
+        // closed captions: descriptions of important sounds ([passos à esquerda])
         public static bool Subtitles { get => Get("Subtitles", 1.0f) > 0.5f; set => Set("Subtitles", value ? 1.0f : 0.0f); }
+        // what the narrator and the radio say
+        public static bool DialogueSubtitles { get => Get("DialogueSubtitles", 1.0f) > 0.5f; set => Set("DialogueSubtitles", value ? 1.0f : 0.0f); }
+        // size of both kinds of subtitle, 0.8 .. 1.5
+        public static float SubtitleScale { get => Mathf.Clamp(Get("SubtitleScale", 1.0f), 0.8f, 1.5f); set => Set("SubtitleScale", Mathf.Clamp(value, 0.8f, 1.5f)); }
         // the objective marker with distance on screen
         public static bool ObjectiveHints { get => Get("Hints", 1.0f) > 0.5f; set => Set("Hints", value ? 1.0f : 0.0f); }
+        // volume groups, 0..1 (there's no AudioMixer asset yet: each system scales its own sources; see Docs/FASE3_ENTREGA.md)
+        public static float MasterVolume { get => Get("VolMaster", 1.0f); set { Set("VolMaster", Mathf.Clamp01(value)); AudioListener.volume = Mathf.Clamp01(value); } }
+        public static float MusicVolume { get => Get("VolMusic", 1.0f); set => Set("VolMusic", Mathf.Clamp01(value)); }
+        public static float SfxVolume { get => Get("VolSfx", 1.0f); set => Set("VolSfx", Mathf.Clamp01(value)); }
+        public static float DialogueVolume { get => Get("VolDialogue", 1.0f); set => Set("VolDialogue", Mathf.Clamp01(value)); }
+        public static float AmbientVolume { get => Get("VolAmbient", 1.0f); set => Set("VolAmbient", Mathf.Clamp01(value)); }
+        public static float UiVolume { get => Get("VolUi", 1.0f); set => Set("VolUi", Mathf.Clamp01(value)); }
         public static ThreatArrowMode ThreatArrows { get => (ThreatArrowMode)Mathf.RoundToInt(Get("Arrows", 0.0f)); set => Set("Arrows", (int)value); }
 
         private static readonly Dictionary<string, float> Cache = new Dictionary<string, float>();

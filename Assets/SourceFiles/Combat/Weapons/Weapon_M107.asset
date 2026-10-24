@@ -15,6 +15,10 @@ MonoBehaviour:
   DisplayName: M107 Sniper
   Model: {fileID: 1829597508155286, guid: 7359baf27e84aa44cafac3788c8be0f1, type: 3}
   Hold: 1
+  Class: 4
+  Icon: {fileID: 21300000, guid: 3463814d5b989464589236d0c249b873, type: 3}
+  AmmoName: .50 BMG
+  AmmoIcon: {fileID: 21300000, guid: 957e436b3e0f48140a58cc6c734ed545, type: 3}
   Mode: 0
   FireInterval: 1.25
   Damage: 110

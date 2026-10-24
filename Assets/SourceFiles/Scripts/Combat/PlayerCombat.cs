@@ -54,10 +54,8 @@ namespace Combat
         public AudioClip DeathSound;
 
         [Header("Flashlight")]
+        [Tooltip("The light itself is the TacticalFlashlight component; this is its on/off state, read by perception and the HUD")]
         public bool FlashlightOn = true;
-        public float FlashlightIntensity = 30.0f;
-        public float FlashlightRange = 35.0f;
-        public float FlashlightAngle = 58.0f;
         public AudioClip FlashlightSound;
 
         // the game flow turns this off when the last life is lost
@@ -116,10 +114,11 @@ namespace Combat
         private float _cameraSide = 1.0f;
 
         private Transform _head;
+        private LeanController _lean;
+        private float _queuedSwitchUntil = -1.0f;
         private float _baseNearClip;
         private SkinnedMeshRenderer[] _bodyRenderers;
         private bool _bodyHidden;
-        private Light _flashlight;
 
         private void Awake()
         {
@@ -136,37 +135,9 @@ namespace Combat
             var animator = GetComponent<Animator>();
             if (animator != null && animator.isHuman) _head = animator.GetBoneTransform(HumanBodyBones.Head);
             _bodyRenderers = GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            _lean = GetComponent<LeanController>();
         }
 
-        // a torch that follows the view, toggled with F
-        private void UpdateFlashlight()
-        {
-            if (_flashlight == null && _camera != null)
-            {
-                var torch = new GameObject("Flashlight");
-                torch.transform.SetParent(_camera.transform, false);
-                torch.transform.localPosition = new Vector3(0.25f, -0.2f, 0.1f);
-                _flashlight = torch.AddComponent<Light>();
-                _flashlight.type = LightType.Spot;
-                _flashlight.color = new Color(1.0f, 0.95f, 0.82f);
-                _flashlight.shadows = LightShadows.Soft;
-                _flashlight.shadowStrength = 0.85f;
-            }
-
-            if (_flashlight == null) return;
-
-            if (UnityEngine.InputSystem.Keyboard.current != null && UnityEngine.InputSystem.Keyboard.current.fKey.wasPressedThisFrame)
-            {
-                FlashlightOn = !FlashlightOn;
-                if (CombatEffects.Instance != null) CombatEffects.Instance.PlaySound(FlashlightSound, transform.position + Vector3.up * 1.5f, 0.5f, 0.05f, 0.0f);
-            }
-
-            _flashlight.enabled = FlashlightOn && !_health.IsDead;
-            _flashlight.intensity = FlashlightIntensity;
-            _flashlight.range = FlashlightRange;
-            _flashlight.spotAngle = FlashlightAngle;
-            _flashlight.innerSpotAngle = FlashlightAngle * 0.45f;
-        }
 
         // looking down the sights, the body (big hands right in front of the eye) only casts its shadow
         private void SetBodyHidden(bool hidden)
@@ -226,7 +197,9 @@ namespace Combat
             if (t <= 0.0f) return;
 
             // follow the sights' direction but never roll the view
-            Quaternion sightRotation = Quaternion.LookRotation(_holder.SightForward, Vector3.up);
+            // (leaning rolls it on purpose, together with the gun)
+            Vector3 viewUp = Quaternion.LookRotation(_holder.SightForward, Vector3.up) * (_lean != null ? _lean.ViewRollRotation : Quaternion.identity) * Vector3.up;
+            Quaternion sightRotation = Quaternion.LookRotation(_holder.SightForward, viewUp);
             Vector3 eye = _holder.SightPosition - _holder.SightForward * EyeRelief;
             Transform camTransform = cam.transform;
             if (float.IsNaN(eye.x) || float.IsNaN(camTransform.position.x)) return;
@@ -318,11 +291,10 @@ namespace Combat
             // anchored on the camera pivot rather than the head bone, which bobs with the walk and swings with the hips
             _holder.SightAim = FirstPersonAim;
             Transform pivot = _controller.CinemachineCameraTarget.transform;
-            _holder.ViewRotation = pivot.rotation;
+            _holder.ViewRotation = _lean != null ? pivot.rotation * _lean.ViewRollRotation : pivot.rotation;
             _holder.SightAnchor = pivot.position + Vector3.up * SightOffsetFromHead.y +
                                   _holder.ViewRotation * new Vector3(SightOffsetFromHead.x, 0.0f, SightOffsetFromHead.z);
 
-            UpdateFlashlight();
 
             if (_input.reload)
             {
@@ -330,10 +302,22 @@ namespace Combat
                 _holder.StartReload();
             }
 
+            // Q / E while aiming lean instead (LeanController): the same press must not also switch or interact
+            if (_lean != null && _lean.Holding)
+            {
+                _input.switchWeapon = false;
+                _input.interact = false;
+            }
+
             if (_input.switchWeapon)
             {
                 _input.switchWeapon = false;
                 SwitchSlot();
+            }
+            else if (_queuedSwitchUntil > 0.0f && !_holder.Busy)
+            {
+                if (Time.time <= _queuedSwitchUntil) SwitchSlot();
+                _queuedSwitchUntil = -1.0f;
             }
 
             if (_input.drop)
@@ -452,6 +436,12 @@ namespace Combat
 
         public void Give(WeaponInstance weapon)
         {
+            Give(weapon, null);
+        }
+
+        // from: where the weapon lies in the world; the hands go and take it from there (no instant swap)
+        public void Give(WeaponInstance weapon, Pose? from)
+        {
             // guns of a kind that has upgrades this run get them
             weapon.Data = WeaponUpgrades.Resolve(weapon.Data);
             int slot = Slots[ActiveSlot] == null ? ActiveSlot : Slots[1 - ActiveSlot] == null ? 1 - ActiveSlot : ActiveSlot;
@@ -459,6 +449,13 @@ namespace Combat
 
             Slots[slot] = weapon;
             ActiveSlot = slot;
+            if (from.HasValue && !_health.IsDead)
+            {
+                // the gun in the hands (if any) goes on the body first, then the new one is picked up
+                _holder.Grab(weapon, from.Value);
+                return;
+            }
+
             EquipActive();
         }
 
@@ -473,13 +470,16 @@ namespace Combat
                     owned.Reserve += ammo;
                     Destroy(pickup.gameObject);
                     PlayPickupSound();
-                    Notify?.Invoke($"+{ammo} munição {pickup.Data.DisplayName}");
+                    PickupFeed.Ammo(owned.Data, ammo);
                     return;
                 }
             }
 
-            Give(pickup.Take());
+            Pose where = pickup.VisualPose;
+            WeaponInstance taken = pickup.Take();
+            Give(taken, where);
             PlayPickupSound();
+            PickupFeed.Weapon(taken.Data);
         }
 
         private void PlayPickupSound()
@@ -498,11 +498,16 @@ namespace Combat
 
         private void SwitchSlot()
         {
-            if (Other == null || _holder.IsReloading && Current == null) return;
+            if (Other == null) return;
+            // mid-way through putting a gun away or drawing one: remember the press for a moment
+            if (_holder.Busy)
+            {
+                _queuedSwitchUntil = Time.time + 0.35f;
+                return;
+            }
 
-            _holder.Unequip();
             ActiveSlot = 1 - ActiveSlot;
-            EquipActive();
+            _holder.SwitchTo(Current);
         }
 
         private void DropCurrent()
@@ -513,7 +518,8 @@ namespace Combat
             if (Other != null)
             {
                 ActiveSlot = 1 - ActiveSlot;
-                EquipActive();
+                // the carried gun is drawn from the body
+                _holder.SwitchTo(Current);
             }
         }
 

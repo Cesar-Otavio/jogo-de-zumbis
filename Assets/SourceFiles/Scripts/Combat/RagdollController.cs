@@ -7,7 +7,16 @@ namespace Combat
      */
     public class RagdollController : MonoBehaviour
     {
+        // bodies thrown around by physics at the same time; the oldest beyond this are frozen where they lie
+        public const int MaxSimulated = 10;
+        private static readonly System.Collections.Generic.List<RagdollController> Simulated = new System.Collections.Generic.List<RagdollController>();
+
+        [Tooltip("A body at rest for this long stops simulating (it can't twitch or slide away later)")]
+        public float SettleTime = 3.5f;
+
         public bool IsRagdoll { get; private set; }
+        private float _ragdollSince;
+        private bool _frozen;
 
         private Rigidbody[] _bodies;
         private Collider[] _colliders;
@@ -24,12 +33,45 @@ namespace Combat
             }
 
             SetRagdoll(false);
+            foreach (Rigidbody body in _bodies)
+            {
+                // a limb spawned inside the floor pops out gently instead of launching the body
+                body.maxDepenetrationVelocity = 2.5f;
+                body.solverIterations = 10;
+            }
+        }
+
+        private void OnDisable()
+        {
+            Simulated.Remove(this);
+        }
+
+        private void Update()
+        {
+            if (!IsRagdoll || _frozen) return;
+            if (Time.time - _ragdollSince < SettleTime) return;
+            float motion = 0.0f;
+            foreach (Rigidbody body in _bodies) motion = Mathf.Max(motion, body.linearVelocity.sqrMagnitude);
+            if (motion < 0.04f) Freeze();
         }
 
         public void SetRagdoll(bool ragdoll)
         {
             IsRagdoll = ragdoll;
+            _frozen = false;
             if (_animator != null) _animator.enabled = !ragdoll;
+            Simulated.Remove(this);
+            if (ragdoll)
+            {
+                _ragdollSince = Time.time;
+                Simulated.Add(this);
+                while (Simulated.Count > MaxSimulated)
+                {
+                    RagdollController oldest = Simulated[0];
+                    Simulated.RemoveAt(0);
+                    if (oldest != null) oldest.Freeze();
+                }
+            }
 
             foreach (Rigidbody body in _bodies)
             {
@@ -47,6 +89,8 @@ namespace Combat
         // stops the physics where the body lies, so the corpse can be moved as a whole
         public void Freeze()
         {
+            _frozen = true;
+            Simulated.Remove(this);
             foreach (Rigidbody body in _bodies)
             {
                 body.isKinematic = true;

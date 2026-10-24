@@ -38,7 +38,7 @@ namespace Combat
      */
     [DefaultExecutionOrder(40)]
     [RequireComponent(typeof(Animator))]
-    public class WeaponHolder : MonoBehaviour
+    public partial class WeaponHolder : MonoBehaviour
     {
         [Header("Pose")]
         public float ShoulderHeight = 1.36f;
@@ -161,6 +161,7 @@ namespace Combat
 
         public void Equip(WeaponInstance weapon)
         {
+            FinishGear();
             DestroyVisual(ref _visual);
             Current = weapon;
             IsReloading = false;
@@ -174,22 +175,7 @@ namespace Combat
                 return;
             }
 
-            _visual = BuildVisual(weapon.Data, "Weapon_" + weapon.Data.DisplayName);
-            _visualHidden = false;
-            _magazine = FindDeep(_visual, weapon.Data.MagazinePart);
-            _cyclingPart = FindDeep(_visual, weapon.Data.CyclingPart);
-            if (_magazine != null)
-            {
-                _magazineRestPosition = _magazine.localPosition;
-                _magazineRestRotation = _magazine.localRotation;
-                _magazineCenter = PartCenter(_magazine);
-            }
-
-            if (_cyclingPart != null)
-            {
-                _cyclingRestPosition = _cyclingPart.localPosition;
-                _cyclingCenter = PartCenter(_cyclingPart);
-            }
+            AdoptVisual(BuildVisual(weapon.Data, "Weapon_" + weapon.Data.DisplayName));
 
             // the weapon comes up from the low ready position
             _equipBlend = 0.0f;
@@ -201,8 +187,31 @@ namespace Combat
             }
         }
 
+        // the visual of the weapon in the hands: finds its moving parts
+        private void AdoptVisual(Transform visual)
+        {
+            _visual = visual;
+            _visualHidden = false;
+            _magazine = FindDeep(_visual, Current.Data.MagazinePart);
+            _cyclingPart = FindDeep(_visual, Current.Data.CyclingPart);
+            if (_magazine != null)
+            {
+                _magazine.gameObject.SetActive(true);
+                _magazineRestPosition = _magazine.localPosition;
+                _magazineRestRotation = _magazine.localRotation;
+                _magazineCenter = PartCenter(_magazine);
+            }
+
+            if (_cyclingPart != null)
+            {
+                _cyclingRestPosition = _cyclingPart.localPosition;
+                _cyclingCenter = PartCenter(_cyclingPart);
+            }
+        }
+
         public WeaponInstance Unequip()
         {
+            FinishGear();
             WeaponInstance weapon = Current;
             DestroyVisual(ref _visual);
             Current = null;
@@ -216,6 +225,7 @@ namespace Combat
             if (_backData == data) return;
             DestroyVisual(ref _backVisual);
             _backData = data;
+            _backSide = 0;
             if (data != null) _backVisual = BuildVisual(data, "BackWeapon_" + data.DisplayName);
         }
 
@@ -297,6 +307,7 @@ namespace Combat
 
             UpdateBlends(dt);
             UpdateSprings(dt);
+            UpdateGear(dt);
 
             if (Current == null)
             {
@@ -450,6 +461,7 @@ namespace Combat
                 weaponRotation = Quaternion.Slerp(weaponRotation, backRotation, h);
             }
 
+            ApplyGearMotion(ref weaponPosition, ref weaponRotation, dt);
             _visual.SetPositionAndRotation(weaponPosition, weaponRotation);
             if (_visualHidden != HideVisual)
             {
@@ -547,21 +559,16 @@ namespace Combat
             return Vector3.Lerp(well, support, Mathf.SmoothStep(0, 1, (t - 0.65f) / 0.35f));
         }
 
+        // the gun's place on the body (see WeaponHolder.Gear): holster, back or chest by weapon class
         private void BackPose(WeaponData data, int slot, out Vector3 position, out Quaternion rotation)
         {
-            Quaternion yaw = Quaternion.Euler(0.0f, transform.eulerAngles.y, 0.0f);
-            // slung diagonally across the back, barrel up over the shoulder
-            Vector3 barrel = new Vector3(slot == 0 ? -0.55f : 0.55f, 0.85f, 0.0f);
-            rotation = yaw * Quaternion.LookRotation(-barrel, Vector3.back);
-            Vector3 center = (data.GripPoint + data.MuzzlePoint) * 0.5f;
-            Vector3 anchor = transform.position + yaw * new Vector3(0.0f, 1.12f, -0.2f - slot * 0.05f);
-            position = anchor - rotation * center;
+            CarryPose(data, slot, out position, out rotation);
         }
 
         private void PoseBackWeapon()
         {
             if (_backVisual == null) return;
-            BackPose(_backData, 1, out Vector3 position, out Quaternion rotation);
+            CarryPose(_backData, _backSide, out Vector3 position, out Quaternion rotation);
             _backVisual.SetPositionAndRotation(position, rotation);
         }
 
@@ -579,7 +586,7 @@ namespace Combat
             float baseSpread = Mathf.Lerp(data.HipSpread, data.AimSpread, AimBlend) + data.MoveSpread * MoveSpeed01;
             CurrentSpread = baseSpread + _bloom;
 
-            if (Holstered) return;
+            if (Holstered || Busy) return;
 
             if (IsReloading)
             {
@@ -949,8 +956,9 @@ namespace Combat
 
             Vector3 leftRotation = data.Hold == HoldStyle.Pistol ? PistolLeftHandRotation : LeftHandRotation;
             float leftRotationWeight = IsReloading ? 0.3f : 0.8f;
-            _animator.SetIKPositionWeight(AvatarIKGoal.LeftHand, weight);
-            _animator.SetIKRotationWeight(AvatarIKGoal.LeftHand, weight * leftRotationWeight);
+            _animator.SetIKPositionWeight(AvatarIKGoal.LeftHand, weight * _supportHandWeight);
+            _animator.SetIKRotationWeight(AvatarIKGoal.LeftHand, weight * leftRotationWeight * _supportHandWeight);
+            if (Busy) GearBodyIK();
             _animator.SetIKPosition(AvatarIKGoal.LeftHand, _leftHandTarget);
             _animator.SetIKRotation(AvatarIKGoal.LeftHand, _handFrame * Quaternion.Euler(leftRotation));
 

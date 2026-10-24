@@ -1,0 +1,1015 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f0d744dab90ab1543a4e76b892128ed5, type: 3}
+  m_Name: DialogueLibrary
+  m_EditorClassIdentifier: Assembly-CSharp::Combat.DialogueLibrary
+  Lines:
+  - Id: prologue_1
+    Speaker: 0
+    LocalizationKey: dlg.prologue_1
+    Text: "\xC0s vinte e tr\xEAs e quarenta, os primeiros gritos vieram dos hangares. O sargento de servi\xE7o disse que era treinamento."
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 3
+    Interrupt: 0
+    Trigger: 0
+    MissionId: 
+    ObjectiveIndex: -1
+    ItemId: 
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 90
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: prologue
+    Segments: []
+  - Id: prologue_2
+    Speaker: 0
+    LocalizationKey: dlg.prologue_2
+    Text: "\xC0 meia-noite e quinze, a base parou de responder ao comando regional. Pouco depois, a conten\xE7\xE3o do laborat\xF3rio come\xE7ou a falhar."
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 3
+    Interrupt: 0
+    Trigger: 0
+    MissionId: 
+    ObjectiveIndex: -1
+    ItemId: 
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 90
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: prologue
+    Segments: []
+  - Id: prologue_3
+    Speaker: 0
+    LocalizationKey: dlg.prologue_3
+    Text: "O \xFAltimo relat\xF3rio falava de um composto chamado Aurora. Nenhuma equipe de resgate veio confirmar o que aconteceu."
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 3
+    Interrupt: 0
+    Trigger: 0
+    MissionId: 
+    ObjectiveIndex: -1
+    ItemId: 
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 90
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: prologue
+    Segments: []
+  - Id: prologue_4
+    Speaker: 1
+    LocalizationKey: dlg.prologue_4
+    Text: "...al\xF4? Algu\xE9m na escuta? Aqui \xE9 o Tenente Duarte, Controle Aurora. Se tem algu\xE9m vivo a\xED dentro, responda."
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 3
+    Interrupt: 0
+    Trigger: 0
+    MissionId: 
+    ObjectiveIndex: -1
+    ItemId: 
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 90
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: prologue
+    Segments: []
+  - Id: prologue_5
+    Speaker: 1
+    LocalizationKey: dlg.prologue_5
+    Text: "A comunica\xE7\xE3o est\xE1 inst\xE1vel, e eu n\xE3o sei quanto tempo a gente tem."
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 3
+    Interrupt: 0
+    Trigger: 0
+    MissionId: 
+    ObjectiveIndex: -1
+    ItemId: 
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 90
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: prologue
+    Segments: []
+  - Id: prologue_6
+    Speaker: 1
+    LocalizationKey: dlg.prologue_6
+    Text: "Pegue uma arma e saia do p\xE1tio. Tem alguma coisa se movendo entre os alojamentos."
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 3
+    Interrupt: 0
+    Trigger: 0
+    MissionId: 
+    ObjectiveIndex: -1
+    ItemId: 
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 90
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: prologue
+    Segments: []
+  - Id: radio_wake
+    Speaker: 1
+    LocalizationKey: dlg.radio_wake
+    Text: "...est\xE1 me ouvindo? Aqui \xE9 o Tenente Duarte. Se voc\xEA est\xE1 vivo, pegue uma arma. Eles v\xEAm atr\xE1s do barulho."
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 2
+    Interrupt: 0
+    Trigger: 0
+    MissionId: 
+    ObjectiveIndex: -1
+    ItemId: 
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 20
+    RequireMissionActive: 0
+    SkipIfPlayed: prologue_6
+    Group: 
+    Segments: []
+  - Id: fc_armed
+    Speaker: 1
+    LocalizationKey: dlg.fc_armed
+    Text: "Boa. Agora voc\xEA tem com o que se defender. D\xEA uma olhada em volta, mas sem pressa."
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 1
+    Interrupt: 0
+    Trigger: 2
+    MissionId: m_first_contact
+    ObjectiveIndex: 0
+    ItemId: 
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 10
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: 
+    Segments: []
+  - Id: fc_area
+    Speaker: 1
+    LocalizationKey: dlg.fc_area
+    Text: Estou ouvindo movimento perto do seu sinal. Muito movimento. Prepare-se.
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 2
+    Interrupt: 1
+    Trigger: 2
+    MissionId: m_first_contact
+    ObjectiveIndex: 1
+    ItemId: 
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 20
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: 
+    Segments: []
+  - Id: fc_done
+    Speaker: 1
+    LocalizationKey: dlg.fc_done
+    Text: "Voc\xEA ainda est\xE1 de p\xE9. Isso j\xE1 \xE9 mais do que a maioria aqui conseguiu."
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 1
+    Interrupt: 0
+    Trigger: 3
+    MissionId: m_first_contact
+    ObjectiveIndex: -1
+    ItemId: 
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 10
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: 
+    Segments: []
+  - Id: radio_power
+    Speaker: 1
+    LocalizationKey: dlg.radio_power
+    Text: "Estou vendo uma queda no gerador do setor noroeste. Se a energia cair de vez, os port\xF5es de seguran\xE7a param. V\xE1 at\xE9 a sala de m\xE1quinas."
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 2
+    Interrupt: 0
+    Trigger: 0
+    MissionId: 
+    ObjectiveIndex: -1
+    ItemId: 
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 20
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: 
+    Segments: []
+  - Id: gen_found
+    Speaker: 1
+    LocalizationKey: dlg.gen_found
+    Text: "Achei a origem da falha. Tiraram dois fus\xEDveis do painel. Devem estar espalhados pela base."
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 1
+    Interrupt: 0
+    Trigger: 2
+    MissionId: m_generator
+    ObjectiveIndex: 0
+    ItemId: 
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 10
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: 
+    Segments: []
+  - Id: gen_fuse1
+    Speaker: 1
+    LocalizationKey: dlg.gen_fuse1
+    Text: "\xD3timo, um j\xE1 foi. Falta mais um. Cuidado: estou ouvindo movimento perto de voc\xEA."
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 1
+    Interrupt: 0
+    Trigger: 5
+    MissionId: m_generator
+    ObjectiveIndex: -1
+    ItemId: fuse
+    ItemCount: 1
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 10
+    RequireMissionActive: 1
+    SkipIfPlayed: 
+    Group: 
+    Segments: []
+  - Id: gen_fuse2
+    Speaker: 1
+    LocalizationKey: dlg.gen_fuse2
+    Text: "Os dois fus\xEDveis. Volte para o painel e instale."
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 1
+    Interrupt: 0
+    Trigger: 5
+    MissionId: m_generator
+    ObjectiveIndex: -1
+    ItemId: fuse
+    ItemCount: 2
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 10
+    RequireMissionActive: 1
+    SkipIfPlayed: 
+    Group: 
+    Segments: []
+  - Id: gen_power
+    Speaker: 1
+    LocalizationKey: dlg.gen_power
+    Text: "Energia restaurada... espere. O barulho atraiu alguma coisa. Segure a posi\xE7\xE3o at\xE9 o gerador estabilizar!"
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 3
+    Interrupt: 1
+    Trigger: 2
+    MissionId: m_generator
+    ObjectiveIndex: 3
+    ItemId: 
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 20
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: 
+    Segments: []
+  - Id: gen_done
+    Speaker: 1
+    LocalizationKey: dlg.gen_done
+    Text: "O gerador est\xE1 est\xE1vel. Boa. Respire um pouco, enquanto pode."
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 1
+    Interrupt: 0
+    Trigger: 3
+    MissionId: m_generator
+    ObjectiveIndex: -1
+    ItemId: 
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 10
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: 
+    Segments: []
+  - Id: radio_signal
+    Speaker: 1
+    LocalizationKey: dlg.radio_signal
+    Text: "...tchhh... esta\xE7\xE3o de comunica\xE7\xE3o... m\xF3dulo... repetindo... protocolo... tchhh..."
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 2
+    Interrupt: 0
+    Trigger: 0
+    MissionId: 
+    ObjectiveIndex: -1
+    ItemId: 
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 20
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: 
+    Segments: []
+  - Id: sig_station
+    Speaker: 1
+    LocalizationKey: dlg.sig_station
+    Text: "Essa esta\xE7\xE3o \xE9 a nossa chance de ouvir o que o comando est\xE1 dizendo. Falta o m\xF3dulo de r\xE1dio."
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 1
+    Interrupt: 0
+    Trigger: 2
+    MissionId: m_signal
+    ObjectiveIndex: 0
+    ItemId: 
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 10
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: 
+    Segments: []
+  - Id: sig_module
+    Speaker: 1
+    LocalizationKey: dlg.sig_module
+    Text: "Achou o m\xF3dulo. Instale no console e vamos ver o que sai da\xED."
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 1
+    Interrupt: 0
+    Trigger: 2
+    MissionId: m_signal
+    ObjectiveIndex: 1
+    ItemId: 
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 10
+    RequireMissionActive: 1
+    SkipIfPlayed: 
+    Group: 
+    Segments: []
+  - Id: radio_signal_ok
+    Speaker: 1
+    LocalizationKey: dlg.radio_signal_ok
+    Text: "Sinal limpo! Escute... o comando n\xE3o vem nos buscar. A ordem \xE9 conter a base. Conter a gente."
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 2
+    Interrupt: 0
+    Trigger: 0
+    MissionId: 
+    ObjectiveIndex: -1
+    ItemId: 
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 20
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: 
+    Segments: []
+  - Id: radio_armory
+    Speaker: 1
+    LocalizationKey: dlg.radio_armory
+    Text: "O arsenal est\xE1 trancado por cart\xE3o. O intendente deixou um com o oficial de dia, perto das torres."
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 2
+    Interrupt: 0
+    Trigger: 0
+    MissionId: 
+    ObjectiveIndex: -1
+    ItemId: 
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 20
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: 
+    Segments: []
+  - Id: arm_card
+    Speaker: 1
+    LocalizationKey: dlg.arm_card
+    Text: "\xC9 esse cart\xE3o. O leitor fica na porta do arsenal."
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 1
+    Interrupt: 0
+    Trigger: 2
+    MissionId: m_armory
+    ObjectiveIndex: 0
+    ItemId: 
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 10
+    RequireMissionActive: 1
+    SkipIfPlayed: 
+    Group: 
+    Segments: []
+  - Id: arm_done
+    Speaker: 1
+    LocalizationKey: dlg.arm_done
+    Text: "Com isso d\xE1 para aguentar mais uma noite. Talvez."
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 1
+    Interrupt: 0
+    Trigger: 3
+    MissionId: m_armory
+    ObjectiveIndex: -1
+    ItemId: 
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 10
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: 
+    Segments: []
+  - Id: radio_e07
+    Speaker: 1
+    LocalizationKey: dlg.radio_e07
+    Text: "Alguma coisa enorme rompeu a conten\xE7\xE3o do laborat\xF3rio. O Experimento 07. Fa\xE7a ele bater em algo pesado e acerte quando cambalear."
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 3
+    Interrupt: 1
+    Trigger: 0
+    MissionId: 
+    ObjectiveIndex: -1
+    ItemId: 
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 20
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: 
+    Segments: []
+  - Id: radio_e07_dead
+    Speaker: 1
+    LocalizationKey: dlg.radio_e07_dead
+    Text: "Voc\xEA derrubou o 07... Isso n\xE3o foi acidente. Foi um teste. E voc\xEA passou."
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 2
+    Interrupt: 0
+    Trigger: 0
+    MissionId: 
+    ObjectiveIndex: -1
+    ItemId: 
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 20
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: 
+    Segments: []
+  - Id: radio_tower
+    Speaker: 1
+    LocalizationKey: dlg.radio_tower
+    Text: "A torre de vigil\xE2ncia tem refletores. A luz segura essas coisas por um tempo. Religue a alimenta\xE7\xE3o dela."
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 2
+    Interrupt: 0
+    Trigger: 0
+    MissionId: 
+    ObjectiveIndex: -1
+    ItemId: 
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 20
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: 
+    Segments: []
+  - Id: tow_lights
+    Speaker: 1
+    LocalizationKey: dlg.tow_lights
+    Text: "Refletores acesos! Agora eles v\xE3o querer ver o que \xE9. Defenda a torre."
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 2
+    Interrupt: 1
+    Trigger: 2
+    MissionId: m_tower
+    ObjectiveIndex: 2
+    ItemId: 
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 20
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: 
+    Segments: []
+  - Id: tow_done
+    Speaker: 1
+    LocalizationKey: dlg.tow_done
+    Text: "Consegui ver a base pelas c\xE2meras da torre. Est\xE1 pior do que eu pensava."
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 1
+    Interrupt: 0
+    Trigger: 3
+    MissionId: m_tower
+    ObjectiveIndex: -1
+    ItemId: 
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 10
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: 
+    Segments: []
+  - Id: radio_lab
+    Speaker: 1
+    LocalizationKey: dlg.radio_lab
+    Text: "O laborat\xF3rio fica no setor sudeste. Os registros de l\xE1 devem explicar tudo. Recupere a caixa-preta."
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 2
+    Interrupt: 0
+    Trigger: 0
+    MissionId: 
+    ObjectiveIndex: -1
+    ItemId: 
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 20
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: 
+    Segments: []
+  - Id: lab_enter
+    Speaker: 1
+    LocalizationKey: dlg.lab_enter
+    Text: "Voc\xEA est\xE1 dentro do laborat\xF3rio. Fique atento: foi daqui que tudo saiu."
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 2
+    Interrupt: 0
+    Trigger: 2
+    MissionId: m_blackbox
+    ObjectiveIndex: 0
+    ItemId: 
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 20
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: 
+    Segments: []
+  - Id: lab_docs
+    Speaker: 1
+    LocalizationKey: dlg.lab_docs
+    Text: "Valen\xE7a... eu conhe\xE7o esse nome. Era ele quem assinava as ordens do Setor 4."
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 1
+    Interrupt: 0
+    Trigger: 2
+    MissionId: m_blackbox
+    ObjectiveIndex: 1
+    ItemId: 
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 10
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: 
+    Segments: []
+  - Id: lab_box
+    Speaker: 1
+    LocalizationKey: dlg.lab_box
+    Text: "A caixa-preta fala de um protocolo de queima \xE0s quatro da manh\xE3. Eles v\xE3o apagar a base inteira. Com a gente dentro."
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 3
+    Interrupt: 0
+    Trigger: 3
+    MissionId: m_blackbox
+    ObjectiveIndex: -1
+    ItemId: 
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 20
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: 
+    Segments: []
+  - Id: radio_alarm
+    Speaker: 1
+    LocalizationKey: dlg.radio_alarm
+    Text: "O alarme disparou sozinho e est\xE1 chamando a horda inteira. Desligue os pain\xE9is!"
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 2
+    Interrupt: 1
+    Trigger: 0
+    MissionId: 
+    ObjectiveIndex: -1
+    ItemId: 
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 20
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: 
+    Segments: []
+  - Id: alarm_done
+    Speaker: 1
+    LocalizationKey: dlg.alarm_done
+    Text: "Sil\xEAncio de novo. Ou o mais perto disso que d\xE1 para ter aqui."
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 0
+    Interrupt: 0
+    Trigger: 3
+    MissionId: m_alarm
+    ObjectiveIndex: -1
+    ItemId: 
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 10
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: 
+    Segments: []
+  - Id: radio_supply
+    Speaker: 1
+    LocalizationKey: dlg.radio_supply
+    Text: "Tem um dep\xF3sito de suprimentos no fundo da base. Abrir aquilo vai fazer barulho, mas est\xE1 cheio de muni\xE7\xE3o."
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 0
+    Interrupt: 0
+    Trigger: 0
+    MissionId: 
+    ObjectiveIndex: -1
+    ItemId: 
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 10
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: 
+    Segments: []
+  - Id: radio_gates
+    Speaker: 1
+    LocalizationKey: dlg.radio_gates
+    Text: "Os port\xF5es est\xE3o abertos. Feche todos e reforce as passagens. Cada minuto conta."
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 1
+    Interrupt: 0
+    Trigger: 0
+    MissionId: 
+    ObjectiveIndex: -1
+    ItemId: 
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 10
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: 
+    Segments: []
+  - Id: radio_contain
+    Speaker: 1
+    LocalizationKey: dlg.radio_contain
+    Text: "Os dutos de ventila\xE7\xE3o est\xE3o abrindo! Feche as v\xE1lvulas na ordem certa, ou a base inteira vira um ninho."
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 3
+    Interrupt: 1
+    Trigger: 0
+    MissionId: 
+    ObjectiveIndex: -1
+    ItemId: 
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 20
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: 
+    Segments: []
+  - Id: cont_done
+    Speaker: 1
+    LocalizationKey: dlg.cont_done
+    Text: Setores lacrados. Isso compra um pouco de tempo.
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 1
+    Interrupt: 0
+    Trigger: 3
+    MissionId: m_containment
+    ObjectiveIndex: -1
+    ItemId: 
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 10
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: 
+    Segments: []
+  - Id: evac_codes
+    Speaker: 1
+    LocalizationKey: dlg.evac_codes
+    Text: "AURORA-NOITE. \xC9 esse o c\xF3digo. Leve at\xE9 a esta\xE7\xE3o de r\xE1dio."
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 2
+    Interrupt: 0
+    Trigger: 5
+    MissionId: m_evac_prep
+    ObjectiveIndex: -1
+    ItemId: evac_codes
+    ItemCount: 1
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 20
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: 
+    Segments: []
+  - Id: evac_sent
+    Speaker: 2
+    LocalizationKey: dlg.evac_sent
+    Text: "Controle Aurora, aqui \xE9 \xC1guia 2. C\xF3digo recebido. Preparem a zona de pouso e acendam o farol."
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 2
+    Interrupt: 0
+    Trigger: 2
+    MissionId: m_evac_prep
+    ObjectiveIndex: 1
+    ItemId: 
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 20
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: 
+    Segments: []
+  - Id: radio_evac
+    Speaker: 1
+    LocalizationKey: dlg.radio_evac
+    Text: "Voc\xEA ouviu. Prepare o heliponto e acenda o farol. Ele chega em minutos."
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 2
+    Interrupt: 0
+    Trigger: 0
+    MissionId: 
+    ObjectiveIndex: -1
+    ItemId: 
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 20
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: 
+    Segments: []
+  - Id: radio_final
+    Speaker: 1
+    LocalizationKey: dlg.radio_final
+    Text: "A Aurora est\xE1 vindo. \xC9 ela, a coisa do laborat\xF3rio. Use a luz contra ela e aguente at\xE9 o helic\xF3ptero tocar o ch\xE3o!"
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 3
+    Interrupt: 1
+    Trigger: 0
+    MissionId: 
+    ObjectiveIndex: -1
+    ItemId: 
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 20
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: 
+    Segments: []
+  - Id: evac_beacon
+    Speaker: 2
+    LocalizationKey: dlg.evac_beacon
+    Text: "Farol \xE0 vista. Estou a quatro minutos. Mantenham a zona limpa."
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 2
+    Interrupt: 0
+    Trigger: 2
+    MissionId: m_evacuation
+    ObjectiveIndex: 0
+    ItemId: 
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 20
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: 
+    Segments: []
+  - Id: aurora_down
+    Speaker: 1
+    LocalizationKey: dlg.aurora_down
+    Text: "Ela caiu... ela caiu! Aguente mais um pouco, ele est\xE1 chegando!"
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 3
+    Interrupt: 1
+    Trigger: 8
+    MissionId: aurora
+    ObjectiveIndex: -1
+    ItemId: 
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 20
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: 
+    Segments: []
+  - Id: evac_done
+    Speaker: 2
+    LocalizationKey: dlg.evac_done
+    Text: "Tocando o ch\xE3o! Embarca, embarca!"
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 3
+    Interrupt: 1
+    Trigger: 3
+    MissionId: m_evacuation
+    ObjectiveIndex: -1
+    ItemId: 
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 20
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: 
+    Segments: []
+  - Id: react_blackout
+    Speaker: 1
+    LocalizationKey: dlg.react_blackout
+    Text: Perdi a leitura de energia de um setor. Sem luz eles ficam mais ousados.
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 0
+    Interrupt: 2
+    Trigger: 6
+    MissionId: 
+    ObjectiveIndex: -1
+    ItemId: 
+    ItemCount: 0
+    Once: 0
+    Cooldown: 150
+    MaxQueueTime: 10
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: 
+    Segments: []
+  - Id: react_lowammo
+    Speaker: 1
+    LocalizationKey: dlg.react_lowammo
+    Text: "Sua muni\xE7\xE3o est\xE1 acabando. Procure as caixas de suprimento."
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 0
+    Interrupt: 2
+    Trigger: 9
+    MissionId: 
+    ObjectiveIndex: -1
+    ItemId: 
+    ItemCount: 0
+    Once: 0
+    Cooldown: 120
+    MaxQueueTime: 10
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: 
+    Segments: []
+  - Id: react_critical
+    Speaker: 1
+    LocalizationKey: dlg.react_critical
+    Text: "Voc\xEA est\xE1 ferido! Saia da linha de fogo e use um kit m\xE9dico!"
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 2
+    Interrupt: 1
+    Trigger: 10
+    MissionId: 
+    ObjectiveIndex: -1
+    ItemId: 
+    ItemCount: 0
+    Once: 0
+    Cooldown: 90
+    MaxQueueTime: 20
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: 
+    Segments: []
+  - Id: react_failed
+    Speaker: 1
+    LocalizationKey: dlg.react_failed
+    Text: Perdemos essa. Respire. Vamos tentar de novo.
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 1
+    Interrupt: 0
+    Trigger: 4
+    MissionId: 
+    ObjectiveIndex: -1
+    ItemId: 
+    ItemCount: 0
+    Once: 0
+    Cooldown: 30
+    MaxQueueTime: 10
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: 
+    Segments: []
+  - Id: react_lastnight
+    Speaker: 1
+    LocalizationKey: dlg.react_lastnight
+    Text: "\xC9 a \xFAltima noite. Se o piloto vier, vai ser agora."
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 1
+    Interrupt: 0
+    Trigger: 11
+    MissionId: 
+    ObjectiveIndex: -1
+    ItemId: 9
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 10
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: 
+    Segments: []

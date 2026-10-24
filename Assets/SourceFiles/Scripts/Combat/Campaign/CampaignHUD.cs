@@ -32,6 +32,8 @@ namespace Combat
         private float _creditsPopupTime = -10.0f;
         private readonly Image[] _slots = new Image[6];
         private readonly TextMeshProUGUI[] _slotTexts = new TextMeshProUGUI[6];
+        private readonly Image[] _slotIcons = new Image[6];
+        private readonly TextMeshProUGUI[] _slotKeys = new TextMeshProUGUI[6];
         private TextMeshProUGUI _intermission;
         private GameObject _bossBar;
         private Image _bossFill;
@@ -97,13 +99,24 @@ namespace Combat
             _credits = UiKit.Text(_root, "", 26, new Vector2(0.7f, 0.86f), new Vector2(0.969f, 0.9f), TextAlignmentOptions.Right, UiKit.Accent);
             _creditsPopup = UiKit.Text(_root, "", 22, new Vector2(0.7f, 0.82f), new Vector2(0.969f, 0.86f), TextAlignmentOptions.Right, UiKit.Accent);
 
-            // quick bar, above the health bar
+            // quick bar, above the health bar: icon, key and count per slot
             for (int i = 0; i < 6; i++)
             {
-                Image slot = UiKit.Box("Slot", _root, new Vector2(0.0f, 0.0f), new Vector2(92.0f + i * 66.0f, 215.0f), new Vector2(60.0f, 46.0f), new Color(0, 0, 0, 0.45f));
+                Image slot = UiKit.Box("Slot", _root, new Vector2(0.0f, 0.0f), new Vector2(92.0f + i * 66.0f, 215.0f), new Vector2(60.0f, 60.0f), new Color(0, 0, 0, 0.45f));
                 _slots[i] = slot;
-                _slotTexts[i] = UiKit.Text(slot.rectTransform, "", 15, Vector2.zero, Vector2.one, TextAlignmentOptions.Center, Color.white, true);
+                var icon = new GameObject("Icon", typeof(RectTransform), typeof(Image)).GetComponent<Image>();
+                icon.rectTransform.SetParent(slot.rectTransform, false);
+                icon.rectTransform.anchorMin = icon.rectTransform.anchorMax = new Vector2(0.5f, 0.56f);
+                icon.rectTransform.sizeDelta = new Vector2(38.0f, 38.0f);
+                icon.preserveAspect = true;
+                icon.raycastTarget = false;
+                icon.sprite = ItemCatalog.IconOf((QuickItem)i);
+                _slotIcons[i] = icon;
+                _slotKeys[i] = UiKit.Text(slot.rectTransform, (i + 1).ToString(), 13, new Vector2(0.06f, 0.62f), new Vector2(0.5f, 0.98f), TextAlignmentOptions.TopLeft, UiKit.Muted, true);
+                _slotTexts[i] = UiKit.Text(slot.rectTransform, "", 16, new Vector2(0.4f, 0.0f), new Vector2(0.94f, 0.36f), TextAlignmentOptions.BottomRight, Color.white, true);
             }
+
+            gameObject.AddComponent<PickupFeedView>().Build(_root);
 
             _intermission = UiKit.Text(_root, "", 24, new Vector2(0.25f, 0.8f), new Vector2(0.75f, 0.85f), TextAlignmentOptions.Center, UiKit.Accent, true);
 
@@ -311,9 +324,12 @@ namespace Combat
                 var item = (QuickItem)i;
                 int count = _inventory.Count(item);
                 bool selected = _inventory.Selected == item;
-                _slots[i].color = selected ? new Color(1.0f, 0.78f, 0.3f, 0.45f) : new Color(0, 0, 0, 0.45f);
-                _slotTexts[i].text = $"<size=80%>{i + 1}</size> {InventoryManager.Short[i]}\n<size=120%>{count}</size>";
-                _slotTexts[i].alpha = count > 0 ? 1.0f : 0.4f;
+                _slots[i].color = selected ? new Color(1.0f, 0.78f, 0.3f, 0.32f) : new Color(0.05f, 0.06f, 0.07f, 0.55f);
+                _slotTexts[i].text = count.ToString();
+                _slotTexts[i].alpha = count > 0 ? 1.0f : 0.35f;
+                // without the item the icon goes grey and faint, still showing what the slot is for
+                _slotIcons[i].color = count > 0 ? (selected ? UiKit.Accent : Color.white) : new Color(1.0f, 1.0f, 1.0f, 0.22f);
+                _slotKeys[i].color = selected ? UiKit.Accent : UiKit.Muted;
             }
         }
 

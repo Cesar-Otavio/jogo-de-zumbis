@@ -15,6 +15,10 @@ MonoBehaviour:
   DisplayName: M1911
   Model: {fileID: 1694449805434718, guid: 6f1a7354265853f44b0ed5e2e43676ad, type: 3}
   Hold: 0
+  Class: 0
+  Icon: {fileID: 21300000, guid: 74f72265ea84f2844acd88571a62cff6, type: 3}
+  AmmoName: .45 ACP
+  AmmoIcon: {fileID: 21300000, guid: 49143fad789e05648b81eab4cf28480a, type: 3}
   Mode: 0
   FireInterval: 0.14
   Damage: 28

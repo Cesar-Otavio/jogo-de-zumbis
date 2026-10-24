@@ -81,6 +81,8 @@ namespace Combat
 
         public static string ItemName(string id)
         {
+            ItemDefinition item = ItemCatalog.Find(id);
+            if (item != null) return item.DisplayName.ToLowerInvariant();
             switch (id)
             {
                 case "fuse": return "fusível";

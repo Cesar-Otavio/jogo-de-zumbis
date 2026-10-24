@@ -15,6 +15,10 @@ MonoBehaviour:
   DisplayName: M4
   Model: {fileID: 1117582899397640, guid: 689946d975a0e55449b1e7ae41933e73, type: 3}
   Hold: 1
+  Class: 3
+  Icon: {fileID: 21300000, guid: 1862c574c155af44f8e62b4db4803547, type: 3}
+  AmmoName: 5,56 mm
+  AmmoIcon: {fileID: 21300000, guid: 0addcff468bbe164e8e7d0015b5d0e95, type: 3}
   Mode: 1
   FireInterval: 0.08
   Damage: 22

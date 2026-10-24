@@ -141,7 +141,7 @@ namespace Combat
 
                 _player.Health.Heal(HealAmount);
                 if (fx != null) fx.PlayUI(fx.HealthPickupSound, 0.7f);
-                _player.ShowNotice($"<color=#66FF88>+{Mathf.RoundToInt(HealAmount)} vida</color>");
+                PickupFeed.Health(Mathf.RoundToInt(HealAmount));
                 return true;
             }
 
@@ -149,13 +149,14 @@ namespace Combat
             foreach (WeaponInstance weapon in _player.Slots)
             {
                 if (weapon == null) continue;
-                weapon.Reserve += weapon.Data.MagazineSize * AmmoMagazines;
+                int rounds = weapon.Data.MagazineSize * AmmoMagazines;
+                weapon.Reserve += rounds;
+                PickupFeed.Ammo(weapon.Data, rounds);
                 any = true;
             }
 
             if (!any) return false;
             if (fx != null) fx.PlayUI(fx.AmmoPickupSound, 0.7f);
-            _player.ShowNotice("<color=#FFC74D>+munição</color>");
             return true;
         }
 

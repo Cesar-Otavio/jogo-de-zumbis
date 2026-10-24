@@ -20,9 +20,9 @@ RenderSettings:
   m_FogDensity: 0.02
   m_LinearFogStart: 10
   m_LinearFogEnd: 350
-  m_AmbientSkyColor: {r: 0.16, g: 0.18, b: 0.26, a: 1}
-  m_AmbientEquatorColor: {r: 0.09, g: 0.1, b: 0.13, a: 1}
-  m_AmbientGroundColor: {r: 0.035, g: 0.035, b: 0.045, a: 1}
+  m_AmbientSkyColor: {r: 0.17, g: 0.19, b: 0.27, a: 1}
+  m_AmbientEquatorColor: {r: 0.11, g: 0.12, b: 0.16, a: 1}
+  m_AmbientGroundColor: {r: 0.055, g: 0.055, b: 0.065, a: 1}
   m_AmbientIntensity: 1
   m_AmbientMode: 1
   m_SubtractiveShadowColor: {r: 0, g: 0, b: 0, a: 1}
@@ -107414,6 +107414,8 @@ GameObject:
   - component: {fileID: 2004755413}
   - component: {fileID: 2004755412}
   - component: {fileID: 2004755411}
+  - component: {fileID: 2004755420}
+  - component: {fileID: 2004755419}
   m_Layer: 0
   m_Name: CampaignSystems
   m_TagString: Untagged
@@ -107575,6 +107577,34 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2004755419
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2004755410}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 21c4f067847a25b42bb5fb178bf7fb5d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Combat.DialogueSubtitleView
+--- !u!114 &2004755420
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2004755410}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a48a7f5c59ff22488398749c8438229, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Combat.DialogueDirector
+  MusicDuckLevel: 0.35
+  VoiceVolume: 1
+  RadioStaticVolume: 0.08
+  ReadingSpeed: 15
 --- !u!1001 &2010193441
 PrefabInstance:
   m_ObjectHideFlags: 0
