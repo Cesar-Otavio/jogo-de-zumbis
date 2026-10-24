@@ -20,7 +20,8 @@ namespace Combat
 
         private void Start()
         {
-            RectTransform root = UiKit.Canvas("DialogueSubtitles", transform, 140);
+            // above the cinematic letterbox (140)
+            RectTransform root = UiKit.Canvas("DialogueSubtitles", transform, 150);
             _panel = new GameObject("Subtitle", typeof(RectTransform), typeof(CanvasGroup)).GetComponent<RectTransform>();
             _panel.SetParent(root, false);
             _panel.anchorMin = _panel.anchorMax = new Vector2(0.5f, 0.0f);
@@ -66,6 +67,8 @@ namespace Combat
 
             // the panel hugs the text, scaled by the accessibility setting
             float scale = GameSettings.SubtitleScale;
+            // during a cinematic, sit on the lower letterbox bar instead of the picture
+            _panel.anchoredPosition = new Vector2(0.0f, CinematicPlayer.Playing ? 18.0f : 96.0f);
             _text.fontSize = 26.0f * scale;
             _speaker.fontSize = 17.0f * scale;
             float width = Mathf.Min(1100.0f * scale, Mathf.Max(420.0f, _text.GetPreferredValues(_text.text, 1000.0f * scale, 0.0f).x + 60.0f));

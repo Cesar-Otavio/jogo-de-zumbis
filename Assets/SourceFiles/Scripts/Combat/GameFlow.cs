@@ -706,27 +706,48 @@ namespace Combat
             OptionRow(rect, row++, "Marcador de objetivo", () => GameSettings.ObjectiveHints ? "LIGADO" : "DESLIGADO",
                 step => GameSettings.ObjectiveHints = !GameSettings.ObjectiveHints);
 
+            // second column: dialogue and sound
+            row = 0;
+            OptionRow(rect, row++, "Legendas de diálogo", () => GameSettings.DialogueSubtitles ? "LIGADAS" : "DESLIGADAS",
+                step => GameSettings.DialogueSubtitles = !GameSettings.DialogueSubtitles, 1);
+            OptionRow(rect, row++, "Tamanho das legendas", () => Mathf.RoundToInt(GameSettings.SubtitleScale * 100.0f) + "%",
+                step => GameSettings.SubtitleScale = GameSettings.SubtitleScale + step * 0.1f, 1);
+            OptionRow(rect, row++, "Volume geral", () => Percent(GameSettings.MasterVolume, 0.0f, 1.0f),
+                step => GameSettings.MasterVolume = GameSettings.MasterVolume + step * 0.1f, 1);
+            OptionRow(rect, row++, "Música", () => Percent(GameSettings.MusicVolume, 0.0f, 1.0f),
+                step => GameSettings.MusicVolume = GameSettings.MusicVolume + step * 0.1f, 1);
+            OptionRow(rect, row++, "Efeitos", () => Percent(GameSettings.SfxVolume, 0.0f, 1.0f),
+                step => GameSettings.SfxVolume = GameSettings.SfxVolume + step * 0.1f, 1);
+            OptionRow(rect, row++, "Diálogos e rádio", () => Percent(GameSettings.DialogueVolume, 0.0f, 1.0f),
+                step => GameSettings.DialogueVolume = GameSettings.DialogueVolume + step * 0.1f, 1);
+            OptionRow(rect, row++, "Ambiente", () => Percent(GameSettings.AmbientVolume, 0.0f, 1.0f),
+                step => GameSettings.AmbientVolume = GameSettings.AmbientVolume + step * 0.1f, 1);
+            OptionRow(rect, row++, "Interface", () => Percent(GameSettings.UiVolume, 0.0f, 1.0f),
+                step => GameSettings.UiVolume = GameSettings.UiVolume + step * 0.1f, 1);
+
             Label(rect, "Brilho e granulação mudam na hora. \"Automático\" mostra todas as setas no Fácil e Normal e só as dos inimigos que te viram no Difícil e Pesadelo.",
                 18, new Vector2(0.06f, 0.015f), new Vector2(0.94f, 0.085f), TextAlignmentOptions.TopLeft, FontStyles.Normal, new Color(1, 1, 1, 0.6f)).textWrappingMode = TextWrappingModes.Normal;
             _optionsPanel.SetActive(false);
         }
 
-        private void OptionRow(RectTransform parent, int row, string name, Func<string> value, Action<int> change)
+        // two columns of rows: name, <, value, >
+        private void OptionRow(RectTransform parent, int row, string name, Func<string> value, Action<int> change, int column = 0)
         {
             float y = 0.79f - row * 0.088f;
-            Label(parent, name, 24, new Vector2(0.06f, y), new Vector2(0.48f, y + 0.07f), TextAlignmentOptions.Left, FontStyles.Normal, new Color(1, 1, 1, 0.75f));
+            float x = column == 0 ? 0.04f : 0.52f;
+            Label(parent, name, 21, new Vector2(x, y), new Vector2(x + 0.2f, y + 0.07f), TextAlignmentOptions.Left, FontStyles.Normal, new Color(1, 1, 1, 0.75f));
             TextMeshProUGUI label = null;
-            SmallButton(parent, "<", new Vector2(0.5f, y), () =>
+            SmallButton(parent, "<", new Vector2(x + 0.205f, y), () =>
             {
                 change(-1);
                 label.text = value();
-            });
-            label = Label(parent, value(), 26, new Vector2(0.58f, y), new Vector2(0.84f, y + 0.07f), TextAlignmentOptions.Center, FontStyles.Bold, Color.white);
-            SmallButton(parent, ">", new Vector2(0.85f, y), () =>
+            }, 50.0f);
+            label = Label(parent, value(), 22, new Vector2(x + 0.265f, y), new Vector2(x + 0.38f, y + 0.07f), TextAlignmentOptions.Center, FontStyles.Bold, Color.white);
+            SmallButton(parent, ">", new Vector2(x + 0.385f, y), () =>
             {
                 change(1);
                 label.text = value();
-            });
+            }, 50.0f);
             _optionRefreshers.Add(() => label.text = value());
         }
 
@@ -1025,12 +1046,12 @@ namespace Combat
             return rect;
         }
 
-        private void SmallButton(RectTransform parent, string text, Vector2 anchor, Action onClick)
+        private void SmallButton(RectTransform parent, string text, Vector2 anchor, Action onClick, float size = 70.0f)
         {
             Image background = Panel("Arrow_" + text, parent, anchor, anchor, new Color(1, 1, 1, 0.08f));
             RectTransform rect = background.rectTransform;
             rect.pivot = new Vector2(0.0f, 0.0f);
-            rect.sizeDelta = new Vector2(70.0f, 70.0f);
+            rect.sizeDelta = new Vector2(size, size);
             var button = background.gameObject.AddComponent<Button>();
             button.onClick.AddListener(() =>
             {

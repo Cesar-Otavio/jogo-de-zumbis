@@ -33,6 +33,8 @@ namespace StarterAssets
 		// held; they only lean while aiming, otherwise the same keys keep their usual job
 		public bool leanLeft;
 		public bool leanRight;
+		// the crouch button held down (prone, when available)
+		public bool proneHeld;
 
 		[Header("Movement Settings")]
 		public bool analogMovement;
@@ -155,6 +157,11 @@ namespace StarterAssets
 		public void OnLeanRight(InputValue value)
 		{
 			leanRight = value.isPressed;
+		}
+
+		public void OnProne(InputValue value)
+		{
+			proneHeld = value.isPressed;
 		}
 #endif
 

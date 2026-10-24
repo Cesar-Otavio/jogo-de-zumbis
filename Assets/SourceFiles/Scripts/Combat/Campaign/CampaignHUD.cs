@@ -25,6 +25,7 @@ namespace Combat
         private EnemySpawner _spawner;
 
         private TextMeshProUGUI _tracker;
+        private Image _trackerCard;
         private RectTransform _marker;
         private TextMeshProUGUI _markerText;
         private TextMeshProUGUI _credits;
@@ -85,6 +86,12 @@ namespace Combat
             _root = UiKit.Canvas("CampaignHUD", transform, 60);
             _canvas = _root.gameObject;
 
+            // the tracker sits on a card that grows with its text
+            _trackerCard = UiKit.Panel("TrackerCard", _root, new Vector2(0.0f, 1.0f), new Vector2(0.0f, 1.0f), new Color(0.055f, 0.06f, 0.07f, 0.55f));
+            _trackerCard.rectTransform.pivot = new Vector2(0.0f, 1.0f);
+            Image edge = UiKit.Panel("Edge", _trackerCard.rectTransform, Vector2.zero, new Vector2(0.0f, 1.0f), new Color(1.0f, 0.78f, 0.3f, 0.7f));
+            edge.rectTransform.pivot = new Vector2(0.0f, 0.5f);
+            edge.rectTransform.sizeDelta = new Vector2(3.0f, 0.0f);
             _tracker = UiKit.Text(_root, "", 22, new Vector2(0.02f, 0.5f), new Vector2(0.4f, 0.9f), TextAlignmentOptions.TopLeft, Color.white);
             _tracker.textWrappingMode = TextWrappingModes.Normal;
 
@@ -232,8 +239,16 @@ namespace Combat
             if (missions == null || missions.Active.Count == 0)
             {
                 _tracker.text = "";
+                _trackerCard.enabled = false;
                 return;
             }
+
+            // card under the text, sized to it (one frame behind the text, which is fine)
+            Vector2 size = _tracker.GetRenderedValues(false);
+            RectTransform trackerRect = _tracker.rectTransform;
+            _trackerCard.enabled = size.y > 1.0f;
+            _trackerCard.rectTransform.anchoredPosition = new Vector2(_root.rect.width * 0.02f - 16.0f, -_root.rect.height * 0.1f + 12.0f);
+            _trackerCard.rectTransform.sizeDelta = new Vector2(size.x + 34.0f, size.y + 24.0f);
 
             var text = new StringBuilder();
             foreach (MissionRun run in missions.Active)

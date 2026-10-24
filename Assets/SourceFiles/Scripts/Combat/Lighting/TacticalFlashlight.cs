@@ -32,7 +32,7 @@ namespace Combat
         [Header("Spill")]
         public float SpillIntensity = 4.5f;
         public float SpillRange = 8.0f;
-        public float SpillAhead = 1.0f;
+        public float SpillAhead = 1.8f;
         [Tooltip("Below this distance to what the beam hits, it dims (inverse square would blow out walls up close)")]
         public float FullPowerDistance = 11.0f;
 
@@ -102,14 +102,19 @@ namespace Combat
             _beam.shadowResolution = LightShadowResolution.VeryHigh;
             _beam.renderMode = LightRenderMode.ForcePixel;
             _beam.cookie = Cookie();
+            // the light sits a hand's width from the gun: it must not light the player's own body and
+            // weapon (a blown-out hot spot) nor shadow them onto the scene
+            _beam.cullingMask = ~(1 << gameObject.layer);
 
             _spill = new GameObject("Spill").AddComponent<Light>();
             _spill.transform.SetParent(_rig, false);
-            _spill.transform.localPosition = Vector3.forward * SpillAhead;
+            // ahead and low: it lights the ground and walls around, not the gun right in front of the chest
+            _spill.transform.localPosition = Vector3.forward * SpillAhead + Vector3.down * 0.7f;
             _spill.type = LightType.Point;
             _spill.color = Color.Lerp(BeamColor, new Color(0.7f, 0.8f, 1.0f), 0.35f);
             _spill.shadows = LightShadows.None;
             _spill.renderMode = LightRenderMode.ForcePixel;
+            _spill.cullingMask = ~(1 << gameObject.layer);
         }
 
         // a round beam with a hot core and a faint ring, like a real reflector, made once
