@@ -1,0 +1,129 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 41a8c78b165099a4dad57befaa66c3e3, type: 3}
+  m_Name: SurfaceImpactLibrary
+  m_EditorClassIdentifier: Assembly-CSharp::Combat.SurfaceImpactLibrary
+  Impacts:
+  - Surface: 0
+    Sparks: {x: 2, y: 5}
+    SparkColor: {r: 1, g: 0.9, b: 0.7, a: 1}
+    SparkSpeed: 4
+    Dust: {x: 4, y: 6}
+    DustColor: {r: 0.72, g: 0.7, b: 0.66, a: 0.6}
+    DustSize: 0.28
+    Debris: {x: 4, y: 7}
+    DebrisColor: {r: 0.55, g: 0.53, b: 0.5, a: 1}
+    DebrisSize: 0.025
+    DebrisSpeed: 3.5
+    Splash: 0
+    Decal: 1
+    DecalScale: 1
+    Sounds:
+    - {fileID: 8300000, guid: 5b403dd10abec4c4fa032e110b812db4, type: 3}
+    - {fileID: 8300000, guid: d41103edbd8d6f6468719f1c19c11bc6, type: 3}
+    - {fileID: 8300000, guid: 08776afcce571ed48ac86fcc6fcdbc60, type: 3}
+    Volume: 0.7
+  - Surface: 1
+    Sparks: {x: 12, y: 18}
+    SparkColor: {r: 1, g: 0.72, b: 0.3, a: 1}
+    SparkSpeed: 7.5
+    Dust: {x: 1, y: 2}
+    DustColor: {r: 0.3, g: 0.3, b: 0.32, a: 0.45}
+    DustSize: 0.18
+    Debris: {x: 0, y: 0}
+    DebrisColor: {r: 0.3, g: 0.3, b: 0.3, a: 1}
+    DebrisSize: 0.03
+    DebrisSpeed: 3
+    Splash: 0
+    Decal: 1
+    DecalScale: 0.7
+    Sounds:
+    - {fileID: 8300000, guid: 791dff667a15cc24880aec8392f9b284, type: 3}
+    - {fileID: 8300000, guid: f27c8a905902f304abfa9d3a7484e39c, type: 3}
+    - {fileID: 8300000, guid: 89dbf29bff73c8547ace30e4d1d9dcaf, type: 3}
+    Volume: 0.8
+  - Surface: 5
+    Sparks: {x: 0, y: 0}
+    SparkColor: {r: 1, g: 0.75, b: 0.35, a: 1}
+    SparkSpeed: 4
+    Dust: {x: 2, y: 3}
+    DustColor: {r: 0.55, g: 0.45, b: 0.33, a: 0.45}
+    DustSize: 0.2
+    Debris: {x: 6, y: 10}
+    DebrisColor: {r: 0.5, g: 0.36, b: 0.22, a: 1}
+    DebrisSize: 0.04
+    DebrisSpeed: 4
+    Splash: 0
+    Decal: 1
+    DecalScale: 0.9
+    Sounds:
+    - {fileID: 8300000, guid: ed829946326f4ce4fad90bce144c43e9, type: 3}
+    - {fileID: 8300000, guid: 049801110a0b7304ebd918ac944d97dc, type: 3}
+    - {fileID: 8300000, guid: fadb535f8c297484f91009dc4a4bcf6c, type: 3}
+    Volume: 0.75
+  - Surface: 2
+    Sparks: {x: 0, y: 0}
+    SparkColor: {r: 1, g: 0.75, b: 0.35, a: 1}
+    SparkSpeed: 4
+    Dust: {x: 4, y: 6}
+    DustColor: {r: 0.4, g: 0.32, b: 0.24, a: 0.6}
+    DustSize: 0.32
+    Debris: {x: 8, y: 12}
+    DebrisColor: {r: 0.28, g: 0.21, b: 0.15, a: 1}
+    DebrisSize: 0.035
+    DebrisSpeed: 3
+    Splash: 0
+    Decal: 0
+    DecalScale: 1
+    Sounds:
+    - {fileID: 8300000, guid: 4d6a5cf4c76f1d944acf0ec67eeaea07, type: 3}
+    - {fileID: 8300000, guid: 14497c2d99bb16d459c96d2699c524a9, type: 3}
+    - {fileID: 8300000, guid: 4611ac282d2e5ee458e87ad570450aad, type: 3}
+    Volume: 0.7
+  - Surface: 3
+    Sparks: {x: 0, y: 0}
+    SparkColor: {r: 1, g: 0.75, b: 0.35, a: 1}
+    SparkSpeed: 4
+    Dust: {x: 2, y: 3}
+    DustColor: {r: 0.35, g: 0.33, b: 0.24, a: 0.45}
+    DustSize: 0.24
+    Debris: {x: 6, y: 9}
+    DebrisColor: {r: 0.22, g: 0.3, b: 0.14, a: 1}
+    DebrisSize: 0.03
+    DebrisSpeed: 2.5
+    Splash: 0
+    Decal: 0
+    DecalScale: 1
+    Sounds:
+    - {fileID: 8300000, guid: 4d6a5cf4c76f1d944acf0ec67eeaea07, type: 3}
+    - {fileID: 8300000, guid: 14497c2d99bb16d459c96d2699c524a9, type: 3}
+    - {fileID: 8300000, guid: 4611ac282d2e5ee458e87ad570450aad, type: 3}
+    Volume: 0.6
+  - Surface: 4
+    Sparks: {x: 0, y: 0}
+    SparkColor: {r: 1, g: 0.75, b: 0.35, a: 1}
+    SparkSpeed: 4
+    Dust: {x: 2, y: 3}
+    DustColor: {r: 0.75, g: 0.8, b: 0.85, a: 0.35}
+    DustSize: 0.3
+    Debris: {x: 12, y: 18}
+    DebrisColor: {r: 0.75, g: 0.82, b: 0.9, a: 0.8}
+    DebrisSize: 0.03
+    DebrisSpeed: 3.2
+    Splash: 1
+    Decal: 0
+    DecalScale: 1
+    Sounds:
+    - {fileID: 8300000, guid: 515f74565533c674d9850ea3597d688e, type: 3}
+    - {fileID: 8300000, guid: 5dd3c9e30f38d2b408882cb3c0fea5ad, type: 3}
+    - {fileID: 8300000, guid: 7f262c53fbacdc743993b7731df2741e, type: 3}
+    Volume: 0.75

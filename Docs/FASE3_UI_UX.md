@@ -72,6 +72,13 @@ Fonte: Liberation Sans (TMP padrão), com contorno escuro de 15% para legibilida
 
 ## 6. Não feito nesta fase
 
-- **Hub e menu principal**: mantidos como estavam. O fluxo inicial não foi alterado, para não arriscar os menus que já funcionam.
+- **Hub e menu principal**: o fluxo e os botões continuam iguais. Mudou só a câmera de fundo, que antes girava alto sobre a base:
+  - agora faz planos baixos e lentos pelos locais da história (`GameFlow.MenuShotAnchors`: heliponto, Portão 1, torre, laboratório, arsenal, gerador, rádio, depósito);
+  - cada plano dura 9 s, com um fade ao preto entre eles;
+  - a ordem é embaralhada a cada volta ao menu;
+  - cada ângulo é escolhido entre 8 candidatos, com a vista e a posição da câmera livres de colisão;
+  - sem âncoras, volta ao giro antigo;
+  - o guarda-roupa continua com a própria câmera.
+- **Painel de controles**: inclui Esc (pausa) e Q/E mirando (inclinar).
 - **Tela de inventário dedicada**: o jogo não tem uma; o inventário é a barra rápida.
 - **Animações de UI**: foram feitas com código simples (lerp/fade), sem bibliotecas novas.

@@ -69,6 +69,40 @@ namespace Combat.EditorTools
             Debug.Log($"Hit reactions on {count} enemy prefabs");
         }
 
+        // ---------------------------------------------------------------- surface impacts
+
+        [MenuItem("Tools/Combat/Phase 3/7 - Surface Impacts")]
+        public static void SetupPhase3Impacts()
+        {
+            EnsureFolder(ResourcesFolder);
+            string path = $"{ResourcesFolder}/{SurfaceImpactLibrary.ResourcePath}.asset";
+            var library = AssetDatabase.LoadAssetAtPath<SurfaceImpactLibrary>(path);
+            if (library == null)
+            {
+                library = ScriptableObject.CreateInstance<SurfaceImpactLibrary>();
+                AssetDatabase.CreateAsset(library, path);
+            }
+
+            // the built-in looks, plus a sound for each surface (grass shares the dirt thuds)
+            library.Impacts = SurfaceImpactLibrary.Defaults();
+            foreach (SurfaceImpactLibrary.Impact impact in library.Impacts)
+            {
+                switch (impact.Surface)
+                {
+                    case SurfaceType.Metal: impact.Sounds = Clips("Impact_Metal"); break;
+                    case SurfaceType.Wood: impact.Sounds = Clips("Impact_Wood"); break;
+                    case SurfaceType.Water: impact.Sounds = Clips("Impact_Water"); break;
+                    case SurfaceType.Dirt:
+                    case SurfaceType.Grass: impact.Sounds = Clips("Impact_Dirt"); break;
+                    default: impact.Sounds = Clips("Impact_Ground"); break;
+                }
+            }
+
+            EditorUtility.SetDirty(library);
+            AssetDatabase.SaveAssets();
+            Debug.Log("Surface impacts set up: " + string.Join(", ", System.Array.ConvertAll(library.Impacts, i => $"{i.Surface} {i.Sounds.Length} sons")));
+        }
+
         // ---------------------------------------------------------------- items and icons
 
         private const string IconFolder = "Assets/SourceFiles/UI/Icons/Items";

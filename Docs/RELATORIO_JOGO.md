@@ -74,7 +74,6 @@ Estado em 24/10/2026, branch `fase3-imersao`, commit `938a337`. Levantado direto
 
 Também há mapeamento para gamepad (LB/RB inclinam enquanto mira).
 
-> Observação: o painel CONTROLES do menu ainda não lista a inclinação (Q/E mirando).
 
 ### 3.2 Menu principal
 
@@ -354,14 +353,12 @@ Ferramentas fora da Unity:
 - **Mapa**: um só mapa.
 - **Armas**: 6. Há 10 modelos de arma do pacote sem uso.
 - **Inimigos**: 5 tipos de infectado, soldados genéricos e 2 chefes.
-- **Impactos por material**: os efeitos (metal, madeira, terra, água) não variam por superfície.
 
 ### Técnico
 - **Localização**: só PT-BR, sem pacote; as chaves `dlg.*` estão prontas.
 - **Testes automatizados**: não existem (Unity Test Framework não instalado).
 - **Desempenho**: não há medição em build com Profiler; a cena tem ~150 luzes.
 - **Lixo do template**: robô Timmy, estrela, plataformas, `GetStarted_Scene`, pasta Tutorials e o pacote IET.
-- **Painel de controles**: não mostra a inclinação.
 
 ### Funcionalidades que não existem
 - **Modos e interface**:
@@ -392,7 +389,6 @@ Ferramentas fora da Unity:
 | Opções gráficas, FOV e remapeamento de teclas | baixo–médio | médio | nada |
 | Minimapa ou mapa tático com objetivos | médio | médio | nada |
 | Stealth kill por trás (ligado à furtividade e ao silenciador) | médio | médio | idealmente um clipe |
-| Impactos e decalques por material | baixo | médio | nada |
 | Segundo mapa ou setor novo da base | alto | alto | assets de cenário |
 | Modo cooperativo local | alto | alto | grande refatoração |
 | Limpeza do template e build com medição de FPS | baixo | médio (qualidade) | nada |

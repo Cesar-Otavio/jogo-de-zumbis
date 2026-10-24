@@ -10,6 +10,8 @@
 | Biblioteca de diálogos (50 falas) | `Assets/SourceFiles/Resources/DialogueLibrary.asset` | Roteiro original (ver FASE3_NARRATIVA.md) | DialogueDirector |
 | Cookie da lanterna | gerado em tempo de execução (`TacticalFlashlight.Cookie`) | Procedural | Feixe com centro forte e borda suave |
 | Sons de rádio (squelch de abertura/fechamento, chiado) | gerados em tempo de execução (`RadioSounds`) | Procedural | Transmissões |
+| 9 sons de impacto: madeira, terra e água (3 variações cada) | `Assets/SourceFiles/SoundFX/Weapons/Impact_{Wood,Dirt,Water}_*.wav` | Sintetizados por `Tools/AudioGen/make_impacts.py` (ruído filtrado e ressonadores). **Provisórios**: trocar por foley gravado com licença livre quando houver | `SurfaceImpactLibrary` |
+| Biblioteca de impactos por superfície | `Assets/SourceFiles/Resources/SurfaceImpactLibrary.asset` | Dados (menu *Phase 3 / 7*) | Partículas, furo e som por material |
 
 Para regerar os ícones de itens: `python Tools/IconGen/make_icons.py Assets/SourceFiles/UI/Icons/Items` (só precisa de `numpy`), depois *Tools ▸ Combat ▸ Phase 3 ▸ 2 - Item Icons and Catalog*.
 

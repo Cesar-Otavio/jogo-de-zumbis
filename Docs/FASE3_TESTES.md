@@ -24,6 +24,10 @@ Hardware: AMD Ryzen 7 5700U com GPU integrada, Game View em 2560×1440.
 | 12 | HUD redesenhado | OK: cartões de vida, arma (ícones da arma e da reserva) e pontuação; estado "FERIDO" | `hit_0`, `perf` |
 | 13 | Ferramenta do Animator 2D sem os clipes | OK: lista os clipes faltantes e não altera nada | log |
 | 14 | Desempenho com 30 inimigos | **~27 ms/quadro (~37 FPS) no editor**; lanterna ligada 27,1 ms × desligada 26,5 ms (pior quadro 47–55 ms) | log |
+| 16 | Impactos por material (contagem logo após 1 impacto) | OK. Furo: só concreto, metal e madeira | log |
+| 17 | Detecção de material em objetos reais | OK: baú → madeira, terreno → terra; poste → concreto, **corrigido** (palavras "lamp", "pole", "antenna" → metal) | log |
+| 18 | Menu com planos de câmera | OK: planos baixos nas barreiras e no heliponto; fade ao preto entre planos; menu legível sobre a faixa | `menu_shot_0`, `menu_shot_2` |
+| 19 | Desempenho depois dos impactos novos (onda de 34, até 17 vivos ao mesmo tempo, 40 s) | **27,8 ms/quadro (~36 FPS) no editor**; mediana 27,1, p95 32,1, p99 42,8, pior 330 ms (pico isolado; o script de medição também contava os personagens a cada quadro) | log |
 | 15 | Console | sem erros nas sessões normais. Os NullReference vistos vieram de uma sessão que **recompilou no meio do Play** (artefato do editor) | — |
 
 ## 2. Problemas encontrados e corrigidos durante os testes
@@ -39,6 +43,8 @@ Hardware: AMD Ryzen 7 5700U com GPU integrada, Game View em 2560×1440.
 - **Opções novas** (volumes, legendas): compilam e estão ligadas, mas **não as abri em Play**.
 - **Prone, agachar animado, locomoção 2D**: sem clipes não há o que testar além do comportamento inerte (item 13).
 - **Reações com cambaleio, limite de ragdolls (10) e congelamento de corpos**: não medidos isoladamente.
+- **Impactos — avaliação visual**: a captura de perto ficou estourada pela lâmpada de teste; a verificação foi numérica. Os sons sintetizados de madeira, terra e água não foram ouvidos em Play pelo teste automatizado.
+- **Grama e água**: o mapa atual não tem superfícies com esses nomes; os efeitos existem, mas só aparecem se uma superfície receber `SurfaceMaterial`.
 - **Gamepad**: as ações novas têm binding, mas não houve teste com controle físico.
 - **Falas reativas** de apagão, munição baixa, missão falha e chefe derrotado: dependem de eventos; só a fila e a regra de intervalo mínimo foram verificadas.
 - **Meta de 60 FPS**: não atingida nesta máquina no editor (37 FPS com 30 inimigos em 1440p, GPU integrada). Um build e o Profiler numa máquina representativa são necessários antes de concluir sobre desempenho.

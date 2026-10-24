@@ -784,7 +784,7 @@ namespace Combat
                         hit.rigidbody.AddForceAtPosition(direction * data.HitForce, hit.point, ForceMode.Impulse);
                     }
 
-                    if (fx != null) fx.Impact(hit.point, hit.normal, false, hit.collider.transform);
+                    if (fx != null) fx.Impact(hit.point, hit.normal, hit.collider);
                 }
             }
 

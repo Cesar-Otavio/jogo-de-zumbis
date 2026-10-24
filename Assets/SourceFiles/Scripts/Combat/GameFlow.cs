@@ -29,6 +29,9 @@ namespace Combat
         public float FlyoverRadius = 48.0f;
         public float FlyoverHeight = 20.0f;
         public float FlyoverSpeed = 4.0f;
+        [Tooltip("Mission anchors the menu camera visits, one slow low shot each (shuffled); when none can be framed it circles the flyover centre")]
+        public string[] MenuShotAnchors = { "helipad", "gate_1", "watchtower", "lab", "armory", "gen_room", "radio_station", "depot" };
+        public float MenuShotDuration = 9.0f;
 
         [Header("Audio")]
         public AudioClip MenuMusic;
@@ -94,6 +97,10 @@ namespace Combat
         private Camera _gameCamera;
         private int _gameCameraMask;
         private Camera _menuCamera;
+        private Image _menuFade;
+        private readonly System.Collections.Generic.List<CinematicPlayer.Shot> _menuShots = new System.Collections.Generic.List<CinematicPlayer.Shot>();
+        private int _menuShot;
+        private float _menuShotStarted;
         private AudioSource _music;
         private float _musicLevel;
         private float _baseRegen;
@@ -218,7 +225,11 @@ namespace Combat
         {
             if (Current == State.Menu)
             {
-                if (_wardrobePanel != null && _wardrobePanel.activeSelf) UpdateWardrobeCamera();
+                if (_wardrobePanel != null && _wardrobePanel.activeSelf)
+                {
+                    if (_menuFade != null) _menuFade.color = Color.clear;
+                    UpdateWardrobeCamera();
+                }
                 else UpdateFlyover();
                 return;
             }
@@ -277,6 +288,7 @@ namespace Combat
 
             _menuCamera.gameObject.SetActive(true);
             if (_gameCamera != null) _gameCamera.cullingMask = 0;
+            BuildMenuShots();
         }
 
         public void StartGame()
@@ -417,13 +429,95 @@ namespace Combat
 
         private void UpdateFlyover()
         {
-            if (_menuCamera == null || FlyoverCenter == null) return;
+            if (_menuCamera == null) return;
 
+            if (_menuShots.Count > 0)
+            {
+                UpdateMenuShot();
+                return;
+            }
+
+            if (_menuFade != null) _menuFade.color = Color.clear;
+            if (FlyoverCenter == null) return;
             float angle = Time.unscaledTime * FlyoverSpeed * Mathf.Deg2Rad;
             Vector3 center = FlyoverCenter.position;
             Vector3 offset = new Vector3(Mathf.Cos(angle), 0.0f, Mathf.Sin(angle)) * FlyoverRadius + Vector3.up * FlyoverHeight;
             _menuCamera.transform.position = center + offset;
             _menuCamera.transform.LookAt(center + Vector3.up * 2.0f);
+        }
+
+        // ---------------------------------------------------------------- menu shots
+
+        // the places of the story, each seen from a spot with a clear view, in a new order every time
+        private void BuildMenuShots()
+        {
+            _menuShots.Clear();
+            foreach (string id in MenuShotAnchors)
+            {
+                MissionAnchor anchor = MissionAnchor.Find(id);
+                if (anchor != null && TryMenuShot(anchor.transform.position, out CinematicPlayer.Shot shot)) _menuShots.Add(shot);
+            }
+
+            for (int i = _menuShots.Count - 1; i > 0; i--)
+            {
+                int j = UnityEngine.Random.Range(0, i + 1);
+                (_menuShots[i], _menuShots[j]) = (_menuShots[j], _menuShots[i]);
+            }
+
+            _menuShot = 0;
+            _menuShotStarted = Time.unscaledTime;
+        }
+
+        // a low, slow sideways dolly towards the place, from the first angle that sees it unobstructed
+        private bool TryMenuShot(Vector3 place, out CinematicPlayer.Shot shot)
+        {
+            Vector3 target = place + Vector3.up * 1.5f;
+            float start = UnityEngine.Random.Range(0.0f, 360.0f);
+            for (int i = 0; i < 8; i++)
+            {
+                Quaternion around = Quaternion.Euler(0.0f, start + i * 45.0f, 0.0f);
+                Vector3 back = around * Vector3.forward;
+                Vector3 side = around * Vector3.right;
+                Vector3 from = place + back * 15.0f + side * 4.5f + Vector3.up * 3.8f;
+                Vector3 to = place + back * 12.0f - side * 4.5f + Vector3.up * 3.0f;
+                if (!ClearView(from, target) || !ClearView(to, target) || !ClearView(from, to)) continue;
+
+                shot = new CinematicPlayer.Shot
+                {
+                    From = from, To = to, LookFrom = target + side * 1.2f, LookTo = target - side * 1.2f, Duration = MenuShotDuration
+                };
+                return true;
+            }
+
+            shot = default;
+            return false;
+        }
+
+        private static bool ClearView(Vector3 from, Vector3 to)
+        {
+            const int mask = Physics.DefaultRaycastLayers;
+            if (Physics.CheckSphere(from, 0.6f, mask, QueryTriggerInteraction.Ignore)) return false;
+            return !Physics.Linecast(from, to, mask, QueryTriggerInteraction.Ignore);
+        }
+
+        private void UpdateMenuShot()
+        {
+            CinematicPlayer.Shot shot = _menuShots[_menuShot];
+            float elapsed = Time.unscaledTime - _menuShotStarted;
+            if (elapsed >= shot.Duration)
+            {
+                _menuShot = (_menuShot + 1) % _menuShots.Count;
+                _menuShotStarted = Time.unscaledTime;
+                elapsed = 0.0f;
+                shot = _menuShots[_menuShot];
+            }
+
+            // a steady glide with soft ends, and a dip to black between places
+            float t = Mathf.SmoothStep(0.0f, 1.0f, elapsed / shot.Duration * 0.8f + 0.1f);
+            _menuCamera.transform.position = Vector3.Lerp(shot.From, shot.To, t);
+            _menuCamera.transform.LookAt(Vector3.Lerp(shot.LookFrom, shot.LookTo, t));
+            float edge = Mathf.Min(elapsed, shot.Duration - elapsed);
+            if (_menuFade != null) _menuFade.color = new Color(0.0f, 0.0f, 0.0f, 1.0f - Mathf.Clamp01(edge / 0.9f));
         }
 
         private void PlayMusic(AudioClip clip)
@@ -591,6 +685,9 @@ namespace Combat
 
             // main menu: title on the left over a dark band, the level flying by behind
             _menuPanel = Panel("MainMenu", root, Vector2.zero, Vector2.one, new Color(0, 0, 0, 0)).gameObject;
+            // behind the band: the dip to black between the menu camera's shots
+            _menuFade = Panel("ShotFade", (RectTransform)_menuPanel.transform, Vector2.zero, Vector2.one, Color.clear);
+            _menuFade.raycastTarget = false;
             Image band = Panel("Band", (RectTransform)_menuPanel.transform, new Vector2(0.0f, 0.0f), new Vector2(0.42f, 1.0f), new Color(0.01f, 0.01f, 0.02f, 0.82f));
             _menuBand = band.gameObject;
             RectTransform menu = band.rectTransform;
@@ -619,8 +716,8 @@ namespace Combat
             Label(controls.rectTransform,
                 "<b>WASD</b>  andar        <b>Shift</b>  correr (gasta estamina)\n" +
                 "<b>Espaço</b>  pular, pulo duplo no ar      <b>C</b>  agachar (silencioso)\n" +
-                "<b>Ctrl</b>  rolar (invulnerável no começo)\n" +
-                "<b>Botão esquerdo</b>  atirar      <b>Botão direito</b>  mirar\n" +
+                "<b>Ctrl</b>  rolar (invulnerável no começo)      <b>Esc</b>  pausa\n" +
+                "<b>Botão esquerdo</b>  atirar      <b>Botão direito</b>  mirar      <b>Q/E</b> mirando  inclinar\n" +
                 "<b>V</b>  coronhada / faca      <b>B</b>  empurrar      <b>T</b>  trocar ombro\n" +
                 "<b>R</b>  recarregar      <b>E</b>  usar: armas, baús, portas, geradores, painéis\n" +
                 "<b>Q</b>  trocar de arma      <b>G</b>  largar arma      <b>F</b>  lanterna\n" +

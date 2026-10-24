@@ -17,13 +17,19 @@ Branch `fase3-imersao`, sobre o checkpoint `25b0b31` (`main`, estado após o Pro
 | HUD | cartões de vida, arma e pontuação, missão com cartão, ícones, avisos menores, opções em 2 colunas | concluído e testado (exceto as opções em Play) |
 | Narrativa | biblioteca de 50 falas, diretor com prioridades e validade, prólogo de ~45 s, operador Duarte, piloto, legendas com nome, rádio processado, ducking | concluído e testado; **vozes pendentes** |
 | Áudio | volumes por grupo (geral, música, efeitos, diálogo, ambiente, interface) | concluído; **AudioMixer pendente** (manual) |
-| Documentação | 7 documentos em `Docs/` | concluído |
+| Impactos por material | `SurfaceImpactLibrary` (Resources): concreto, metal, madeira, terra, grama e água com faíscas, poeira, detritos/respingos, furo e som próprios; usa a mesma detecção de superfície dos passos; partículas em pool, furos limitados a 80 | concluído; verificação numérica (visual limitada); **sons de madeira/terra/água sintetizados, provisórios** |
+| Menu principal | planos baixos de câmera pelos locais da história com fade; painel de controles atualizado | concluído e testado |
+| Documentação | 7 documentos em `Docs/` + `RELATORIO_JOGO.md` | concluído |
 
 ## 2. Arquivos criados
 
 ```
 Docs/FASE3_AUDITORIA.md, FASE3_ANIMACOES.md, FASE3_ASSETS.md, FASE3_NARRATIVA.md, FASE3_UI_UX.md, FASE3_TESTES.md, FASE3_ENTREGA.md
 Tools/IconGen/make_icons.py
+Tools/AudioGen/make_impacts.py
+Assets/SourceFiles/Scripts/Combat/Effects/SurfaceImpactLibrary.cs
+Assets/SourceFiles/Resources/SurfaceImpactLibrary.asset
+Assets/SourceFiles/SoundFX/Weapons/Impact_Wood_1..3.wav, Impact_Dirt_1..3.wav, Impact_Water_1..3.wav (sintetizados)
 .gitignore, .gitattributes
 Assets/SourceFiles/Scripts/Combat/Lighting/TacticalFlashlight.cs
 Assets/SourceFiles/Scripts/Combat/Animation/LeanController.cs
@@ -55,7 +61,10 @@ Assets/SourceFiles/Resources/ItemCatalog.asset, DialogueLibrary.asset
 | `Campaign/Story.cs` | rádio pelo diretor (textos movidos para a biblioteca) |
 | `Campaign/CampaignManager.cs` | prólogo novo |
 | `GameFlow.cs` | volumes, ducking, reset de diálogo e feed, opções em 2 colunas |
-| `CombatEffects.cs`, `Horror/WeatherController.cs` | volumes por grupo (efeitos, interface, ambiente) |
+| `CombatEffects.cs`, `Horror/WeatherController.cs` | volumes por grupo (efeitos, interface, ambiente); impactos por material e sistema de detritos |
+| `WeaponHolder.cs` | impacto no cenário passa o collider (material real) |
+| `Horror/Surfaces.cs` | postes, lâmpadas e antenas contam como metal |
+| `GameFlow.cs` (menu) | planos de câmera do menu, painel de controles |
 | `Horror/GameSettings.cs` | legendas de diálogo, tamanho, volumes |
 | `RagdollController.cs` | limite de simulação, congelamento, anti-explosão |
 
@@ -74,7 +83,7 @@ Assets/SourceFiles/Resources/ItemCatalog.asset, DialogueLibrary.asset
 ## 5. Como reproduzir e verificar
 
 1. Abra `MilitaryBase_Combat`.
-2. Os setups já foram aplicados. Para refazer: *Tools ▸ Combat ▸ Phase 3* ▸ 1 a 5 (o 6 só depois de importar os clipes).
+2. Os setups já foram aplicados. Para refazer: *Tools ▸ Combat ▸ Phase 3* ▸ 1 a 5 e 7 (o 6 só depois de importar os clipes).
 3. Em Play, verifique:
    - **Campanha nova**: prólogo com legendas (Espaço pula).
    - **Pegar a pistola**: o personagem abaixa e pega; o feed aparece; Duarte comenta.
@@ -92,9 +101,9 @@ Assets/SourceFiles/Resources/ItemCatalog.asset, DialogueLibrary.asset
 ## 7. Pendências conhecidas
 
 - **Animações**: strafe, ré, partida/parada, agachar andando, prone, interações físicas com clipe, inimigos especiais com movimento próprio, soldados com clipes de arma (dependem de assets).
-- **Hub/menu principal** não foi redesenhado.
 - **Localização** (pacote não instalado; chaves `dlg.*` prontas).
-- **Efeitos de impacto por material** (metal, concreto, madeira, terra, água): o sistema de marcas e partículas existente foi mantido, sem novas definições por superfície.
+- **Sons de impacto de madeira, terra e água**: sintetizados (`Tools/AudioGen/make_impacts.py`), provisórios até haver foley gravado.
+- **Hub**: o menu ganhou planos de câmera pelos locais da história, mas não tem tela de equipamentos nem cena própria.
 - **Medição em build** com Profiler; a meta de 60 FPS não foi verificada fora do editor.
 - **Testes automatizados** (Unity Test Framework não instalado).
 
