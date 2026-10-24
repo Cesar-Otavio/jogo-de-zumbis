@@ -1,0 +1,94 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d93aeec7e7e59c4ba73a9e49d0cc910, type: 3}
+  m_Name: m_signal
+  m_EditorClassIdentifier: Assembly-CSharp::Combat.MissionDefinition
+  Id: m_signal
+  Title: Sinal perdido
+  Briefing: "O r\xE1dio recebeu uma mensagem incompleta. A esta\xE7\xE3o de comunica\xE7\xE3o precisa de um m\xF3dulo."
+  Optional: 0
+  ChoiceGroup: 
+  ChoiceSummary: 
+  TimeLimit: 0
+  Retryable: 1
+  Objectives:
+  - Text: "Localize a esta\xE7\xE3o de comunica\xE7\xE3o"
+    Type: 8
+    Target: radio_station
+    Count: 1
+    Duration: 0
+    Radius: 7
+    Optional: 0
+    BonusCredits: 0
+    PressureEnemies: 0
+    Radio: 
+    ShowMarker: 1
+    SkipAfter: 0
+  - Text: "Recupere o m\xF3dulo eletr\xF4nico (talvez em cima de um cont\xEAiner)"
+    Type: 1
+    Target: radio_module
+    Count: 1
+    Duration: 0
+    Radius: 5
+    Optional: 0
+    BonusCredits: 0
+    PressureEnemies: 0
+    Radio: 
+    ShowMarker: 1
+    SkipAfter: 0
+  - Text: "Instale o m\xF3dulo no console"
+    Type: 0
+    Target: radio_console
+    Count: 1
+    Duration: 0
+    Radius: 5
+    Optional: 0
+    BonusCredits: 0
+    PressureEnemies: 0
+    Radio: 
+    ShowMarker: 1
+    SkipAfter: 0
+  - Text: "Ative a antena e proteja a transmiss\xE3o"
+    Type: 0
+    Target: antenna
+    Count: 1
+    Duration: 0
+    Radius: 5
+    Optional: 0
+    BonusCredits: 0
+    PressureEnemies: 6
+    Radio: 
+    ShowMarker: 1
+    SkipAfter: 0
+  OnStart:
+  - Type: 12
+    Target: radio_signal
+    Target2: 
+    Value: 0
+  OnComplete:
+  - Type: 12
+    Target: radio_signal_ok
+    Target2: 
+    Value: 0
+  - Type: 13
+    Target: doc_radio_order
+    Target2: 
+    Value: 0
+  OnFail: []
+  Credits: 200
+  Experience: 150
+  Score: 200
+  RequiredIds:
+  - radio_station
+  - radio_console
+  - antenna
+  RequiredFlag: 

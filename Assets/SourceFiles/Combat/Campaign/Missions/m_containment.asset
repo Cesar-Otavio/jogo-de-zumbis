@@ -1,0 +1,82 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d93aeec7e7e59c4ba73a9e49d0cc910, type: 3}
+  m_Name: m_containment
+  m_EditorClassIdentifier: Assembly-CSharp::Combat.MissionDefinition
+  Id: m_containment
+  Title: "Protocolo de conten\xE7\xE3o"
+  Briefing: "Os dutos est\xE3o abrindo. Feche as v\xE1lvulas na ordem certa."
+  Optional: 0
+  ChoiceGroup: 
+  ChoiceSummary: 
+  TimeLimit: 0
+  Retryable: 1
+  Objectives:
+  - Text: "Ative os sistemas de seguran\xE7a"
+    Type: 0
+    Target: security_console
+    Count: 1
+    Duration: 0
+    Radius: 5
+    Optional: 0
+    BonusCredits: 0
+    PressureEnemies: 0
+    Radio: 
+    ShowMarker: 1
+    SkipAfter: 0
+  - Text: "Feche as v\xE1lvulas na ordem 1, 2, 3"
+    Type: 5
+    Target: valve
+    Count: 3
+    Duration: 0
+    Radius: 5
+    Optional: 0
+    BonusCredits: 0
+    PressureEnemies: 4
+    Radio: 
+    ShowMarker: 1
+    SkipAfter: 0
+  - Text: "Segure a \xE1rea enquanto os setores lacram"
+    Type: 4
+    Target: 
+    Count: 1
+    Duration: 30
+    Radius: 5
+    Optional: 0
+    BonusCredits: 0
+    PressureEnemies: 6
+    Radio: 
+    ShowMarker: 1
+    SkipAfter: 0
+  OnStart:
+  - Type: 12
+    Target: radio_contain
+    Target2: 
+    Value: 0
+  OnComplete:
+  - Type: 4
+    Target: lab
+    Target2: 
+    Value: 0
+  - Type: 8
+    Target: contained
+    Target2: 
+    Value: 0
+  OnFail: []
+  Credits: 220
+  Experience: 180
+  Score: 200
+  RequiredIds:
+  - lab
+  - security_console
+  - valve_1
+  RequiredFlag: 

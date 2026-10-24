@@ -1,0 +1,101 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d93aeec7e7e59c4ba73a9e49d0cc910, type: 3}
+  m_Name: m_armory
+  m_EditorClassIdentifier: Assembly-CSharp::Combat.MissionDefinition
+  Id: m_armory
+  Title: Arsenal bloqueado
+  Briefing: "O dep\xF3sito militar est\xE1 trancado por cart\xE3o magn\xE9tico."
+  Optional: 0
+  ChoiceGroup: 
+  ChoiceSummary: 
+  TimeLimit: 0
+  Retryable: 1
+  Objectives:
+  - Text: "Encontre o cart\xE3o de acesso (perto das torres)"
+    Type: 1
+    Target: keycard
+    Count: 1
+    Duration: 0
+    Radius: 5
+    Optional: 0
+    BonusCredits: 0
+    PressureEnemies: 0
+    Radio: 
+    ShowMarker: 1
+    SkipAfter: 0
+  - Text: "Abra o arsenal com o cart\xE3o"
+    Type: 0
+    Target: armory_reader
+    Count: 1
+    Duration: 0
+    Radius: 5
+    Optional: 0
+    BonusCredits: 0
+    PressureEnemies: 0
+    Radio: 
+    ShowMarker: 1
+    SkipAfter: 0
+  - Text: Entre no arsenal
+    Type: 7
+    Target: armory
+    Count: 1
+    Duration: 0
+    Radius: 5
+    Optional: 0
+    BonusCredits: 0
+    PressureEnemies: 0
+    Radio: 
+    ShowMarker: 1
+    SkipAfter: 0
+  - Text: Recupere a caixa de equipamento
+    Type: 9
+    Target: armory_case
+    Count: 1
+    Duration: 0
+    Radius: 5
+    Optional: 0
+    BonusCredits: 0
+    PressureEnemies: 0
+    Radio: 
+    ShowMarker: 1
+    SkipAfter: 0
+  OnStart:
+  - Type: 12
+    Target: radio_armory
+    Target2: 
+    Value: 0
+  - Type: 3
+    Target: armory
+    Target2: 
+    Value: 0
+  OnComplete:
+  - Type: 10
+    Target: 
+    Target2: 
+    Value: 4
+  - Type: 9
+    Target: Grenade
+    Target2: 
+    Value: 2
+  - Type: 11
+    Target: armory
+    Target2: M4
+    Value: 0
+  OnFail: []
+  Credits: 150
+  Experience: 150
+  Score: 200
+  RequiredIds:
+  - armory
+  - armory_reader
+  RequiredFlag: 

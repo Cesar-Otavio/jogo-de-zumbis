@@ -1,0 +1,64 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d93aeec7e7e59c4ba73a9e49d0cc910, type: 3}
+  m_Name: m_gates
+  m_EditorClassIdentifier: Assembly-CSharp::Combat.MissionDefinition
+  Id: m_gates
+  Title: "Port\xF5es comprometidos"
+  Briefing: "A seguran\xE7a acusa invas\xF5es. Feche os port\xF5es e reforce as passagens."
+  Optional: 0
+  ChoiceGroup: 
+  ChoiceSummary: 
+  TimeLimit: 0
+  Retryable: 1
+  Objectives:
+  - Text: "Feche os port\xF5es"
+    Type: 0
+    Target: gate
+    Count: 3
+    Duration: 0
+    Radius: 5
+    Optional: 0
+    BonusCredits: 0
+    PressureEnemies: 4
+    Radio: 
+    ShowMarker: 1
+    SkipAfter: 0
+  - Text: Reforce duas passagens com barricadas (5 = barricada, X usar)
+    Type: 12
+    Target: gatebar
+    Count: 2
+    Duration: 0
+    Radius: 5
+    Optional: 0
+    BonusCredits: 0
+    PressureEnemies: 0
+    Radio: 
+    ShowMarker: 1
+    SkipAfter: 0
+  OnStart:
+  - Type: 12
+    Target: radio_gates
+    Target2: 
+    Value: 0
+  - Type: 9
+    Target: Barricade
+    Target2: 
+    Value: 2
+  OnComplete: []
+  OnFail: []
+  Credits: 180
+  Experience: 120
+  Score: 200
+  RequiredIds:
+  - gate_1
+  RequiredFlag: 

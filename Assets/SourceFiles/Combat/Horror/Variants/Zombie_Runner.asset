@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 51cb1974bac7b2741aae845cb7e4c4d8, type: 3}
+  m_Name: Zombie_Runner
+  m_EditorClassIdentifier: Assembly-CSharp::Combat.ZombieVariant
+  Kind: 1
+  DisplayName: Corredor
+  BonusPoints: 50
+  Scale: 0.95
+  Tint: {r: 0.85, g: 0.78, b: 0.72, a: 1}
+  Animator: {fileID: 9100000, guid: 2eb95f5e647d9ce4ba9921d8b594a424, type: 2}
+  MoveAnimationSpeed: 5
+  Height: 1.8
+  Health: 0.6
+  WanderSpeed: 1.3
+  ChaseSpeed: 3.6
+  Damage: 0.8
+  AttackCooldown: 0.7
+  AttackHitTime: 0.45
+  AttackRange: 1.4
+  HeadMultiplier: 1
+  SightRange: 26
+  Hearing: 1.4
+  DetectionSpeed: 2.6
+  ShoveResistance: 0
+  BreaksDoors: 0
+  DoorDamage: 10
+  Ambusher: 0
+  Groans:
+  - {fileID: 8300000, guid: 4e7d931cab52fdf4e8211bf75ba46155, type: 3}
+  - {fileID: 8300000, guid: c3163d42f6221934d8bb3c6bc16b78d3, type: 3}
+  - {fileID: 8300000, guid: 774710061e78e3443844cf493dd8891f, type: 3}
+  - {fileID: 8300000, guid: de242df3f8948d345913d7c42e1ef06c, type: 3}
+  DetectSound: {fileID: 8300000, guid: 20f38506b31b2594e85c9627d63403b4, type: 3}
+  WindupSound: {fileID: 0}
+  VoicePitch: 1.25

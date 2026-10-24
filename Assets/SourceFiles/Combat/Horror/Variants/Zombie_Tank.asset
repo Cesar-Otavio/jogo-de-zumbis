@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 51cb1974bac7b2741aae845cb7e4c4d8, type: 3}
+  m_Name: Zombie_Tank
+  m_EditorClassIdentifier: Assembly-CSharp::Combat.ZombieVariant
+  Kind: 2
+  DisplayName: Tanque
+  BonusPoints: 250
+  Scale: 1.35
+  Tint: {r: 0.55, g: 0.48, b: 0.48, a: 1}
+  Animator: {fileID: 0}
+  MoveAnimationSpeed: 0.9
+  Height: 2.4
+  Health: 4.5
+  WanderSpeed: 0.8
+  ChaseSpeed: 0.8
+  Damage: 2.6
+  AttackCooldown: 1.5
+  AttackHitTime: 1.1
+  AttackRange: 2
+  HeadMultiplier: 2.5
+  SightRange: 20
+  Hearing: 0.8
+  DetectionSpeed: 1.2
+  ShoveResistance: 0.9
+  BreaksDoors: 1
+  DoorDamage: 45
+  Ambusher: 0
+  Groans:
+  - {fileID: 8300000, guid: 2b0c66622b464e44fa4aed22f6574fce, type: 3}
+  - {fileID: 8300000, guid: e1ee61522cb348e4f9a5b6c32d676feb, type: 3}
+  DetectSound: {fileID: 8300000, guid: 47d7b0fb2eeb3964481f9208d5980e9f, type: 3}
+  WindupSound: {fileID: 8300000, guid: 47d7b0fb2eeb3964481f9208d5980e9f, type: 3}
+  VoicePitch: 0.6

@@ -1,0 +1,63 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b78629236a4ae0b419ecd7e6413b8f70, type: 3}
+  m_Name: Weapon_AK74
+  m_EditorClassIdentifier: Assembly-CSharp::Combat.WeaponData
+  DisplayName: AK-74
+  Model: {fileID: 1487774384131766, guid: ee329c3cd08e58645834d20702d7f6c6, type: 3}
+  Hold: 1
+  Mode: 1
+  FireInterval: 0.1
+  Damage: 26
+  Pellets: 1
+  Range: 120
+  Suppressed: 0
+  HitForce: 4
+  HipSpread: 2.6
+  AimSpread: 0.45
+  MoveSpread: 1.6
+  SpreadPerShot: 0.35
+  MaxBloom: 3.5
+  BloomRecovery: 8
+  MagazineSize: 30
+  StartReserve: 90
+  Reload: 0
+  ReloadTime: 2.3
+  ShellInsertTime: 0.5
+  KickBack: 0.07
+  KickPitch: 3.9
+  KickYaw: 1.75
+  CameraPitchKick: 0.45
+  CameraYawKick: 0.23
+  AimFov: 28
+  HasScope: 0
+  GripPoint: {x: 0, y: -0.08501591, z: 0.09947581}
+  SupportPoint: {x: 0, y: -0.019074108, z: -0.1594472}
+  MuzzlePoint: {x: 0.00044524227, y: -0.00081294024, z: -0.45795992}
+  EjectPoint: {x: -0.03, y: 0.014220075, z: -0.045001917}
+  SightPoint: {x: 0, y: 0.05717174, z: 0.06947581}
+  Attachment: {fileID: 0}
+  AttachmentOffset: {x: 0, y: 0, z: 0}
+  MagazinePart: Mag
+  CyclingPart: Bolt
+  CyclingTravel: {x: 0, y: 0, z: 0.06}
+  ManualCycle: 0
+  ShotSounds:
+  - {fileID: 8300000, guid: 0dff262b33625114197a658ffc73ee94, type: 3}
+  - {fileID: 8300000, guid: 872623afc0427a54db1acbaf64e81ea6, type: 3}
+  - {fileID: 8300000, guid: f8fc6540392b8384ea543f70b765f961, type: 3}
+  MagOutSound: {fileID: 8300000, guid: d84027f3b178da149a0b3bf65c74f2b7, type: 3}
+  MagInSound: {fileID: 8300000, guid: 069c81054204382458129573904de3e2, type: 3}
+  ChargeSound: {fileID: 8300000, guid: 65a6a00d42b5b06429c3185a9f4cb99d, type: 3}
+  CycleSound: {fileID: 0}
+  ShellInsertSound: {fileID: 0}
+  DrySound: {fileID: 8300000, guid: e54457e4c2b91b042a4c70a2c5108e59, type: 3}

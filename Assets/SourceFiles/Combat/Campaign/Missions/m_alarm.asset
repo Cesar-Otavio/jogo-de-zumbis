@@ -1,0 +1,61 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d93aeec7e7e59c4ba73a9e49d0cc910, type: 3}
+  m_Name: m_alarm
+  m_EditorClassIdentifier: Assembly-CSharp::Combat.MissionDefinition
+  Id: m_alarm
+  Title: "C\xF3digo vermelho"
+  Briefing: "Um alarme militar disparou e est\xE1 atraindo a horda."
+  Optional: 0
+  ChoiceGroup: 
+  ChoiceSummary: 
+  TimeLimit: 240
+  Retryable: 1
+  Objectives:
+  - Text: "Desligue os pain\xE9is de alarme"
+    Type: 0
+    Target: alarm_panel
+    Count: 3
+    Duration: 0
+    Radius: 5
+    Optional: 0
+    BonusCredits: 0
+    PressureEnemies: 5
+    Radio: 
+    ShowMarker: 1
+    SkipAfter: 0
+  OnStart:
+  - Type: 6
+    Target: alarm_zone
+    Target2: 
+    Value: 0
+  - Type: 12
+    Target: radio_alarm
+    Target2: 
+    Value: 0
+  OnComplete:
+  - Type: 7
+    Target: alarm_zone
+    Target2: 
+    Value: 0
+  OnFail:
+  - Type: 7
+    Target: alarm_zone
+    Target2: 
+    Value: 0
+  Credits: 160
+  Experience: 120
+  Score: 200
+  RequiredIds:
+  - alarm_zone
+  - alarm_panel_1
+  RequiredFlag: 

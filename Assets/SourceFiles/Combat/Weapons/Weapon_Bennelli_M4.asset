@@ -1,0 +1,63 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b78629236a4ae0b419ecd7e6413b8f70, type: 3}
+  m_Name: Weapon_Bennelli_M4
+  m_EditorClassIdentifier: Assembly-CSharp::Combat.WeaponData
+  DisplayName: Benelli M4
+  Model: {fileID: 1236257789494122, guid: 8b0b86b42def11849a8eba21f4a6a684, type: 3}
+  Hold: 1
+  Mode: 0
+  FireInterval: 0.85
+  Damage: 13
+  Pellets: 9
+  Range: 45
+  Suppressed: 0
+  HitForce: 9
+  HipSpread: 6.5
+  AimSpread: 4.5
+  MoveSpread: 1
+  SpreadPerShot: 0
+  MaxBloom: 0
+  BloomRecovery: 8
+  MagazineSize: 7
+  StartReserve: 28
+  Reload: 1
+  ReloadTime: 2
+  ShellInsertTime: 0.5
+  KickBack: 0.12
+  KickPitch: 9.1
+  KickYaw: 2.1
+  CameraPitchKick: 1.2
+  CameraYawKick: 0.3
+  AimFov: 32
+  HasScope: 0
+  GripPoint: {x: 0, y: -0.091103345, z: 0.186754}
+  SupportPoint: {x: 0, y: -0.045774546, z: -0.09423469}
+  MuzzlePoint: {x: -1.26281026e-11, y: -0.008704357, z: -0.48842216}
+  EjectPoint: {x: -0.03, y: -0.01886106, z: -0.09423469}
+  SightPoint: {x: 0, y: 0.04569321, z: 0.156754}
+  Attachment: {fileID: 0}
+  AttachmentOffset: {x: 0, y: 0, z: 0}
+  MagazinePart: 
+  CyclingPart: Pump
+  CyclingTravel: {x: 0, y: 0, z: 0.1}
+  ManualCycle: 1
+  ShotSounds:
+  - {fileID: 8300000, guid: c9dc0f3d0759c7b4e8276dabc75eea01, type: 3}
+  - {fileID: 8300000, guid: dac6c76e2f002eb449ff9a050d239309, type: 3}
+  - {fileID: 8300000, guid: d8553f27c991d534ba913d1675560b7b, type: 3}
+  MagOutSound: {fileID: 8300000, guid: d84027f3b178da149a0b3bf65c74f2b7, type: 3}
+  MagInSound: {fileID: 8300000, guid: 069c81054204382458129573904de3e2, type: 3}
+  ChargeSound: {fileID: 0}
+  CycleSound: {fileID: 8300000, guid: a0a2b4f72d6b11c4eb3dd7139dc7a368, type: 3}
+  ShellInsertSound: {fileID: 8300000, guid: 3afa89266a572fb4892d890234008b69, type: 3}
+  DrySound: {fileID: 8300000, guid: e54457e4c2b91b042a4c70a2c5108e59, type: 3}

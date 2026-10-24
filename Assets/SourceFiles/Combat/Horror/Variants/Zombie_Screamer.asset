@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 51cb1974bac7b2741aae845cb7e4c4d8, type: 3}
+  m_Name: Zombie_Screamer
+  m_EditorClassIdentifier: Assembly-CSharp::Combat.ZombieVariant
+  Kind: 3
+  DisplayName: Gritador
+  BonusPoints: 120
+  Scale: 0.92
+  Tint: {r: 0.95, g: 0.88, b: 0.65, a: 1}
+  Animator: {fileID: 0}
+  MoveAnimationSpeed: 0.9
+  Height: 1.8
+  Health: 0.55
+  WanderSpeed: 1
+  ChaseSpeed: 1.1
+  Damage: 0.6
+  AttackCooldown: 1
+  AttackHitTime: 0.6
+  AttackRange: 1.5
+  HeadMultiplier: 1
+  SightRange: 28
+  Hearing: 1.3
+  DetectionSpeed: 2
+  ShoveResistance: 0
+  BreaksDoors: 0
+  DoorDamage: 10
+  Ambusher: 0
+  Groans:
+  - {fileID: 8300000, guid: 4e7d931cab52fdf4e8211bf75ba46155, type: 3}
+  - {fileID: 8300000, guid: c3163d42f6221934d8bb3c6bc16b78d3, type: 3}
+  - {fileID: 8300000, guid: 774710061e78e3443844cf493dd8891f, type: 3}
+  - {fileID: 8300000, guid: de242df3f8948d345913d7c42e1ef06c, type: 3}
+  DetectSound: {fileID: 8300000, guid: 69c41a9ed6d266344a122d1a092facfc, type: 3}
+  WindupSound: {fileID: 8300000, guid: 8ec37031fe0539f49996ce896e887a3d, type: 3}
+  VoicePitch: 1.35

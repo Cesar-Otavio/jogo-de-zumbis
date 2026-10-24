@@ -1,0 +1,63 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b78629236a4ae0b419ecd7e6413b8f70, type: 3}
+  m_Name: Weapon_M107
+  m_EditorClassIdentifier: Assembly-CSharp::Combat.WeaponData
+  DisplayName: M107 Sniper
+  Model: {fileID: 1829597508155286, guid: 7359baf27e84aa44cafac3788c8be0f1, type: 3}
+  Hold: 1
+  Mode: 0
+  FireInterval: 1.25
+  Damage: 110
+  Pellets: 1
+  Range: 300
+  Suppressed: 0
+  HitForce: 14
+  HipSpread: 5
+  AimSpread: 0
+  MoveSpread: 2.5
+  SpreadPerShot: 0
+  MaxBloom: 0
+  BloomRecovery: 8
+  MagazineSize: 5
+  StartReserve: 15
+  Reload: 0
+  ReloadTime: 2.8
+  ShellInsertTime: 0.5
+  KickBack: 0.16
+  KickPitch: 10.4
+  KickYaw: 2.1
+  CameraPitchKick: 1.75
+  CameraYawKick: 0.4
+  AimFov: 9
+  HasScope: 1
+  GripPoint: {x: 0, y: -0.080194086, z: 0.17782012}
+  SupportPoint: {x: 0, y: 0.0055491347, z: -0.21930394}
+  MuzzlePoint: {x: -0.00000003169084, y: 0.023606203, z: -0.7086657}
+  EjectPoint: {x: -0.03, y: 0.028735526, z: 0.117176384}
+  SightPoint: {x: 0, y: 0.117236614, z: 0.06751478}
+  Attachment: {fileID: 1888391163116910, guid: cb825447b7c1ef442a049949c3f95ba7, type: 3}
+  AttachmentOffset: {x: 0, y: 0.11419685, z: -0.018529888}
+  MagazinePart: Magazin
+  CyclingPart: Bolt
+  CyclingTravel: {x: 0, y: 0, z: 0.09}
+  ManualCycle: 1
+  ShotSounds:
+  - {fileID: 8300000, guid: 1dee6bbeacb88ff4c8343cced9764941, type: 3}
+  - {fileID: 8300000, guid: e1ccf2538e17ce446ad87c6e7bd59092, type: 3}
+  - {fileID: 8300000, guid: ed9d628fcf2d46147b96f2d6d3f9c903, type: 3}
+  MagOutSound: {fileID: 8300000, guid: d84027f3b178da149a0b3bf65c74f2b7, type: 3}
+  MagInSound: {fileID: 8300000, guid: 069c81054204382458129573904de3e2, type: 3}
+  ChargeSound: {fileID: 8300000, guid: 00216dca97c0f35449c97f3bdfe32254, type: 3}
+  CycleSound: {fileID: 8300000, guid: 00216dca97c0f35449c97f3bdfe32254, type: 3}
+  ShellInsertSound: {fileID: 0}
+  DrySound: {fileID: 8300000, guid: e54457e4c2b91b042a4c70a2c5108e59, type: 3}

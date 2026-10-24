@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d93aeec7e7e59c4ba73a9e49d0cc910, type: 3}
+  m_Name: m_wave_5
+  m_EditorClassIdentifier: Assembly-CSharp::Combat.MissionDefinition
+  Id: m_wave_5
+  Title: Onda 5
+  Briefing: "Eles est\xE3o vindo."
+  Optional: 0
+  ChoiceGroup: 
+  ChoiceSummary: 
+  TimeLimit: 0
+  Retryable: 1
+  Objectives:
+  - Text: "Sobreviva \xE0 onda"
+    Type: 11
+    Target: 
+    Count: 1
+    Duration: 0
+    Radius: 5
+    Optional: 0
+    BonusCredits: 0
+    PressureEnemies: 0
+    Radio: 
+    ShowMarker: 1
+    SkipAfter: 0
+  OnStart: []
+  OnComplete: []
+  OnFail: []
+  Credits: 100
+  Experience: 50
+  Score: 100
+  RequiredIds: []
+  RequiredFlag: 

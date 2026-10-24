@@ -1,0 +1,52 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1393655268e8aa8498dd5325601196ce, type: 3}
+  m_Name: Boss_E07
+  m_EditorClassIdentifier: Assembly-CSharp::Combat.BossDefinition
+  Id: e07
+  DisplayName: Experimento 07
+  Title: "Sujeito militar do Protocolo Aurora \u2014 fa\xE7a-o se chocar contra algo pesado"
+  MaxHealth: 1500
+  Scale: 1.7
+  Tint: {r: 0.8, g: 0.5, b: 0.48, a: 1}
+  Animator: {fileID: 9100000, guid: 2eb95f5e647d9ce4ba9921d8b594a424, type: 2}
+  MoveAnimationSpeed: 5
+  HeadMultiplier: 1.5
+  ChaseSpeed: 2.4
+  MeleeDamage: 35
+  MeleeRange: 2.6
+  MeleeWindup: 0.9
+  MeleeCooldown: 2
+  CanCharge: 1
+  ChargeWindup: 1.3
+  ChargeSpeed: 11
+  ChargeDuration: 1.6
+  ChargeDamage: 40
+  ChargeCooldown: 7
+  ChargeMinRange: 6
+  ChargeMaxRange: 26
+  StunTime: 3.5
+  VulnerableMultiplier: 2.5
+  Phases: []
+  Shockwave: 0
+  ShockwaveRadius: 7
+  ShockwaveDamage: 35
+  ShockwaveWindup: 1.5
+  ShockwaveCooldown: 9
+  SummonCount: 0
+  SummonVariant: {fileID: 0}
+  WeakToLight: 0
+  LightMultiplier: 1.8
+  Credits: 500
+  Experience: 400
+  Score: 2500
+  Achievement: boss_e07

@@ -1,0 +1,73 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d93aeec7e7e59c4ba73a9e49d0cc910, type: 3}
+  m_Name: m_supply
+  m_EditorClassIdentifier: Assembly-CSharp::Combat.MissionDefinition
+  Id: m_supply
+  Title: "\xDAltimo suprimento"
+  Briefing: "Um dep\xF3sito no fundo da base guarda muni\xE7\xE3o e rem\xE9dios. Abrir faz barulho."
+  Optional: 0
+  ChoiceGroup: 
+  ChoiceSummary: 
+  TimeLimit: 0
+  Retryable: 1
+  Objectives:
+  - Text: "Chegue ao dep\xF3sito"
+    Type: 8
+    Target: depot
+    Count: 1
+    Duration: 0
+    Radius: 7
+    Optional: 0
+    BonusCredits: 0
+    PressureEnemies: 0
+    Radio: 
+    ShowMarker: 1
+    SkipAfter: 0
+  - Text: "Desbloqueie o cont\xEAiner (barulhento)"
+    Type: 0
+    Target: depot_lock
+    Count: 1
+    Duration: 0
+    Radius: 5
+    Optional: 0
+    BonusCredits: 0
+    PressureEnemies: 0
+    Radio: 
+    ShowMarker: 1
+    SkipAfter: 0
+  - Text: Recolha o que conseguir
+    Type: 4
+    Target: 
+    Count: 1
+    Duration: 8
+    Radius: 5
+    Optional: 0
+    BonusCredits: 0
+    PressureEnemies: 0
+    Radio: 
+    ShowMarker: 1
+    SkipAfter: 0
+  OnStart:
+  - Type: 12
+    Target: radio_supply
+    Target2: 
+    Value: 0
+  OnComplete: []
+  OnFail: []
+  Credits: 100
+  Experience: 100
+  Score: 200
+  RequiredIds:
+  - depot
+  - depot_lock
+  RequiredFlag: 

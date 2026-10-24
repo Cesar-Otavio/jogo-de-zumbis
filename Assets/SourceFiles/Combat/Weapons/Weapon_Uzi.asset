@@ -1,0 +1,63 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b78629236a4ae0b419ecd7e6413b8f70, type: 3}
+  m_Name: Weapon_Uzi
+  m_EditorClassIdentifier: Assembly-CSharp::Combat.WeaponData
+  DisplayName: Uzi
+  Model: {fileID: 1095254202041702, guid: 6273e2936e9d6a24e9f64c7c70d6bd19, type: 3}
+  Hold: 1
+  Mode: 1
+  FireInterval: 0.065
+  Damage: 14
+  Pellets: 1
+  Range: 120
+  Suppressed: 0
+  HitForce: 2
+  HipSpread: 3.2
+  AimSpread: 1.6
+  MoveSpread: 1.2
+  SpreadPerShot: 0.25
+  MaxBloom: 3
+  BloomRecovery: 8
+  MagazineSize: 32
+  StartReserve: 128
+  Reload: 0
+  ReloadTime: 1.7
+  ShellInsertTime: 0.5
+  KickBack: 0.035
+  KickPitch: 2.27
+  KickYaw: 1.75
+  CameraPitchKick: 0.23
+  CameraYawKick: 0.17
+  AimFov: 32
+  HasScope: 0
+  GripPoint: {x: 0, y: -0.045510683, z: 0.032903828}
+  SupportPoint: {x: 0, y: 0.004591166, z: -0.10783765}
+  MuzzlePoint: {x: -3.259629e-11, y: 0.024774663, z: -0.22874391}
+  EjectPoint: {x: -0.03, y: 0.042697802, z: -0.019517599}
+  SightPoint: {x: 0, y: 0.077115655, z: 0.0029038284}
+  Attachment: {fileID: 0}
+  AttachmentOffset: {x: 0, y: 0, z: 0}
+  MagazinePart: Magazin
+  CyclingPart: Bolt
+  CyclingTravel: {x: 0, y: 0, z: 0.04}
+  ManualCycle: 0
+  ShotSounds:
+  - {fileID: 8300000, guid: b051d51b27ba83342aac11be5c96631d, type: 3}
+  - {fileID: 8300000, guid: 29d87ad8dcedb75489a954763f831ec8, type: 3}
+  - {fileID: 8300000, guid: 718411e973a35bc4a81f64958353aff8, type: 3}
+  MagOutSound: {fileID: 8300000, guid: d84027f3b178da149a0b3bf65c74f2b7, type: 3}
+  MagInSound: {fileID: 8300000, guid: 069c81054204382458129573904de3e2, type: 3}
+  ChargeSound: {fileID: 8300000, guid: 65a6a00d42b5b06429c3185a9f4cb99d, type: 3}
+  CycleSound: {fileID: 0}
+  ShellInsertSound: {fileID: 0}
+  DrySound: {fileID: 8300000, guid: e54457e4c2b91b042a4c70a2c5108e59, type: 3}

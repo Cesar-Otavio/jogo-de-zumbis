@@ -1,0 +1,85 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4721de52d0e104f4681e12a8d002dafb, type: 3}
+  m_Name: FootstepLibrary
+  m_EditorClassIdentifier: Assembly-CSharp::Combat.FootstepLibrary
+  Surfaces:
+  - Surface: 0
+    Steps:
+    - {fileID: 8300000, guid: 6b779f7556b2c6b4fafd917f773be50f, type: 3}
+    - {fileID: 8300000, guid: 813df4d3142618a4484ed5ea53d137a7, type: 3}
+    - {fileID: 8300000, guid: b40af7a7e96dbe64da0ee68e5734eb96, type: 3}
+    - {fileID: 8300000, guid: d2840750af1782e4a803995d434b21cf, type: 3}
+    Lands:
+    - {fileID: 8300000, guid: e7ed463bec034fe4e81712b6eef5fb1d, type: 3}
+    - {fileID: 8300000, guid: f023b37c0ce910349be5e9f5e55d452c, type: 3}
+    Loudness: 1
+    Volume: 0.8
+  - Surface: 1
+    Steps:
+    - {fileID: 8300000, guid: 787fea288e4ad1e41b7ced869e95ab35, type: 3}
+    - {fileID: 8300000, guid: 5a59deef34c185b4388d93308e5324a0, type: 3}
+    - {fileID: 8300000, guid: 4464f5f21ba17d84ca9bf36835aa849a, type: 3}
+    - {fileID: 8300000, guid: 4134c85804bfb794f9df551ca8c8dc93, type: 3}
+    Lands:
+    - {fileID: 8300000, guid: d474a90b59a074c4b89c48f30788029e, type: 3}
+    - {fileID: 8300000, guid: 7fa3ad1c866dd0446b1c89885555d7a7, type: 3}
+    Loudness: 1.6
+    Volume: 0.9
+  - Surface: 2
+    Steps:
+    - {fileID: 8300000, guid: 6637a9b03aefb614089839241593c3af, type: 3}
+    - {fileID: 8300000, guid: 141a19a23842bff489db85fabf7424e0, type: 3}
+    - {fileID: 8300000, guid: db52f8f3f4bc5e341b8547911659fdbd, type: 3}
+    - {fileID: 8300000, guid: 2503aaa3c5e834a4b820b8326624b31b, type: 3}
+    Lands:
+    - {fileID: 8300000, guid: c5179abfff3e866489e8fcb16d666ef3, type: 3}
+    - {fileID: 8300000, guid: 9b8b57cbd3712dc429c5276e74024ec8, type: 3}
+    Loudness: 0.8
+    Volume: 0.8
+  - Surface: 3
+    Steps:
+    - {fileID: 8300000, guid: dd7e858ebd047f34998f009eca858c36, type: 3}
+    - {fileID: 8300000, guid: c4816df146757a643998a434207b72eb, type: 3}
+    - {fileID: 8300000, guid: 10e941efcc8acfb4f83326da90748d58, type: 3}
+    - {fileID: 8300000, guid: af7e14d7bbeafba49946ae154e83eea7, type: 3}
+    Lands:
+    - {fileID: 8300000, guid: 2578d02bc5ab32647a6ffe56a1beac66, type: 3}
+    - {fileID: 8300000, guid: 951de3243d05f3042b2ee30d28e25da9, type: 3}
+    Loudness: 0.6
+    Volume: 0.7
+  - Surface: 4
+    Steps:
+    - {fileID: 8300000, guid: 1fe7fc7e1b8a1dd458abc2d9f803bc32, type: 3}
+    - {fileID: 8300000, guid: 243503ad621e188418ef69274f9f8cb1, type: 3}
+    - {fileID: 8300000, guid: 44a8f3858cbe06d43895475b4043e4f5, type: 3}
+    - {fileID: 8300000, guid: d7819aa182ee7ee46af03b1e4dde9de0, type: 3}
+    Lands:
+    - {fileID: 8300000, guid: 92521ff7e0aaede438fd08e26acb4e83, type: 3}
+    - {fileID: 8300000, guid: 579496435225a084fa5c8dec1d1401c4, type: 3}
+    Loudness: 1.3
+    Volume: 0.9
+  - Surface: 5
+    Steps:
+    - {fileID: 8300000, guid: d95bdf62731cdf7418ecae0bccc6bc75, type: 3}
+    - {fileID: 8300000, guid: 426a0fe29cdfc02459997f9ed2901ca4, type: 3}
+    - {fileID: 8300000, guid: 77568b514978fc145baf7f4a79e81af0, type: 3}
+    - {fileID: 8300000, guid: bef79c4084f778d4bba5bf0b9ed23a16, type: 3}
+    Lands:
+    - {fileID: 8300000, guid: f4a915c4636d0d846bcecaf1c28682e3, type: 3}
+    - {fileID: 8300000, guid: ff68f6489ff99ae4dbe2b4b9e8850e8d, type: 3}
+    Loudness: 1.1
+    Volume: 0.85
+  WetLayer:
+  - {fileID: 8300000, guid: f5cce3f2821189a41947d25c62080edb, type: 3}
+  - {fileID: 8300000, guid: 46657cf84ce50644c8e04c0903ed2a98, type: 3}
+  - {fileID: 8300000, guid: 94d6a0cfb2cbb2f4d9d689b43544ece4, type: 3}

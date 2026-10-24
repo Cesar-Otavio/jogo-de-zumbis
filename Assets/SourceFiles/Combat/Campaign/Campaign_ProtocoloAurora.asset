@@ -1,0 +1,168 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e13c2baae074ac4297ff065b19b4977, type: 3}
+  m_Name: Campaign_ProtocoloAurora
+  m_EditorClassIdentifier: Assembly-CSharp::Combat.CampaignDefinition
+  Title: Protocolo Aurora
+  Intro: "Voc\xEA acorda sozinho num posto de guarda. Ningu\xE9m responde. Algo deu muito errado nesta base."
+  Chapters:
+  - Title: "ONDA 1 \u2014 PRIMEIRO CONTATO"
+    Subtitle: O sobrevivente desperta na base.
+    Radio: radio_wake
+    OnStart: []
+    Missions:
+    - {fileID: 11400000, guid: 4886d7f1fe33dc4479c6fc078994d9ed, type: 2}
+    SideMissions: []
+    Zombies: 5
+    Soldiers: 0
+    EnemyHealth: 1
+    Boss: {fileID: 0}
+    Intermission: 50
+    ChoiceA: {fileID: 0}
+    ChoiceB: {fileID: 0}
+  - Title: "ONDA 2 \u2014 SEM ENERGIA"
+    Subtitle: Um setor perdeu energia.
+    Radio: 
+    OnStart: []
+    Missions:
+    - {fileID: 11400000, guid: a06187346e61ff241a6e0344a659299f, type: 2}
+    - {fileID: 11400000, guid: c8bf6dc93e69d7945b38dacea9176e85, type: 2}
+    SideMissions: []
+    Zombies: 7
+    Soldiers: 0
+    EnemyHealth: 1
+    Boss: {fileID: 0}
+    Intermission: 60
+    ChoiceA: {fileID: 0}
+    ChoiceB: {fileID: 0}
+  - Title: "ONDA 3 \u2014 MENSAGEM DESCONHECIDA"
+    Subtitle: "O r\xE1dio recebe uma transmiss\xE3o."
+    Radio: 
+    OnStart: []
+    Missions:
+    - {fileID: 11400000, guid: cb3977f4d4a78bb47a73041e3a7273c5, type: 2}
+    - {fileID: 11400000, guid: d8c7f837d3d749f478ef27eb0f74fdc0, type: 2}
+    SideMissions:
+    - {fileID: 11400000, guid: feb5cc7e92c5010498f3c5d33899a46d, type: 2}
+    Zombies: 8
+    Soldiers: 1
+    EnemyHealth: 1
+    Boss: {fileID: 0}
+    Intermission: 60
+    ChoiceA: {fileID: 0}
+    ChoiceB: {fileID: 0}
+  - Title: "ONDA 4 \u2014 ARSENAL"
+    Subtitle: "Prepare-se para uma amea\xE7a maior."
+    Radio: 
+    OnStart: []
+    Missions:
+    - {fileID: 11400000, guid: 76318df029f504a4f8bedeb873472bb4, type: 2}
+    - {fileID: 11400000, guid: 256c2ae92b66eff42bfb049af0e3a020, type: 2}
+    SideMissions: []
+    Zombies: 9
+    Soldiers: 2
+    EnemyHealth: 1.05
+    Boss: {fileID: 0}
+    Intermission: 75
+    ChoiceA: {fileID: 11400000, guid: 79f32ba401533cb409de7fb0075b9286, type: 2}
+    ChoiceB: {fileID: 11400000, guid: b96aee6d6cbf65348a0413fa1d170663, type: 2}
+  - Title: "ONDA 5 \u2014 EXPERIMENTO 07"
+    Subtitle: O surto tem origem nesta base.
+    Radio: 
+    OnStart: []
+    Missions:
+    - {fileID: 11400000, guid: 3c2f5eb8260f1cb4dab3efebf22bd414, type: 2}
+    SideMissions: []
+    Zombies: 6
+    Soldiers: 0
+    EnemyHealth: 1.05
+    Boss: {fileID: 11400000, guid: b41719cffda2f8943b2779f5d88948ee, type: 2}
+    Intermission: 75
+    ChoiceA: {fileID: 0}
+    ChoiceB: {fileID: 0}
+  - Title: "ONDA 6 \u2014 COMUNICA\xC7\xC3O COMPROMETIDA"
+    Subtitle: "Restaure a torre e receba instru\xE7\xF5es."
+    Radio: 
+    OnStart: []
+    Missions:
+    - {fileID: 11400000, guid: 0e99b224bc7b83e48a3680f8b59b38e5, type: 2}
+    - {fileID: 11400000, guid: d5910adad13a79740a9d9c9dc1b1d615, type: 2}
+    SideMissions:
+    - {fileID: 11400000, guid: db63c25097f3a0a4ba7f43011eb2d1fa, type: 2}
+    Zombies: 10
+    Soldiers: 2
+    EnemyHealth: 1.1
+    Boss: {fileID: 0}
+    Intermission: 70
+    ChoiceA: {fileID: 0}
+    ChoiceB: {fileID: 0}
+  - Title: "ONDA 7 \u2014 LABORAT\xD3RIO"
+    Subtitle: "Descubra a origem da infec\xE7\xE3o."
+    Radio: 
+    OnStart: []
+    Missions:
+    - {fileID: 11400000, guid: 4d356277b37176e4faaafc0d1c469a3b, type: 2}
+    - {fileID: 11400000, guid: ab10c147fe121154c967d9235270c2aa, type: 2}
+    SideMissions:
+    - {fileID: 11400000, guid: 0a383d7573198844883ea7c9c8d1adb3, type: 2}
+    Zombies: 10
+    Soldiers: 3
+    EnemyHealth: 1.1
+    Boss: {fileID: 0}
+    Intermission: 70
+    ChoiceA: {fileID: 0}
+    ChoiceB: {fileID: 0}
+  - Title: "ONDA 8 \u2014 FALHA DE CONTEN\xC7\xC3O"
+    Subtitle: "Impe\xE7a que os setores contaminados se abram."
+    Radio: 
+    OnStart: []
+    Missions:
+    - {fileID: 11400000, guid: 53f87f107a9843c41af5ce87f7b10587, type: 2}
+    - {fileID: 11400000, guid: 00e83d006a77aca40b7be0b30f521857, type: 2}
+    SideMissions: []
+    Zombies: 12
+    Soldiers: 2
+    EnemyHealth: 1.15
+    Boss: {fileID: 0}
+    Intermission: 75
+    ChoiceA: {fileID: 0}
+    ChoiceB: {fileID: 0}
+  - Title: "ONDA 9 \u2014 PROTOCOLO DE EVACUA\xC7\xC3O"
+    Subtitle: "Prepare a zona de extra\xE7\xE3o."
+    Radio: 
+    OnStart: []
+    Missions:
+    - {fileID: 11400000, guid: b90cae9c6ecaafe4b945cf5a03433685, type: 2}
+    - {fileID: 11400000, guid: 2d71fe4bb538a8f4b9c97c6b8331257f, type: 2}
+    SideMissions: []
+    Zombies: 13
+    Soldiers: 3
+    EnemyHealth: 1.15
+    Boss: {fileID: 0}
+    Intermission: 80
+    ChoiceA: {fileID: 0}
+    ChoiceB: {fileID: 0}
+  - Title: "ONDA 10 \u2014 SOBREVIVA \xC0 NOITE"
+    Subtitle: O confronto final.
+    Radio: 
+    OnStart: []
+    Missions:
+    - {fileID: 11400000, guid: 2e5c9092f6caec5438ba78a26ad0bf8c, type: 2}
+    SideMissions: []
+    Zombies: 14
+    Soldiers: 2
+    EnemyHealth: 1.2
+    Boss: {fileID: 11400000, guid: 5190e469c5129ba47ae3db2078deb49a, type: 2}
+    Intermission: 0
+    ChoiceA: {fileID: 0}
+    ChoiceB: {fileID: 0}
+  Ending: "O helic\xF3ptero sobe enquanto a base queima atr\xE1s de voc\xEA. O Protocolo Aurora acabou \u2014 mas algu\xE9m vai querer saber o que voc\xEA viu."

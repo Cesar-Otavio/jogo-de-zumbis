@@ -1,0 +1,303 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b0a7627657b0cbb4ea561f305a882b44, type: 3}
+  m_Name: ShopCatalog
+  m_EditorClassIdentifier: Assembly-CSharp::Combat.ShopCatalog
+  Entries:
+  - Id: w_uzi
+    DisplayName: Uzi
+    Description: "Submetralhadora r\xE1pida, pouco alcance."
+    Category: 0
+    Kind: 0
+    Price: 400
+    RequiredLevel: 1
+    LimitPerRun: 0
+    Weapon: {fileID: 11400000, guid: 057c891580ba4204789c4895bb08881c, type: 2}
+    Item: 0
+    Amount: 1
+    Upgrade: {fileID: 0}
+  - Id: w_shotgun
+    DisplayName: Benelli M4
+    Description: Devastadora de perto.
+    Category: 0
+    Kind: 0
+    Price: 600
+    RequiredLevel: 1
+    LimitPerRun: 0
+    Weapon: {fileID: 11400000, guid: 4b12b8cb32bd1084e820bce6a92358a9, type: 2}
+    Item: 0
+    Amount: 1
+    Upgrade: {fileID: 0}
+  - Id: w_ak
+    DisplayName: AK-74
+    Description: Fuzil potente, recuo forte.
+    Category: 0
+    Kind: 0
+    Price: 650
+    RequiredLevel: 1
+    LimitPerRun: 0
+    Weapon: {fileID: 11400000, guid: dd01542d2322d4847bbb6d52b3ac7b46, type: 2}
+    Item: 0
+    Amount: 1
+    Upgrade: {fileID: 0}
+  - Id: w_m4
+    DisplayName: M4
+    Description: "Fuzil preciso e control\xE1vel."
+    Category: 0
+    Kind: 0
+    Price: 650
+    RequiredLevel: 2
+    LimitPerRun: 0
+    Weapon: {fileID: 11400000, guid: ba23de4bb8a62a146a090c9577944388, type: 2}
+    Item: 0
+    Amount: 1
+    Upgrade: {fileID: 0}
+  - Id: w_sniper
+    DisplayName: M107 Sniper
+    Description: "Precis\xE3o de longe, com luneta."
+    Category: 0
+    Kind: 0
+    Price: 900
+    RequiredLevel: 3
+    LimitPerRun: 0
+    Weapon: {fileID: 11400000, guid: 1737185caf728cb42897f64ab7948765, type: 2}
+    Item: 0
+    Amount: 1
+    Upgrade: {fileID: 0}
+  - Id: ammo
+    DisplayName: Pentes extras
+    Description: "Dois pentes para cada arma que voc\xEA carrega."
+    Category: 1
+    Kind: 1
+    Price: 60
+    RequiredLevel: 1
+    LimitPerRun: 0
+    Weapon: {fileID: 0}
+    Item: 0
+    Amount: 2
+    Upgrade: {fileID: 0}
+  - Id: ammo_full
+    DisplayName: Reabastecimento completo
+    Description: "Pentes cheios e reservas no m\xE1ximo."
+    Category: 1
+    Kind: 2
+    Price: 180
+    RequiredLevel: 1
+    LimitPerRun: 0
+    Weapon: {fileID: 0}
+    Item: 0
+    Amount: 1
+    Upgrade: {fileID: 0}
+  - Id: vest
+    DisplayName: "Colete bal\xEDstico"
+    Description: "Absorve metade do dano at\xE9 60 pontos."
+    Category: 2
+    Kind: 3
+    Price: 200
+    RequiredLevel: 1
+    LimitPerRun: 3
+    Weapon: {fileID: 0}
+    Item: 0
+    Amount: 1
+    Upgrade: {fileID: 0}
+  - Id: heal
+    DisplayName: "Atendimento m\xE9dico"
+    Description: Vida cheia agora.
+    Category: 2
+    Kind: 4
+    Price: 150
+    RequiredLevel: 1
+    LimitPerRun: 0
+    Weapon: {fileID: 0}
+    Item: 0
+    Amount: 1
+    Upgrade: {fileID: 0}
+  - Id: i_medkit
+    DisplayName: "Kit m\xE9dico"
+    Description: +50 de vida quando usado (tecla 1, X).
+    Category: 3
+    Kind: 5
+    Price: 80
+    RequiredLevel: 1
+    LimitPerRun: 0
+    Weapon: {fileID: 0}
+    Item: 0
+    Amount: 1
+    Upgrade: {fileID: 0}
+  - Id: i_grenade
+    DisplayName: Granada
+    Description: "Explode 2,5 s depois do arremesso. Cuidado: te fere tamb\xE9m (metade)."
+    Category: 3
+    Kind: 5
+    Price: 100
+    RequiredLevel: 1
+    LimitPerRun: 0
+    Weapon: {fileID: 0}
+    Item: 1
+    Amount: 1
+    Upgrade: {fileID: 0}
+  - Id: i_molotov
+    DisplayName: Molotov
+    Description: "\xC1rea de fogo por 8 s. Os inimigos desviam dela."
+    Category: 3
+    Kind: 5
+    Price: 90
+    RequiredLevel: 1
+    LimitPerRun: 0
+    Weapon: {fileID: 0}
+    Item: 2
+    Amount: 1
+    Upgrade: {fileID: 0}
+  - Id: i_flare
+    DisplayName: Sinalizador
+    Description: "Luz vermelha por 40 s; atrai infectados para longe de voc\xEA."
+    Category: 3
+    Kind: 5
+    Price: 40
+    RequiredLevel: 1
+    LimitPerRun: 0
+    Weapon: {fileID: 0}
+    Item: 3
+    Amount: 1
+    Upgrade: {fileID: 0}
+  - Id: i_barricade
+    DisplayName: Kit de barricada
+    Description: "Refor\xE7a uma porta ou passagem."
+    Category: 3
+    Kind: 5
+    Price: 60
+    RequiredLevel: 1
+    LimitPerRun: 0
+    Weapon: {fileID: 0}
+    Item: 4
+    Amount: 1
+    Upgrade: {fileID: 0}
+  - Id: i_decoy
+    DisplayName: "Distra\xE7\xE3o"
+    Description: "Apita por 10 s: os inimigos v\xE3o investigar."
+    Category: 3
+    Kind: 5
+    Price: 50
+    RequiredLevel: 1
+    LimitPerRun: 0
+    Weapon: {fileID: 0}
+    Item: 5
+    Amount: 1
+    Upgrade: {fileID: 0}
+  - Id: u_Upgrade_Barrel
+    DisplayName: "Cano refor\xE7ado"
+    Description: +15% de dano.
+    Category: 4
+    Kind: 6
+    Price: 350
+    RequiredLevel: 1
+    LimitPerRun: 0
+    Weapon: {fileID: 0}
+    Item: 0
+    Amount: 1
+    Upgrade: {fileID: 11400000, guid: 174444311efe0434a842627640d7dc39, type: 2}
+  - Id: u_Upgrade_Magazine
+    DisplayName: Carregador estendido
+    Description: +40% de capacidade do pente.
+    Category: 4
+    Kind: 6
+    Price: 300
+    RequiredLevel: 1
+    LimitPerRun: 0
+    Weapon: {fileID: 0}
+    Item: 0
+    Amount: 1
+    Upgrade: {fileID: 11400000, guid: d4665b67cf5da7c46b120f59df44edf1, type: 2}
+  - Id: u_Upgrade_Grip
+    DisplayName: Empunhadura vertical
+    Description: "-30% de recuo, mais est\xE1vel."
+    Category: 4
+    Kind: 6
+    Price: 300
+    RequiredLevel: 1
+    LimitPerRun: 0
+    Weapon: {fileID: 0}
+    Item: 0
+    Amount: 1
+    Upgrade: {fileID: 11400000, guid: f57e136e8452d3341b2a350050c88e96, type: 2}
+  - Id: u_Upgrade_Compensator
+    DisplayName: Compensador
+    Description: "-20% de recuo, -10% de dispers\xE3o."
+    Category: 4
+    Kind: 6
+    Price: 250
+    RequiredLevel: 1
+    LimitPerRun: 0
+    Weapon: {fileID: 0}
+    Item: 0
+    Amount: 1
+    Upgrade: {fileID: 11400000, guid: b5eaa9127faf77345b9cf40b8a5f04ba, type: 2}
+  - Id: u_Upgrade_Suppressor
+    DisplayName: Silenciador
+    Description: Tiros ouvidos de bem mais perto (furtividade).
+    Category: 4
+    Kind: 6
+    Price: 400
+    RequiredLevel: 3
+    LimitPerRun: 0
+    Weapon: {fileID: 0}
+    Item: 0
+    Amount: 1
+    Upgrade: {fileID: 11400000, guid: 9577500a1e6d4f04e98188c4dda60a09, type: 2}
+  - Id: u_Upgrade_Sight
+    DisplayName: "Mira hologr\xE1fica"
+    Description: "Mira alternativa: mais zoom ao mirar, um pouco mais est\xE1vel."
+    Category: 4
+    Kind: 6
+    Price: 250
+    RequiredLevel: 2
+    LimitPerRun: 0
+    Weapon: {fileID: 0}
+    Item: 0
+    Amount: 1
+    Upgrade: {fileID: 11400000, guid: 81d1805161fb32447bc00515d82a7c97, type: 2}
+  - Id: u_Upgrade_Reload
+    DisplayName: "Mola de recarga r\xE1pida"
+    Description: "Recarrega 35% mais r\xE1pido."
+    Category: 4
+    Kind: 6
+    Price: 300
+    RequiredLevel: 2
+    LimitPerRun: 0
+    Weapon: {fileID: 0}
+    Item: 0
+    Amount: 1
+    Upgrade: {fileID: 11400000, guid: b2d94189a20e41d4aba8f5e296cf6814, type: 2}
+  - Id: stamina
+    DisplayName: "Treino de resist\xEAncia"
+    Description: "+15 de estamina m\xE1xima nesta partida."
+    Category: 4
+    Kind: 7
+    Price: 250
+    RequiredLevel: 2
+    LimitPerRun: 2
+    Weapon: {fileID: 0}
+    Item: 0
+    Amount: 1
+    Upgrade: {fileID: 0}
+  - Id: capacity
+    DisplayName: "Bolsa t\xE1tica"
+    Description: "+1 de capacidade para cada item r\xE1pido."
+    Category: 4
+    Kind: 8
+    Price: 300
+    RequiredLevel: 1
+    LimitPerRun: 2
+    Weapon: {fileID: 0}
+    Item: 0
+    Amount: 1
+    Upgrade: {fileID: 0}
