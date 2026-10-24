@@ -127,6 +127,9 @@ namespace Combat
             _scorePopupTime = Time.time;
         }
 
+        // other HUD pieces (the minimap) follow this
+        public bool Visible => _visible;
+
         // the main menu hides the HUD
         public void SetVisible(bool visible)
         {

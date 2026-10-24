@@ -93,6 +93,7 @@ namespace Combat
                 case ItemCategory.Mission: return new Color(0.5f, 0.86f, 1.0f);
                 case ItemCategory.Document: return new Color(0.86f, 0.82f, 0.7f);
                 case ItemCategory.Construction: return new Color(0.82f, 0.72f, 0.55f);
+                case ItemCategory.Material: return new Color(0.72f, 0.78f, 0.86f);
                 default: return new Color(1.0f, 0.78f, 0.3f);
             }
         }

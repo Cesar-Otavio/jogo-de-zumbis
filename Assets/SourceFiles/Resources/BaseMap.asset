@@ -1,0 +1,17 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 246b57fd75bd5bf4fa039777c28b0741, type: 3}
+  m_Name: BaseMap
+  m_EditorClassIdentifier: Assembly-CSharp::Combat.MapDefinition
+  Map: {fileID: 2800000, guid: 29450b8a7cf183542ba2426cd353e3c5, type: 3}
+  Min: {x: -165.41574, y: -112.70422}
+  Max: {x: 121.51581, y: 174.22733}

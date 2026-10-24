@@ -19,6 +19,8 @@ namespace Combat
         public Sprite UpgradeIcon;
         public Sprite StaminaIcon;
         public Sprite CapacityIcon;
+        [Header("Map")]
+        public Sprite WorkbenchIcon;
         [Tooltip("Shown for anything without its own icon, so a missing sprite is obvious but not broken")]
         public Sprite FallbackIcon;
 

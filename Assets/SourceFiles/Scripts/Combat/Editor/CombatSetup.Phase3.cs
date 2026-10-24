@@ -140,6 +140,19 @@ namespace Combat.EditorTools
                 ("lab_procedure", "Procedimento de contenção", "A ordem correta das válvulas.", ItemCategory.Document, "document", 1, ItemRarity.Story),
                 ("valve_key", "Chave de válvula", "Chave para as válvulas de contenção.", ItemCategory.Mission, "case", 1, ItemRarity.Story),
                 ("ammo_box", "Caixa de munição", "Munição para as armas que você carrega.", ItemCategory.Ammo, "ammo_box", 99, ItemRarity.Common),
+
+                // ---- Phase 5: crafting materials (backpack) and what they make
+                ("scrap", "Sucata metálica", "Chapas e restos de metal. A base de quase tudo que se improvisa.", ItemCategory.Material, "scrap", 10, ItemRarity.Common),
+                ("cloth", "Tecido", "Lona e uniformes rasgados. Serve para bandagens e enchimento.", ItemCategory.Material, "cloth", 10, ItemRarity.Common),
+                ("electronics", "Componentes eletrônicos", "Placas e chips aproveitáveis de equipamentos quebrados.", ItemCategory.Material, "electronics", 5, ItemRarity.Uncommon),
+                ("med_supplies", "Material médico", "Antisséptico, gaze e seringas da enfermaria.", ItemCategory.Material, "med_supplies", 5, ItemRarity.Uncommon),
+                ("mech_parts", "Peças mecânicas", "Engrenagens, parafusos e molas.", ItemCategory.Material, "mech_parts", 5, ItemRarity.Uncommon),
+                ("chemicals", "Componentes químicos", "Reagentes do laboratório. Instáveis, mas úteis.", ItemCategory.Material, "chemicals", 5, ItemRarity.Uncommon),
+                ("wiring", "Fiação", "Fios e conectores arrancados de painéis.", ItemCategory.Material, "wiring", 10, ItemRarity.Common),
+                ("tactical_parts", "Peças táticas", "Trilhos, presilhas e placas de equipamento militar.", ItemCategory.Material, "tactical_parts", 3, ItemRarity.Rare),
+                ("bandage", "Bandagem", "Recupera 20 de vida na hora. Pode ser usada da mochila.", ItemCategory.Medical, "bandage", 5, ItemRarity.Common),
+                ("vest_patch", "Reforço de colete", "Placa improvisada: +30 de proteção no colete (máximo 60).", ItemCategory.Construction, "vest_patch", 2, ItemRarity.Uncommon),
+                ("supply_pack", "Pacote de suprimentos", "Munição embalada: dois pentes para cada arma que você carrega.", ItemCategory.Ammo, "supply_pack", 3, ItemRarity.Uncommon),
             };
 
             var items = new System.Collections.Generic.List<ItemDefinition>();
@@ -161,6 +174,9 @@ namespace Combat.EditorTools
                 item.MaxStack = row.stack;
                 item.Icon = Icon(row.icon);
                 item.StoryIds = StoryIdsOf(row.id);
+                (item.Use, item.UseAmount) = UseOf(row.id);
+                // story items can't be thrown away
+                item.Droppable = row.category != ItemCategory.Mission && row.category != ItemCategory.Document;
                 EditorUtility.SetDirty(item);
                 items.Add(item);
             }
@@ -181,11 +197,24 @@ namespace Combat.EditorTools
             catalog.UpgradeIcon = Icon("upgrade");
             catalog.StaminaIcon = Icon("stamina");
             catalog.CapacityIcon = Icon("capacity");
+            catalog.WorkbenchIcon = Icon("workbench");
             EditorUtility.SetDirty(catalog);
 
             SetupWeaponPresentation();
             AssetDatabase.SaveAssets();
             Debug.Log($"Item catalog: {items.Count} items");
+        }
+
+        // what "Usar" does from the backpack (quick items are used from the quick bar instead)
+        private static (ItemUse, float) UseOf(string itemId)
+        {
+            switch (itemId)
+            {
+                case "bandage": return (ItemUse.Heal, 20.0f);
+                case "vest_patch": return (ItemUse.Armor, 30.0f);
+                case "supply_pack": return (ItemUse.Ammo, 2.0f);
+                default: return (ItemUse.None, 0.0f);
+            }
         }
 
         // which story documents each item is or brings (the reader shows the item with the text)

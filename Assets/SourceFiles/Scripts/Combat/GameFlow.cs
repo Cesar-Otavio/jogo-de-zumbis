@@ -118,6 +118,7 @@ namespace Combat
         private readonly System.Collections.Generic.List<Action> _optionRefreshers = new System.Collections.Generic.List<Action>();
         private UnityEngine.Rendering.Universal.ColorAdjustments _gradeColor;
         private UnityEngine.Rendering.Universal.FilmGrain _gradeGrain;
+        private UnityEngine.Rendering.Volume _gradeVolume;
         private float _basePostExposure;
         private float _baseGrain;
 
@@ -152,6 +153,7 @@ namespace Combat
                 UnityEngine.Rendering.VolumeProfile profile = volume.profile;
                 if (profile.TryGet(out _gradeColor)) _basePostExposure = _gradeColor.postExposure.value;
                 if (profile.TryGet(out _gradeGrain)) _baseGrain = _gradeGrain.intensity.value;
+                _gradeVolume = volume;
                 if (_gradeColor != null) break;
             }
         }
@@ -160,6 +162,8 @@ namespace Combat
         {
             if (_gradeColor != null) _gradeColor.postExposure.Override(_basePostExposure + GameSettings.Brightness * 0.9f);
             if (_gradeGrain != null) _gradeGrain.intensity.Override(_baseGrain * GameSettings.Grain);
+            if (_gradeVolume != null) _gradeVolume.weight = GameSettings.PostIntensity;
+            DisplayOptions.Apply();
         }
 
         private void Start()
@@ -254,8 +258,10 @@ namespace Combat
             if (_input != null && _input.pause)
             {
                 _input.pause = false;
-                // Esc first closes whatever is in front: the shop, a document, a cinematic
-                if (ShopManager.IsOpen) ShopManager.Instance.Close();
+                // Esc first closes whatever is in front: the backpack, the map, the shop, a document, a cinematic
+                if (InventoryView.IsOpen) InventoryView.Instance.Close();
+                else if (TacticalMapView.IsOpen) TacticalMapView.Instance.Close();
+                else if (ShopManager.IsOpen) ShopManager.Instance.Close();
                 else if (CampaignHUD.ReaderOpen || CinematicPlayer.Playing) { }
                 else if (Current == State.Playing) Pause();
                 else if (Current == State.Paused) Resume();
@@ -266,6 +272,7 @@ namespace Combat
 
         private void EnterMenu()
         {
+            GameplayOverlay.Reset();
             Current = State.Menu;
             Time.timeScale = 1.0f;
             SetGameplayActive(false);
@@ -300,6 +307,7 @@ namespace Combat
         {
             if (_wardrobePanel != null && _wardrobePanel.activeSelf) CloseWardrobe();
             _restartMode = mode;
+            GameplayOverlay.Reset();
             RunState.Reset(mode);
             if (MissionManager.Instance != null) MissionManager.Instance.Clear();
             if (ShopManager.Instance != null) ShopManager.Instance.ResetForRun();
@@ -357,6 +365,7 @@ namespace Combat
 
         private void GameOver()
         {
+            GameplayOverlay.Reset();
             Current = State.GameOver;
             int wave = _spawner != null ? _spawner.Wave : 0;
             int bestWave = PlayerPrefs.GetInt(BestWaveKey, 0);
@@ -722,6 +731,7 @@ namespace Combat
                 "<b>R</b>  recarregar      <b>E</b>  usar: armas, baús, portas, geradores, painéis\n" +
                 "<b>Q</b>  trocar de arma      <b>G</b>  largar arma      <b>F</b>  lanterna\n" +
                 "<b>1-6</b> / <b>Z</b>  escolher item      <b>X</b>  usar item (segure para mirar o arremesso)\n" +
+                "<b>Tab</b>  mochila e fabricação      <b>M</b>  mapa tático (clique marca)\n" +
                 "<b>L</b>  loja (no intervalo)      <b>N</b>  próxima onda      <b>K</b>  abandonar missão opcional\n" +
                 "Barulho atrai os infectados: correr no metal e atirar são ouvidos de longe",
                 24, new Vector2(0.06f, 0.06f), new Vector2(0.94f, 0.82f), TextAlignmentOptions.TopLeft, FontStyles.Normal, Color.white);
@@ -738,6 +748,9 @@ namespace Combat
             Button(pause.rectTransform, "CONTINUAR", new Vector2(0.4f, 0.47f), Resume, true);
             Button(pause.rectTransform, "REINICIAR", new Vector2(0.4f, 0.37f), Restart, false);
             Button(pause.rectTransform, "MENU PRINCIPAL", new Vector2(0.4f, 0.27f), BackToMenu, false);
+            // the way in for a gamepad, which has no free button for them
+            CompactButton(pause.rectTransform, "MOCHILA [Tab]", new Vector2(0.4f, 0.19f), () => { Resume(); if (InventoryView.Instance != null) InventoryView.Instance.OpenBackpack(); });
+            CompactButton(pause.rectTransform, "MAPA [M]", new Vector2(0.4f, 0.13f), () => { Resume(); if (TacticalMapView.Instance != null) TacticalMapView.Instance.Open(); });
             _pausePanel = pause.gameObject;
 
             // game over
@@ -783,8 +796,46 @@ namespace Combat
             Image panel = Panel("Options", parent, new Vector2(0.5f, 0.08f), new Vector2(0.94f, 0.92f), PanelColor);
             _optionsPanel = panel.gameObject;
             RectTransform rect = panel.rectTransform;
-            Label(rect, "OPÇÕES E ACESSIBILIDADE", 36, new Vector2(0.06f, 0.89f), new Vector2(0.94f, 0.97f), TextAlignmentOptions.Left, FontStyles.Bold, Accent);
+            Label(rect, "OPÇÕES", 36, new Vector2(0.06f, 0.89f), new Vector2(0.3f, 0.97f), TextAlignmentOptions.Left, FontStyles.Bold, Accent);
 
+            // three pages: picture and accessibility, sound and subtitles, display and graphics
+            RectTransform[] pages = new RectTransform[3];
+            string[] titles = { "IMAGEM", "ÁUDIO", "GRÁFICOS" };
+            var tabs = new Image[3];
+            for (int i = 0; i < pages.Length; i++)
+            {
+                pages[i] = Panel("Page_" + titles[i], rect, Vector2.zero, Vector2.one, new Color(0, 0, 0, 0)).rectTransform;
+                pages[i].gameObject.SetActive(i == 0);
+            }
+
+            for (int i = 0; i < pages.Length; i++)
+            {
+                int page = i;
+                Image tab = Panel("Tab_" + titles[i], rect, new Vector2(0.32f + i * 0.21f, 0.9f), new Vector2(0.51f + i * 0.21f, 0.96f), new Color(1, 1, 1, i == 0 ? 0.25f : 0.08f));
+                tab.raycastTarget = true;
+                tabs[i] = tab;
+                Label(tab.rectTransform, titles[i], 22, Vector2.zero, Vector2.one, TextAlignmentOptions.Center, FontStyles.Bold, Color.white);
+                tab.gameObject.AddComponent<Button>().onClick.AddListener(() =>
+                {
+                    for (int p = 0; p < pages.Length; p++)
+                    {
+                        pages[p].gameObject.SetActive(p == page);
+                        tabs[p].color = new Color(1, 1, 1, p == page ? 0.25f : 0.08f);
+                    }
+                });
+            }
+
+            BuildPictureOptions(pages[0]);
+            BuildSoundOptions(pages[1]);
+            BuildDisplayOptions(pages[2]);
+
+            Label(rect, "Brilho e granulação mudam na hora. \"Automático\" mostra todas as setas no Fácil e Normal e só as dos inimigos que te viram no Difícil e Pesadelo.",
+                18, new Vector2(0.06f, 0.015f), new Vector2(0.94f, 0.085f), TextAlignmentOptions.TopLeft, FontStyles.Normal, new Color(1, 1, 1, 0.6f)).textWrappingMode = TextWrappingModes.Normal;
+            _optionsPanel.SetActive(false);
+        }
+
+        private void BuildPictureOptions(RectTransform rect)
+        {
             int row = 0;
             OptionRow(rect, row++, "Brilho", () => Percent(GameSettings.Brightness, -1.0f, 1.0f),
                 step => GameSettings.Brightness = Mathf.Clamp(GameSettings.Brightness + step * 0.1f, -1.0f, 1.0f));
@@ -803,8 +854,19 @@ namespace Combat
             OptionRow(rect, row++, "Marcador de objetivo", () => GameSettings.ObjectiveHints ? "LIGADO" : "DESLIGADO",
                 step => GameSettings.ObjectiveHints = !GameSettings.ObjectiveHints);
 
-            // second column: dialogue and sound
+            // second column: the minimap
             row = 0;
+            OptionRow(rect, row++, "Minimapa", () => GameSettings.Minimap ? "LIGADO" : "DESLIGADO",
+                step => GameSettings.Minimap = !GameSettings.Minimap, 1);
+            OptionRow(rect, row++, "Orientação do minimapa", () => GameSettings.MinimapRotates ? "CÂMERA" : "NORTE",
+                step => GameSettings.MinimapRotates = !GameSettings.MinimapRotates, 1);
+            OptionRow(rect, row++, "Zoom do minimapa", () => GameSettings.MinimapZoom == 0 ? "PERTO" : GameSettings.MinimapZoom == 1 ? "MÉDIO" : "LONGE",
+                step => GameSettings.MinimapZoom = (GameSettings.MinimapZoom + step + 3) % 3, 1);
+        }
+
+        private void BuildSoundOptions(RectTransform rect)
+        {
+            int row = 0;
             OptionRow(rect, row++, "Legendas de diálogo", () => GameSettings.DialogueSubtitles ? "LIGADAS" : "DESLIGADAS",
                 step => GameSettings.DialogueSubtitles = !GameSettings.DialogueSubtitles, 1);
             OptionRow(rect, row++, "Tamanho das legendas", () => Mathf.RoundToInt(GameSettings.SubtitleScale * 100.0f) + "%",
@@ -821,10 +883,38 @@ namespace Combat
                 step => GameSettings.AmbientVolume = GameSettings.AmbientVolume + step * 0.1f, 1);
             OptionRow(rect, row++, "Interface", () => Percent(GameSettings.UiVolume, 0.0f, 1.0f),
                 step => GameSettings.UiVolume = GameSettings.UiVolume + step * 0.1f, 1);
+        }
 
-            Label(rect, "Brilho e granulação mudam na hora. \"Automático\" mostra todas as setas no Fácil e Normal e só as dos inimigos que te viram no Difícil e Pesadelo.",
-                18, new Vector2(0.06f, 0.015f), new Vector2(0.94f, 0.085f), TextAlignmentOptions.TopLeft, FontStyles.Normal, new Color(1, 1, 1, 0.6f)).textWrappingMode = TextWrappingModes.Normal;
-            _optionsPanel.SetActive(false);
+        private void BuildDisplayOptions(RectTransform rect)
+        {
+            int row = 0;
+            int qualities = Mathf.Max(1, QualitySettings.names.Length);
+            OptionRow(rect, row++, "Qualidade geral", () => DisplayOptions.QualityName(GameSettings.Quality),
+                step => GameSettings.Quality = (GameSettings.Quality + step + qualities) % qualities);
+            OptionRow(rect, row++, "Resolução", () => DisplayOptions.ResolutionName(GameSettings.Resolution),
+                step =>
+                {
+                    int count = DisplayOptions.Resolutions.Count + 1;
+                    GameSettings.Resolution = (GameSettings.Resolution + 1 + step + count) % count - 1;
+                });
+            OptionRow(rect, row++, "Modo de janela", () => DisplayOptions.WindowModeName(GameSettings.WindowMode),
+                step => GameSettings.WindowMode = (GameSettings.WindowMode + step + 3) % 3);
+            OptionRow(rect, row++, "Campo de visão", () => (GameSettings.FieldOfViewOffset >= 0 ? "+" : "") + Mathf.RoundToInt(GameSettings.FieldOfViewOffset) + "°",
+                step => GameSettings.FieldOfViewOffset = GameSettings.FieldOfViewOffset + step * 2.0f);
+
+            row = 0;
+            OptionRow(rect, row++, "Distância das sombras", () => Mathf.RoundToInt(DisplayOptions.ShadowDistances[GameSettings.ShadowDistance]) + " m",
+                step => GameSettings.ShadowDistance = (GameSettings.ShadowDistance + step + 4) % 4, 1);
+            OptionRow(rect, row++, "Qualidade dos efeitos", () => GameSettings.EffectsQuality == 0 ? "BAIXA" : GameSettings.EffectsQuality == 1 ? "MÉDIA" : "ALTA",
+                step => GameSettings.EffectsQuality = (GameSettings.EffectsQuality + step + 3) % 3, 1);
+            OptionRow(rect, row++, "Limite de FPS", () => DisplayOptions.FrameLimitName(GameSettings.FrameLimit),
+                step => GameSettings.FrameLimit = (GameSettings.FrameLimit + step + DisplayOptions.FrameLimits.Length) % DisplayOptions.FrameLimits.Length, 1);
+            OptionRow(rect, row++, "VSync", () => GameSettings.VSync ? "LIGADO" : "DESLIGADO",
+                step => GameSettings.VSync = !GameSettings.VSync, 1);
+            OptionRow(rect, row++, "Pós-processamento", () => Percent(GameSettings.PostIntensity, 0.0f, 1.0f),
+                step => GameSettings.PostIntensity = GameSettings.PostIntensity + step * 0.1f, 1);
+            Label(rect, "Resolução e modo de janela valem no jogo compilado (o editor usa a janela Game). Com VSync ligado, o limite de FPS segue o monitor.",
+                18, new Vector2(0.04f, 0.38f), new Vector2(0.48f, 0.47f), TextAlignmentOptions.TopLeft, FontStyles.Normal, new Color(1, 1, 1, 0.55f)).textWrappingMode = TextWrappingModes.Normal;
         }
 
         // two columns of rows: name, <, value, >

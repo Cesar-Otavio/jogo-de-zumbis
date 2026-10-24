@@ -68,6 +68,9 @@ namespace Combat
             return true;
         }
 
+        // mission items carried, for the backpack screen
+        public static IEnumerable<KeyValuePair<string, int>> AllItems => Items;
+
         public static bool HasFlag(string flag) => Flags.Contains(flag);
 
         public static void SetFlag(string flag)
@@ -99,6 +102,7 @@ namespace Combat
             MissionsCompleted = 0;
             StartedAt = Time.time;
             WeaponUpgrades.Reset();
+            Backpack.Reset();
             CreditsChanged?.Invoke(0, null);
         }
     }

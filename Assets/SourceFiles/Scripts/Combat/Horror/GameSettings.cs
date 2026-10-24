@@ -44,6 +44,30 @@ namespace Combat
         public static float DialogueVolume { get => Get("VolDialogue", 1.0f); set => Set("VolDialogue", Mathf.Clamp01(value)); }
         public static float AmbientVolume { get => Get("VolAmbient", 1.0f); set => Set("VolAmbient", Mathf.Clamp01(value)); }
         public static float UiVolume { get => Get("VolUi", 1.0f); set => Set("VolUi", Mathf.Clamp01(value)); }
+        public static bool Minimap { get => Get("Minimap", 1.0f) > 0.5f; set => Set("Minimap", value ? 1.0f : 0.0f); }
+        // the minimap turns with the camera (true) or keeps north up
+        public static bool MinimapRotates { get => Get("MinimapRotate", 1.0f) > 0.5f; set => Set("MinimapRotate", value ? 1.0f : 0.0f); }
+        // 0 close, 1 medium, 2 far
+        public static int MinimapZoom { get => Mathf.Clamp(Mathf.RoundToInt(Get("MinimapZoom", 1.0f)), 0, 2); set => Set("MinimapZoom", Mathf.Clamp(value, 0, 2)); }
+        // ---- display and graphics (applied by DisplayOptions)
+        public static int Quality { get => Mathf.RoundToInt(Get("Quality", QualitySettings.GetQualityLevel())); set => Set("Quality", value); }
+        // index into DisplayOptions.Resolutions, -1 = the screen's own
+        public static int Resolution { get => Mathf.RoundToInt(Get("Resolution", -1.0f)); set => Set("Resolution", value); }
+        // 0 borderless full screen, 1 exclusive full screen, 2 window
+        public static int WindowMode { get => Mathf.Clamp(Mathf.RoundToInt(Get("WindowMode", 0.0f)), 0, 2); set => Set("WindowMode", Mathf.Clamp(value, 0, 2)); }
+        // degrees added to the camera's field of view (hip fire; aiming keeps each gun's own zoom)
+        public static float FieldOfViewOffset { get => Mathf.Clamp(Get("FovOffset", 0.0f), -10.0f, 20.0f); set => Set("FovOffset", Mathf.Clamp(value, -10.0f, 20.0f)); }
+        // 0..3 = 30, 50, 70, 90 m
+        public static int ShadowDistance { get => Mathf.Clamp(Mathf.RoundToInt(Get("ShadowDistance", 1.0f)), 0, 3); set => Set("ShadowDistance", Mathf.Clamp(value, 0, 3)); }
+        // 0 low, 1 medium, 2 high: particles and bullet holes
+        public static int EffectsQuality { get => Mathf.Clamp(Mathf.RoundToInt(Get("Effects", 2.0f)), 0, 2); set => Set("Effects", Mathf.Clamp(value, 0, 2)); }
+        public static float EffectsScale => EffectsQuality == 0 ? 0.4f : EffectsQuality == 1 ? 0.7f : 1.0f;
+        // index into DisplayOptions.FrameLimits
+        public static int FrameLimit { get => Mathf.Clamp(Mathf.RoundToInt(Get("FrameLimit", 0.0f)), 0, 4); set => Set("FrameLimit", Mathf.Clamp(value, 0, 4)); }
+        public static bool VSync { get => Get("VSync", 1.0f) > 0.5f; set => Set("VSync", value ? 1.0f : 0.0f); }
+        // how strongly the night grade (vignette, grain, colour) is applied
+        public static float PostIntensity { get => Mathf.Clamp(Get("Post", 1.0f), 0.4f, 1.0f); set => Set("Post", Mathf.Clamp(value, 0.4f, 1.0f)); }
+
         public static ThreatArrowMode ThreatArrows { get => (ThreatArrowMode)Mathf.RoundToInt(Get("Arrows", 0.0f)); set => Set("Arrows", (int)value); }
 
         private static readonly Dictionary<string, float> Cache = new Dictionary<string, float>();

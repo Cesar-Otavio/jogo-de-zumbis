@@ -157,7 +157,7 @@ namespace Combat
                     if (_player.Health.Armor >= 59.0f) return "COLETE CHEIO";
                     break;
                 case ShopItemKind.Consumable:
-                    if (_inventory == null || _inventory.IsFull(entry.Item)) return "SEM ESPAÇO";
+                    if (_inventory == null || !_inventory.CanTake(entry.Item)) return "SEM ESPAÇO";
                     break;
                 case ShopItemKind.WeaponUpgrade:
                     if (_player.Current == null) return "SEM ARMA";

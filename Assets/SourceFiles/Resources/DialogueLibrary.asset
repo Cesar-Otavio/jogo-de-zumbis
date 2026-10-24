@@ -1013,3 +1013,83 @@ MonoBehaviour:
     SkipIfPlayed: 
     Group: 
     Segments: []
+  - Id: fx_workbench
+    Speaker: 1
+    LocalizationKey: dlg.fx_workbench
+    Text: "Parece que ainda existem ferramentas utiliz\xE1veis. Talvez voc\xEA consiga improvisar algum equipamento com os materiais da base."
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 0
+    Interrupt: 2
+    Trigger: 0
+    MissionId: 
+    ObjectiveIndex: -1
+    ItemId: 
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 10
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: 
+    Segments: []
+  - Id: poi_lab
+    Speaker: 1
+    LocalizationKey: dlg.poi_lab
+    Text: "Esse setor n\xE3o aparece nos registros oficiais da instala\xE7\xE3o. Tenha cuidado com o que encontrar."
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 0
+    Interrupt: 2
+    Trigger: 0
+    MissionId: 
+    ObjectiveIndex: -1
+    ItemId: 
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 10
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: 
+    Segments: []
+  - Id: poi_depot
+    Speaker: 1
+    LocalizationKey: dlg.poi_depot
+    Text: "Dep\xF3sito de suprimentos. Se sobrou alguma coisa \xFAtil nesta base, deve estar a\xED."
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 0
+    Interrupt: 2
+    Trigger: 0
+    MissionId: 
+    ObjectiveIndex: -1
+    ItemId: 
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 10
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: 
+    Segments: []
+  - Id: poi_watchtower
+    Speaker: 1
+    LocalizationKey: dlg.poi_watchtower
+    Text: "Da torre d\xE1 para ver boa parte da base. Use isso a seu favor."
+    Clip: {fileID: 0}
+    Duration: 0
+    Priority: 0
+    Interrupt: 2
+    Trigger: 0
+    MissionId: 
+    ObjectiveIndex: -1
+    ItemId: 
+    ItemCount: 0
+    Once: 1
+    Cooldown: 0
+    MaxQueueTime: 10
+    RequireMissionActive: 0
+    SkipIfPlayed: 
+    Group: 
+    Segments: []

@@ -124,6 +124,12 @@ namespace Combat.EditorTools
                 L("react_critical", D, "Você está ferido! Saia da linha de fogo e use um kit médico!", Hi, DialogueTrigger.CriticalHealth).Repeating(90.0f).With(Cut),
                 L("react_failed", D, "Perdemos essa. Respire. Vamos tentar de novo.", Me, DialogueTrigger.MissionFailed).Repeating(30.0f),
                 L("react_lastnight", D, "É a última noite. Se o piloto vier, vai ser agora.", Me, DialogueTrigger.ChapterStarted, null, -1, "9"),
+
+                // ---- Phase 5 discoveries (played once per run, never over something more important)
+                L("fx_workbench", D, "Parece que ainda existem ferramentas utilizáveis. Talvez você consiga improvisar algum equipamento com os materiais da base.", Lo).With(Drop),
+                L("poi_lab", D, "Esse setor não aparece nos registros oficiais da instalação. Tenha cuidado com o que encontrar.", Lo).With(Drop),
+                L("poi_depot", D, "Depósito de suprimentos. Se sobrou alguma coisa útil nesta base, deve estar aí.", Lo).With(Drop),
+                L("poi_watchtower", D, "Da torre dá para ver boa parte da base. Use isso a seu favor.", Lo).With(Drop),
             };
         }
 

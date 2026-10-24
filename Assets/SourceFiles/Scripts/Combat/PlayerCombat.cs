@@ -421,8 +421,10 @@ namespace Combat
             float unarmedSide = ShoulderRight ? _baseCameraSide : 1.0f - _baseCameraSide;
             _follow.CameraSide = Mathf.Lerp(unarmedSide, _cameraSide, _armedBlend);
 
-            float aimFov = Current != null ? Current.Data.AimFov : _baseFov;
-            float fov = Mathf.Lerp(_baseFov, aimFov, aimBlend);
+            // the player's field of view option widens hip fire; aiming keeps each gun's zoom
+            float hipFov = _baseFov + GameSettings.FieldOfViewOffset;
+            float aimFov = Current != null ? Current.Data.AimFov : hipFov;
+            float fov = Mathf.Lerp(hipFov, aimFov, aimBlend);
             LensSettings lens = _virtualCamera.Lens;
             lens.FieldOfView = fov;
             _virtualCamera.Lens = lens;

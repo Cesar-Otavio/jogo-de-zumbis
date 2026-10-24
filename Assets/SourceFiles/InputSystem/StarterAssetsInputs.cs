@@ -35,6 +35,9 @@ namespace StarterAssets
 		public bool leanRight;
 		// the crouch button held down (prone, when available)
 		public bool proneHeld;
+		// pressed: open/close the tactical map (M) and the backpack (Tab)
+		public bool map;
+		public bool inventory;
 
 		[Header("Movement Settings")]
 		public bool analogMovement;
@@ -147,6 +150,16 @@ namespace StarterAssets
 		public void OnFlashlight(InputValue value)
 		{
 			if (value.isPressed) flashlight = true;
+		}
+
+		public void OnMap(InputValue value)
+		{
+			if (value.isPressed) map = true;
+		}
+
+		public void OnInventory(InputValue value)
+		{
+			if (value.isPressed) inventory = true;
 		}
 
 		public void OnLeanLeft(InputValue value)

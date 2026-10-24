@@ -266,8 +266,10 @@ namespace Combat
         {
             SurfaceImpactLibrary.Impact look = SurfaceImpactLibrary.Get(surfaceType);
             var emit = new ParticleSystem.EmitParams();
+            // the effects quality option thins the particles out
+            float scale = GameSettings.EffectsScale;
 
-            int sparks = Random.Range(look.Sparks.x, look.Sparks.y + 1);
+            int sparks = Mathf.RoundToInt(Random.Range(look.Sparks.x, look.Sparks.y + 1) * scale);
             for (int i = 0; i < sparks; i++)
             {
                 emit.position = point + normal * 0.02f;
@@ -278,7 +280,7 @@ namespace Combat
                 _sparks.Emit(emit, 1);
             }
 
-            int puffs = Random.Range(look.Dust.x, look.Dust.y + 1);
+            int puffs = Mathf.RoundToInt(Random.Range(look.Dust.x, look.Dust.y + 1) * scale);
             for (int i = 0; i < puffs; i++)
             {
                 emit.position = point + normal * 0.05f;
@@ -290,7 +292,7 @@ namespace Combat
             }
 
             // splinters, clods, chips: thrown out and falling back; on water, droplets going up
-            int chunks = Random.Range(look.Debris.x, look.Debris.y + 1);
+            int chunks = Mathf.RoundToInt(Random.Range(look.Debris.x, look.Debris.y + 1) * scale);
             Vector3 throwAxis = look.Splash ? Vector3.up : normal;
             for (int i = 0; i < chunks; i++)
             {
@@ -313,7 +315,7 @@ namespace Combat
         private void Decal(Vector3 point, Vector3 normal, Transform surface, float scale)
         {
             // decals stuck to objects that got destroyed are gone too
-            Transform decal = _decals.Count >= MaxDecals ? _decals.Dequeue() : null;
+            Transform decal = _decals.Count >= Mathf.RoundToInt(MaxDecals * GameSettings.EffectsScale) ? _decals.Dequeue() : null;
             if (decal == null)
             {
                 var go = new GameObject("BulletHole", typeof(MeshFilter), typeof(MeshRenderer));

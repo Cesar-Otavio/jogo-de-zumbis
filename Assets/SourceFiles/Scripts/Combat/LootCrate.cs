@@ -94,6 +94,27 @@ namespace Combat
             if (_beacon != null) _beacon.intensity = IsOpen ? 0.0f : 0.8f + Mathf.Sin(Time.time * 3.0f) * 0.3f;
         }
 
+        // weighted: scrap, cloth and wiring are everywhere, tactical parts are rare
+        private static readonly (string id, float weight)[] Materials =
+        {
+            ("scrap", 5.0f), ("cloth", 4.0f), ("wiring", 3.0f), ("med_supplies", 2.5f), ("electronics", 2.0f),
+            ("mech_parts", 2.0f), ("chemicals", 1.5f), ("tactical_parts", 0.8f)
+        };
+
+        private static string RandomMaterial()
+        {
+            float total = 0.0f;
+            foreach (var m in Materials) total += m.weight;
+            float pick = Random.value * total;
+            foreach (var m in Materials)
+            {
+                pick -= m.weight;
+                if (pick <= 0.0f) return m.id;
+            }
+
+            return "scrap";
+        }
+
         public void Open(PlayerCombat player)
         {
             if (IsOpen) return;
@@ -121,6 +142,15 @@ namespace Combat
             {
                 QuickItem[] items = { QuickItem.Grenade, QuickItem.Molotov, QuickItem.Flare, QuickItem.Decoy, QuickItem.Barricade };
                 ItemPickup.Spawn(items[Random.Range(0, items.Length)], 1, transform.position + transform.forward * 0.8f, 60.0f);
+            }
+
+            // crafting materials: common things often, rare parts sometimes, fewer on hard difficulties
+            int materials = Random.value < 0.75f * GameDifficulty.Settings.Supplies ? Random.Range(1, 3) : 0;
+            for (int i = 0; i < materials; i++)
+            {
+                string id = RandomMaterial();
+                Vector3 at = transform.position + transform.forward * -0.8f + side * (i == 0 ? 0.4f : -0.4f) + Vector3.up * 0.05f;
+                WorldItem.Spawn(id, id == "scrap" || id == "cloth" ? Random.Range(1, 3) : 1, at);
             }
 
             // a chest found pays a few credits too

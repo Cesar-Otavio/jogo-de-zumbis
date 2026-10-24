@@ -74,7 +74,7 @@ namespace Combat
             }
 
             if (_player == null || (_player.position - transform.position).sqrMagnitude > PickupRadius * PickupRadius) return;
-            if (_inventory.IsFull(Item)) return;
+            if (!_inventory.CanTake(Item)) return;
             Amount -= _inventory.Add(Item, Amount, true);
             if (CombatEffects.Instance != null) CombatEffects.Instance.PlayUI(CombatEffects.Instance.AmmoPickupSound, 0.6f);
             if (Amount <= 0) Destroy(gameObject);

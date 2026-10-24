@@ -136,7 +136,7 @@ namespace Combat
                 if (_player.Health.Current >= _player.Health.MaxHealth - 0.5f)
                 {
                     InventoryManager inventory = _player.GetComponent<InventoryManager>();
-                    return inventory != null && !inventory.IsFull(QuickItem.Medkit) && inventory.Add(QuickItem.Medkit, 1, true) > 0;
+                    return inventory != null && inventory.CanTake(QuickItem.Medkit) && inventory.Add(QuickItem.Medkit, 1, true) > 0;
                 }
 
                 _player.Health.Heal(HealAmount);

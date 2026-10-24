@@ -11,7 +11,19 @@ namespace Combat
         Mission,
         Document,
         Construction,
-        Currency
+        Currency,
+        // crafting materials (added last so saved categories keep their values)
+        Material
+    }
+
+    // what "Usar" does for an item kept in the backpack (quick items keep their own use on the quick bar)
+    public enum ItemUse
+    {
+        None,
+        Heal,
+        Armor,
+        // full magazines and reserves for the guns carried
+        Ammo
     }
 
     public enum ItemRarity
@@ -38,7 +50,13 @@ namespace Combat
         public Sprite Icon;
         [Tooltip("Shown instead of the icon when the item can't be used right now (optional)")]
         public Sprite UnavailableIcon;
+        [Tooltip("How many share one backpack slot")]
         public int MaxStack = 1;
+        public ItemUse Use;
+        [Tooltip("Health healed or armor added by Use")]
+        public float UseAmount;
+        [Tooltip("Can be dropped from the backpack (mission items never are)")]
+        public bool Droppable = true;
         [Tooltip("Story documents this item is (or carries): the document reader shows the item's icon and name")]
         public string[] StoryIds = new string[0];
     }

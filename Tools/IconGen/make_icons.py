@@ -248,6 +248,105 @@ def capacity():
     plus = U(box(50, 52, 9, 2.6, 1), box(50, 52, 2.6, 9, 1))
     return U(S(bag, pocket, plus), straps)
 
+# ---------------------------------------------------------------- crafting materials and products
+def scrap():
+    # bent sheet metal with rivets
+    sheet = poly([(18, 34), (62, 22), (84, 44), (74, 78), (30, 82), (14, 60)])
+    tear = poly([(46, 52), (60, 44), (56, 62)])
+    rivets = U(circle(28, 42, 2.6), circle(60, 32, 2.6), circle(72, 70, 2.6), circle(32, 72, 2.6))
+    return S(sheet, tear, rivets)
+
+def cloth():
+    # a folded roll of fabric
+    roll = box(46, 50, 30, 20, 8)
+    end = circle(76, 50, 16)
+    spiral = U(ring(76, 50, 9, 1.6), circle(76, 50, 2.4))
+    tail = poly([(20, 66), (60, 66), (66, 88), (26, 88)])
+    seam = box(44, 77, 16, 1.4)
+    return U(S(roll, box(50, 50, 30, 1.4)), S(end, spiral), S(tail, seam))
+
+def electronics():
+    # a chip with legs
+    body = box(50, 50, 24, 24, 3)
+    dot = circle(38, 38, 3.2)
+    legs = U(*[box(26 + i * 9.6, 18, 2.2, 8, 0.6) for i in range(6)], *[box(26 + i * 9.6, 82, 2.2, 8, 0.6) for i in range(6)])
+    core = box(54, 54, 10, 10, 1.5)
+    return U(S(body, dot, ring(54, 54, 10, 1.4)), legs, S(core, box(54, 54, 6, 6, 1)))
+
+def med_supplies():
+    # a bottle with a cross and a syringe
+    bottle = U(box(38, 62, 18, 26, 4), box(38, 30, 10, 6, 2))
+    cross = U(box(38, 64, 9, 3, 0.6), box(38, 64, 3, 9, 0.6))
+    barrel = box(70, 52, 7, 22, 2, 30)
+    needle = capsule(78, 32, 84, 20, 1.4)
+    plunger = box(60, 72, 8, 3, 1, 30)
+    return U(S(bottle, cross), S(barrel, box(70, 52, 3, 14, 0.6, 30)), needle, plunger)
+
+def mech_parts():
+    # a gear and a bolt
+    gear = S(U(circle(40, 46, 20), *[box(40 + 23 * math.cos(math.radians(k * 45)), 46 + 23 * math.sin(math.radians(k * 45)), 5, 5, 1.2, k * 45) for k in range(8)]), circle(40, 46, 8))
+    head = poly([(66, 60), (78, 60), (84, 70), (78, 80), (66, 80), (60, 70)])
+    shaft = box(72, 88, 4, 8, 1)
+    return U(gear, S(head, circle(72, 70, 3)), shaft)
+
+def chemicals():
+    # a flask with a level line
+    neck = box(50, 22, 7, 12, 2)
+    flask = poly([(40, 30), (60, 30), (80, 82), (20, 82)])
+    liquid = poly([(30, 58), (70, 58), (80, 82), (20, 82)])
+    bubbles = U(circle(44, 70, 3), circle(56, 66, 2.2), circle(52, 76, 2))
+    return U(neck, S(flask, box(50, 54, 20, 1.6)), S(liquid, bubbles))
+
+def wiring():
+    # a coil of wire with a plug
+    coil = U(ring(44, 54, 26, 3), ring(44, 54, 17, 3), ring(44, 54, 8, 3))
+    lead = capsule(68, 42, 82, 22, 3)
+    plug = box(84, 16, 6, 8, 1.5, 30)
+    return U(coil, lead, plug)
+
+def tactical_parts():
+    # a rail section with a clamp
+    rail = box(50, 54, 40, 9, 1.5)
+    slots = U(*[box(18 + i * 9.4, 50, 2.2, 5, 0.4) for i in range(8)])
+    clamp = U(box(50, 70, 14, 7, 2), box(50, 38, 8, 6, 1.5))
+    screw = circle(50, 70, 3)
+    return U(S(rail, slots), S(clamp, screw))
+
+def bandage():
+    # a rolled bandage with a tail
+    roll = circle(40, 46, 26)
+    core = circle(40, 46, 9)
+    layers = ring(40, 46, 18, 1.4)
+    tail = box(66, 72, 22, 9, 2, -20)
+    stripes = U(box(62, 70, 1.4, 9, 0, -20), box(72, 74, 1.4, 9, 0, -20))
+    return U(S(roll, core, layers), S(tail, stripes))
+
+def workbench():
+    # a bench with a vice and a hammer
+    top = box(50, 52, 42, 6, 1.5)
+    legs = U(box(16, 74, 4, 18, 1), box(84, 74, 4, 18, 1))
+    brace = box(50, 80, 34, 2.4)
+    vice = U(box(26, 40, 8, 6, 1.5), box(26, 32, 12, 3, 1))
+    handle = box(64, 34, 3, 14, 1, 40)
+    head = box(72, 24, 9, 4, 1, 40)
+    return U(top, legs, brace, vice, handle, head)
+
+def vest_patch():
+    # the vest with a plate being added
+    vest = poly([(26, 18), (40, 18), (44, 26), (56, 26), (60, 18), (74, 18), (80, 34), (76, 86), (24, 86), (20, 34)])
+    neck = circle(50, 18, 9)
+    plate = box(50, 60, 16, 18, 3)
+    plus = U(box(50, 60, 8, 2.4, 1), box(50, 60, 2.4, 8, 1))
+    return U(S(vest, neck, box(50, 60, 19, 21, 4)), S(plate, plus))
+
+def supply_pack():
+    # a crate with straps and a parachute ring
+    crate = box(50, 60, 34, 26, 3)
+    straps = U(box(36, 60, 3, 26), box(64, 60, 3, 26))
+    plank = box(50, 60, 34, 1.6)
+    loop = S(ring(50, 24, 10, 2.6), box(50, 32, 12, 4))
+    return U(S(crate, straps, plank), box(36, 60, 1.4, 26), box(64, 60, 1.4, 26), loop, capsule(50, 34, 50, 38, 2))
+
 def unknown():
     q = S(ring(50, 38, 15, 5), box(36, 46, 9, 12))
     return U(S(box(50, 50, 38, 38, 8), q, capsule(50, 54, 50, 62, 4.5), circle(50, 76, 5)))
@@ -259,6 +358,9 @@ ICONS = {
     "ammo_pistol": ammo_pistol, "ammo_rifle": ammo_rifle, "ammo_sniper": ammo_sniper, "ammo_shotgun": ammo_shotgun, "ammo_box": ammo_box,
     "credits": credits, "health": health, "armor": armor, "unknown": unknown,
     "upgrade": upgrade, "stamina": stamina, "capacity": capacity,
+    "scrap": scrap, "cloth": cloth, "electronics": electronics, "med_supplies": med_supplies, "mech_parts": mech_parts,
+    "chemicals": chemicals, "wiring": wiring, "tactical_parts": tactical_parts,
+    "bandage": bandage, "workbench": workbench, "vest_patch": vest_patch, "supply_pack": supply_pack,
 }
 
 os.makedirs(OUT, exist_ok=True)
