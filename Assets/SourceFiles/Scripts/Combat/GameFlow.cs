@@ -374,6 +374,14 @@ namespace Combat
             AudioListener.pause = false;
         }
 
+        // co-op: the whole team is down or dead (decided by the host, NetGame)
+        public void CoopGameOver()
+        {
+            // the pause menu doesn't stop the world in co-op, so a paused player gets the screen too
+            if (Current != State.Playing && Current != State.Paused) return;
+            Invoke(nameof(GameOver), 2.0f);
+        }
+
         private void GameOver()
         {
             GameplayOverlay.Reset();
@@ -563,6 +571,13 @@ namespace Combat
         private void OnPlayerDied(DamageInfo info)
         {
             if (Current != State.Playing) return;
+
+            // co-op: no lives of their own; the host brings the dead back next wave (NetPlayer)
+            if (Net.Active)
+            {
+                _player.AllowRespawn = false;
+                return;
+            }
 
             LivesLeft--;
             if (LivesLeft <= 0)

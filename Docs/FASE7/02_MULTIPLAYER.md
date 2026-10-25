@@ -17,10 +17,10 @@ Legenda dos estados: ✅ concluído e validado · 🧪 implementado, aguardando 
 | Missões laterais do Infinito | 🟡 | só existem no host. O cliente não as vê; ficou bloqueado de propósito, para não criar missões locais divergentes |
 | Loja aberta segurando o intervalo | 🟡 | só a loja do **host** segura o fim do intervalo |
 | Soldados, Gritador, Tanque, chefes | ⛔ | só `ZombieAI` comum é replicado. As variantes aparecem com a aparência certa, mas habilidades como o grito e a quebra de barricada não estão sincronizadas |
-| Incapacitação, reanimação, espectador, game over cooperativo | ⛔ | |
+| Incapacitação, reanimação, espectador, game over cooperativo | ✅ (mesmo PC) | ver §5 |
 | Mundo (portas, energia, baús, itens, materiais, bancadas) | ⛔ | local em cada máquina: risco de loot duplicado |
 | Economia validada pelo host (créditos, compras, munição, fabricação) | ⛔ | hoje cada jogador tem a sua economia local |
-| HUD de equipe (vida dos aliados, distância, ping, aliados no minimapa) | ⛔ | só existe a etiqueta de nome sobre o boneco |
+| HUD de equipe (vida dos aliados, distância, ping, aliados no minimapa) | ✅ (mesmo PC) | ver §5.2; layout conferido só nas capturas do host |
 | Teste em dois PCs (LAN/Radmin/Hamachi) | ⛔ **bloqueado** | precisa de um segundo computador |
 
 ## 2. Mudanças deste marco
@@ -58,3 +58,74 @@ Legenda dos estados: ✅ concluído e validado · 🧪 implementado, aguardando 
 4. Mundo com IDs estáveis: portas, energia, baús e itens.
 5. Economia e fabricação validadas pelo host.
 6. **Você**: teste em dois PCs (ver `10_PENDENCIAS.md`).
+
+## 5. Marco 2 (segunda execução): HUD de equipe, queda, reanimação, espectador e fim de jogo cooperativo
+
+### 5.1 Regras implementadas
+
+| Regra | Valor |
+|---|---|
+| Golpe que mataria | vira **queda** (no chão, ignorado pelos infectados, invulnerável, sem regeneração) |
+| Quedas por onda | 2; o golpe depois da 2ª queda é morte |
+| Tempo até sangrar | 30 s na 1ª queda, 20 s na 2ª |
+| Reanimar | segurar **E** a até 2,5 m por **5 s**; volta com 30% da vida |
+| Quem decide | **o host**: confere o ID de quem pediu (dado pela rede), os estados dos dois, a distância no começo e no fim e o tempo mínimo; cancela se quem reanima se afasta ou cai; um aliado por vez |
+| Morte | espectador: a câmera segue um aliado de pé (clique ou gatilho direito troca); não atira nem interage |
+| Volta | **no início da próxima onda**, decidido pelo host; as quedas zeram |
+| Fim de jogo | quando **ninguém está de pé**, o host manda todos para a tela de fim de jogo |
+| Vidas | no cooperativo não há vidas individuais (o painel VIDAS some) |
+
+### 5.2 HUD de equipe (`Network/TeamHUD.cs`)
+
+- **Painel por aliado** (até 3): nome, barra de vida e, conforme o estado:
+  - de pé: distância e ping;
+  - caído: "CAÍDO 23 s";
+  - morto: "MORTO".
+- **Conexão**: canto superior esquerdo, "HOST · N jogadores" no host e "Conexão 45 ms" no cliente (verde/âmbar/vermelho).
+- **Mensagens no centro, acima da etiqueta de nome**:
+  - "VOCÊ CAIU";
+  - "X está te reanimando", com barra;
+  - "Reanimando X…", com barra;
+  - "ESPECTADOR · seguindo X".
+- **Aliados no minimapa** (azul, presos à borda quando longe) e **no mapa tático**. Eles não contam no "% explorado".
+- **Etiqueta de nome** do aliado: "CAÍDO 23 s" ou "MORTO", e desce até o corpo quando ele cai.
+
+### 5.3 Arquivos
+
+- **Novo**: `Network/TeamHUD.cs`.
+- **Alterados**:
+  - `Network/NetPlayer.cs`: `CoopCondition`, variáveis de vida, RPCs com validação, ping medido pelo host, respawn na onda;
+  - `Network/NetPuppet.cs`: interação de reanimar, alvo ignorado quando caído, etiqueta, marcador no mapa, raiz da câmera do espectador;
+  - `Network/NetGame.cs`: respawn na onda nova, fim de jogo da equipe;
+  - `Network/NetMatch.cs`;
+  - `PlayerCombat.cs`: `EnterDowned`, `ExitDowned`, `KillNow`, `RespawnNow`;
+  - `Health.cs`: `PreventDeath`, `Untargetable`, `Revive`, sem regeneração caído;
+  - `Horror/EnemyPerception.cs`: ignora alvos `Untargetable`;
+  - `RagdollController.cs`: `BodyPosition`;
+  - `GameFlow.cs`: sem vidas no cooperativo, `CoopGameOver`;
+  - `CombatHUD.cs`;
+  - `Exploration/MapMarker.cs`, `MinimapView.cs`, `TacticalMapView.cs`: tipo `Ally`; marcadores que saíram somem do mapa.
+
+### 5.4 Testes (editor como host + build de desenvolvimento como cliente, mesmo PC)
+
+O cliente de teste usa `-net-revive`: vai até o aliado caído e faz as mesmas chamadas que o HUD faz com E pressionado. **Segurar a tecla E de verdade não foi testado** (as teclas simuladas não chegam ao jogo nesta sessão).
+
+| Teste | Resultado |
+|---|---|
+| Host cai (golpe letal) | ✅ Downed, 1 HP, relógio de 30 s no cliente |
+| Cliente reanima o host | ✅ (2ª build) progresso 13% → 93% em 5 s, host de pé. Na 1ª build **falhou**: o teste pedia a reanimação no mesmo quadro do teletransporte, e o host via a posição antiga e recusava. O teste passou a esperar 0,5 s |
+| Host reanima o cliente | ✅ host aceitou (distância 1,2 m), cliente de pé |
+| Sangrar até o fim | ✅ "Host morreu" depois de 30 s; 2ª queda depois de 20 s |
+| Espectador | ✅ câmera do host seguindo `Puppet_Amigo/SpectateRoot`; captura `coop_espectador_host.png` |
+| Volta na próxima onda | ✅ onda 2: host de pé, 100 HP, câmera de volta, quedas zeradas |
+| Equipe inteira caída → fim de jogo | ✅ `GameFlow` = GameOver no host; captura `coop_fim_de_jogo_host.png` |
+| Regeneração enquanto caído | ❌ → corrigido: subia de 1 para 60 HP no chão; agora não regenera |
+| Console do host | ✅ sem erros de jogo (os NullReference do NGO só aparecem quando o código recompila com o Play aberto) |
+
+**Observação não resolvida**: na 1ª build, uma vez, o host caído foi registrado como morto cerca de 1 s depois da queda, com zumbis da onda 2 por perto. **Não se repetiu** na 2ª build. Agora cada morte registra o motivo no log (`[Net] X morto: …` e `[Net] morte local: …`), para diagnosticar se voltar.
+
+**Não testado**:
+- 3 ou 4 jogadores;
+- dois PCs;
+- a tela de fim de jogo no **cliente** (o comando é o mesmo RPC para todos, mas só vi a do host);
+- gamepad no espectador.

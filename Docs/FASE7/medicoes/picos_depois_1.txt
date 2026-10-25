@@ -1,0 +1,90 @@
+run fixed_1 (development build, 4.0.1)
+cpu AMD Ryzen 7 5700U with Radeon Graphics  (16 threads), gpu AMD Radeon(TM) Graphics (Direct3D11, 5042 MB), ram 10085 MB
+screen 1920x1080 FullScreenWindow, display 1920x1080, quality Médio, pipeline Medium_RPAsset, profile medium
+frame timing stats True, gpu samples 3431/3431
+frames 3431: avg 11.65 ms, median 11.67, p95 13.83, p99 14.73, max 25.17
+cpu main 10.37 ms, render thread 2.17 ms, gpu 5.98 ms (p95 gpu 12.01)
+lights visible 64.39, with shadows 3.77, living characters 31.00
+
+counters (average / max per frame):
+  Draw Calls Count: 599.00 / 657.00
+  SetPass Calls Count: 123.37 / 130.00
+  Triangles Count: 295031.06 / 390372.00
+  Shadow Casters Count: 275.11 / 313.00
+  Visible Skinned Meshes Count: 19.86 / 29.00
+  SRP Batcher Draw Calls Count: 441.96 / 503.00
+  Render Textures Count: 25.00 / 26.00
+  GC Allocated In Frame: 2418.09 / 67508.00
+  GC Allocation In Frame Count: 44.50 / 133.00
+  Total Used Memory: 678718375.25 / 684253592.00
+  GC Used Memory: 9914399.64 / 10981376.00
+  Gfx Used Memory: 396916449.69 / 400775594.00
+
+main thread markers (average ms per frame):
+  PlayerLoop: 11.63
+  Update.ScriptRunBehaviourUpdate: 1.69
+  PreLateUpdate.ScriptRunBehaviourLateUpdate: 0.24
+  FixedUpdate.ScriptRunBehaviourFixedUpdate: 0.00
+  FixedUpdate.PhysicsFixedUpdate: 0.98
+  Physics.Simulate: 0.50
+  Animators.Update: 0.69
+  PreLateUpdate.DirectorUpdateAnimationBegin: 0.29
+  NavMeshManager: 0.63
+  PostLateUpdate.PlayerUpdateCanvases: 0.52
+  UGUI.Rendering.UpdateBatches: 0.48
+  Camera.Render: 0.00
+  CullScriptable: 0.68
+  Gfx.WaitForPresentOnGfxThread: 0.01
+  Gfx.PresentFrame: -5376492005.44
+  Audio.FMODSystemUpdate: 0.12
+  ParticleSystem.Update: 0.06
+  NetworkEarlyUpdate: 0.00
+  NetworkPreUpdate: 0.00
+  NetworkPostLateUpdate: 0.01
+  GC.Collect: 0.00
+  Shader.CreateGPUProgram: 0.00
+  Instantiate: 0.00
+  Loading.AwakeFromLoad: 0.00
+  Destroy: 0.00
+  PostLateUpdate.FinishFrameRendering: 3.74
+  Update.ScriptRunDelayedDynamicFrameRate: 0.08
+  Gfx.WaitForGfxCommandsFromMainThread: 8.20
+  Combat.ZombieAI.Update: 0.22
+  Combat.EnemyPerception.Update: 0.03
+  Combat.EnemySpawner.Update: 0.00
+  Combat.EnvironmentalEventDirector.Update: 0.00
+  Combat.TensionDirector.Update: 0.00
+  Combat.CombatHUD.Update: 0.27
+  Combat.CampaignHUD.Update: 0.02
+  Combat.PlayerCombat.Update: 0.13
+  Combat.CombatEffects.Update: 0.00
+  Combat.SurfaceFootstepSystem.Update: 0.04
+  Combat.WeatherController.Update: 0.03
+  Combat.PowerGridManager.Update: 0.05
+  Combat.MissionManager.Update: 0.00
+  Combat.DialogueDirector.Update: 0.00
+  Combat.PlayerInjuryFeedback.Update: 0.01
+
+gpu passes (average ms per frame):
+  MainLightShadow: 0.33
+  AdditionalLightsShadow: 0.29
+  DrawOpaqueObjects: 0.00
+  Draw Opaque Objects: 0.00
+  DrawTransparentObjects: 0.00
+  Draw Transparent Objects: 0.00
+  UberPostProcess: 0.00
+  Uber Post Process: 0.00
+  Bloom: 0.00
+  DepthPrepass: 0.00
+  Depth Prepass: 0.00
+  CopyDepth: 0.00
+  Copy Depth: 0.00
+  CopyColor: 0.00
+  Copy Color: 0.00
+  DrawSkybox: 0.00
+  Draw Skybox: 0.00
+  UI Rendering: 0.00
+  Render 2D Lights: 0.00
+
+frames over 25 ms: 1 (main-thread markers of 2 ms or more in that frame)
+  5,6 s: 25,2 ms -> Update.ScriptRunBehaviourUpdate 17,1 PostLateUpdate.FinishFrameRendering 2,9 Gfx.WaitForGfxCommandsFromMainThread 23,5 Combat.ZombieAI.Update 15,6 | gc 1 KB

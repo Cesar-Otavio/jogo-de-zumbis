@@ -105,7 +105,15 @@ namespace Combat
             _health.Damaged += OnDamaged;
         }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.EnemyPerception.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             if (_health.IsDead) return;
 
@@ -129,7 +137,7 @@ namespace Combat
 
             foreach (Health other in Health.Living)
             {
-                if (other == _health || other.IsDead || !Factions.AreHostile(_health.Team, other.Team)) continue;
+                if (other == _health || other.IsDead || other.Untargetable || !Factions.AreHostile(_health.Team, other.Team)) continue;
 
                 float distance = Vector3.Distance(transform.position, other.transform.position);
                 if (distance > SightRange * 1.5f) continue;
@@ -259,7 +267,7 @@ namespace Combat
             {
                 case AwarenessState.Chase:
                 case AwarenessState.Attack:
-                    if (Target == null || Target.IsDead)
+                    if (Target == null || Target.IsDead || Target.Untargetable)
                     {
                         Target = null;
                         SetState(AwarenessState.Search);
@@ -333,7 +341,7 @@ namespace Combat
         // e.g. a screamer calling the horde: chase straight to where the prey is
         public void Alert(Health target, Vector3 position)
         {
-            if (target != null && !target.IsDead && Factions.AreHostile(_health.Team, target.Team))
+            if (target != null && !target.IsDead && !target.Untargetable && Factions.AreHostile(_health.Team, target.Team))
             {
                 Candidate candidate = GetCandidate(target, true);
                 candidate.Awareness = Mathf.Max(candidate.Awareness, 0.9f);

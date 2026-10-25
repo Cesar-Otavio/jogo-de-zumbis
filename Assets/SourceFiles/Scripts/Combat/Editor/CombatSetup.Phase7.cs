@@ -48,6 +48,39 @@ namespace Combat.EditorTools
             Debug.Log($"Lamp lights: {disabled} pack spot lights disabled, shadow budget in the scene");
         }
 
+        // Every sound effect was imported with "Preload Audio Data" off, so the first time each one played
+        // it was read and decompressed in the middle of a frame (measured: 15-20 ms hitches when the first
+        // infected attacked). Short effects now load with the scene; long music and ambience stream.
+        [MenuItem("Tools/Combat/Phase 7/4 - Audio Import (preload effects, stream music)")]
+        public static void SetupPhase7AudioImport()
+        {
+            const long StreamAbove = 700 * 1024;
+            int preloaded = 0, streamed = 0, unchanged = 0;
+            foreach (string guid in AssetDatabase.FindAssets("t:AudioClip", new[] { "Assets/SourceFiles/SoundFX" }))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                if (!(AssetImporter.GetAtPath(path) is AudioImporter importer)) continue;
+                long size = new System.IO.FileInfo(path).Length;
+                bool stream = size > StreamAbove;
+                AudioImporterSampleSettings settings = importer.defaultSampleSettings;
+                AudioClipLoadType loadType = stream ? AudioClipLoadType.Streaming : AudioClipLoadType.DecompressOnLoad;
+                if (settings.loadType == loadType && settings.preloadAudioData == !stream)
+                {
+                    unchanged++;
+                    continue;
+                }
+
+                settings.loadType = loadType;
+                settings.preloadAudioData = !stream;
+                importer.defaultSampleSettings = settings;
+                importer.SaveAndReimport();
+                if (stream) streamed++;
+                else preloaded++;
+            }
+
+            Debug.Log($"Audio import: {preloaded} effects preloaded, {streamed} long clips streamed, {unchanged} already right");
+        }
+
         private static void BuildWindows(string path, BuildOptions options)
         {
             PlayerSettings.enableFrameTimingStats = true;

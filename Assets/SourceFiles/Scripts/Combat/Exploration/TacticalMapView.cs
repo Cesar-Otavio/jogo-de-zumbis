@@ -192,6 +192,13 @@ namespace Combat
 
             int known = 0, total = 0;
             var found = new List<string>();
+            foreach (var pair in _markers)
+            {
+                if (pair.Key != null && MapMarker.All.Contains(pair.Key)) continue;
+                pair.Value.dot.gameObject.SetActive(false);
+                pair.Value.label.gameObject.SetActive(false);
+            }
+
             foreach (MapMarker marker in MapMarker.All)
             {
                 if (!_markers.TryGetValue(marker, out var view))
@@ -201,14 +208,16 @@ namespace Combat
                     _markers[marker] = view;
                 }
 
-                total++;
+                bool ally = marker.Kind == MapMarkerKind.Ally;
+                // teammates are drawn but aren't places: they don't count towards what was explored
+                if (!ally) total++;
                 bool visible = marker.Known;
                 view.dot.gameObject.SetActive(visible);
                 // benches show by their icon (and in the list): their names would sit on the place they're in
                 view.label.gameObject.SetActive(visible && marker.Kind != MapMarkerKind.Workbench);
                 if (!visible) continue;
-                known++;
-                found.Add($"<color=#{ColorUtility.ToHtmlStringRGB(MapMarker.ColorOf(marker.Kind))}>●</color> {marker.Label}  <color=#FFFFFF80>{MapMarker.KindName(marker.Kind)}</color>");
+                if (!ally) known++;
+                if (!ally) found.Add($"<color=#{ColorUtility.ToHtmlStringRGB(MapMarker.ColorOf(marker.Kind))}>•</color> {marker.Label}  <color=#FFFFFF80>{MapMarker.KindName(marker.Kind)}</color>");
                 Vector2 at = ToPanel(map, marker.Position);
                 view.dot.rectTransform.anchoredPosition = at;
                 view.dot.rectTransform.sizeDelta = Vector2.one * (marker.Kind == MapMarkerKind.Workbench ? 26.0f : 14.0f);

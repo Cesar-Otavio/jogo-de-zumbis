@@ -242,8 +242,23 @@ namespace Combat
             }
         }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.PlayerCombat.Update");
+
         private void Update()
         {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
+        {
+            // co-op: down on the ground waiting for a teammate; no moving, shooting or using things
+            if (IsDowned)
+            {
+                UpdateCamera(Time.deltaTime);
+                return;
+            }
+
             if (_health.IsDead)
             {
                 if (AllowRespawn && Time.time >= RespawnTime) Respawn();
@@ -609,6 +624,7 @@ namespace Combat
         {
             Kills = 0;
             AllowRespawn = true;
+            if (IsDowned) ExitDowned(1.0f);
             // the dead drop their guns, and respawning hands out the starting weapon
             if (_health.IsDead)
             {
@@ -626,6 +642,66 @@ namespace Combat
             _health.Armor = 0.0f;
             _controller.RefillStamina();
             if (StartingWeapon != null && !StartUnarmed) Give(new WeaponInstance(StartingWeapon, StartingWeapon.MagazineSize, StartingWeapon.StartReserve));
+        }
+
+        // ---------------------------------------------------------------- co-op: down, revived, out
+
+        public bool IsDowned { get; private set; }
+
+        // a blow that would have killed: on the ground, alive, ignored by the infected while teammates come
+        public void EnterDowned()
+        {
+            if (IsDowned || _health.IsDead) return;
+            IsDowned = true;
+            _holder.TriggerHeld = false;
+            _input.fire = false;
+            _input.aim = false;
+            _controller.StrafeMode = false;
+            _controller.enabled = false;
+            if (_climbing != null) _climbing.enabled = false;
+            _characterController.enabled = false;
+            _health.Untargetable = true;
+            _health.InvulnerableUntil = float.MaxValue;
+            if (_ragdoll != null) _ragdoll.SetRagdoll(true);
+        }
+
+        // a teammate got them up: standing where the body lay, with part of their health
+        public void ExitDowned(float healthFraction)
+        {
+            if (!IsDowned) return;
+            IsDowned = false;
+            if (_ragdoll != null)
+            {
+                Vector3 body = _ragdoll.BodyPosition;
+                transform.position = new Vector3(body.x, transform.position.y, body.z);
+                _ragdoll.SetRagdoll(false);
+            }
+
+            _characterController.enabled = true;
+            _controller.enabled = true;
+            if (_climbing != null) _climbing.enabled = true;
+            _controller.ResetMotion(0.0f);
+            _health.Untargetable = false;
+            _health.Revive(healthFraction);
+            _health.InvulnerableUntil = Time.time + SpawnProtection;
+        }
+
+        // bled out or a final blow: dies for real; coming back is up to the host (next wave)
+        public void KillNow()
+        {
+            AllowRespawn = false;
+            bool wasDown = IsDowned;
+            IsDowned = false;
+            _health.Untargetable = false;
+            _health.InvulnerableUntil = 0.0f;
+            if (wasDown) _health.TakeDamage(new DamageInfo { Amount = _health.MaxHealth * 10.0f, Point = transform.position, Direction = Vector3.down });
+        }
+
+        // the host brings this player back (a new wave)
+        public void RespawnNow()
+        {
+            AllowRespawn = true;
+            RespawnTime = Time.time;
         }
 
         // co-op client: the host confirmed a kill this player's shot made (the infected died on the host)
@@ -674,6 +750,7 @@ namespace Combat
 
         private void OnDied(DamageInfo info)
         {
+            if (Net.Active) Debug.Log($"[Net] morte local: {info.Amount:F0} de dano de {(info.Instigator != null ? info.Instigator.name : "?")}, caído {IsDowned}\n{System.Environment.StackTrace}");
             RespawnTime = Time.time + RespawnDelay;
 
             DropSlot(1 - ActiveSlot);
@@ -698,6 +775,8 @@ namespace Combat
 
         private void Respawn()
         {
+            IsDowned = false;
+            _health.Untargetable = false;
             if (_ragdoll != null) _ragdoll.SetRagdoll(false);
             _characterController.enabled = true;
             _controller.enabled = true;

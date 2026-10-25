@@ -13,6 +13,8 @@ namespace Combat
      *                              and take screenshots next to it
      *   -net-hit                   once a replica infected is near, hit it through the same entry point a
      *                              bullet uses (its Health, which hands the hit to the host)
+     *   -net-revive                when a teammate is down, walk up to them and revive them through the same
+     *                              calls the HUD makes while the interact key is held (the host checks it)
      */
     public class NetAutoTest : MonoBehaviour
     {
@@ -20,6 +22,10 @@ namespace Combat
         private string _name = "Teste";
         private string _log;
         private bool _hit;
+        private bool _revive;
+        private NetPlayer _reviving;
+        private float _reviveDone;
+        private float _reviveBegin;
         private float _nextLine;
         private float _nextHit;
         private int _shots;
@@ -40,6 +46,7 @@ namespace Combat
                     case "-net-name": _name = next; break;
                     case "-net-log": _log = next; break;
                     case "-net-hit": _hit = true; break;
+                    case "-net-revive": _revive = true; break;
                 }
             }
 
@@ -73,6 +80,7 @@ namespace Combat
             }
 
             if (_hit && Net.Active) HitNearest();
+            if (_revive && Net.Active) ReviveDowned();
         }
 
         private void Report()
@@ -85,6 +93,14 @@ namespace Combat
             {
                 if (_startHealth < 0.0f) _startHealth = me.Health.Current;
                 line.Append($" | eu {me.transform.position} vida {me.Health.Current:F0}");
+            }
+
+            if (Net.Active)
+            {
+                line.Append(" | estados");
+                foreach (NetPlayer p in NetPlayer.All)
+                    line.Append($" {(p.IsOwner ? "eu" : p.DisplayName)}={p.Condition.Value}{(p.Condition.Value == CoopCondition.Downed ? $"({p.BleedOutLeft:F0}s, revive {p.ReviveProgress:P0})" : "")} quedas {p.Downs.Value} ping {p.Ping.Value}");
+                if (me != null) line.Append($" | caído {me.IsDowned} morto {me.Health.IsDead}");
             }
 
             foreach (NetPlayer player in NetPlayer.All)
@@ -145,6 +161,54 @@ namespace Combat
             if (NetPlayer.Local != null) NetPlayer.Local.ReportShot(from, chest);
             _shots++;
             Write($"tiro {_shots} na réplica {target.Id} a {best:F1} m");
+        }
+
+        private void ReviveDowned()
+        {
+            NetPlayer me = NetPlayer.Local;
+            PlayerCombat body = FindAnyObjectByType<PlayerCombat>();
+            if (me == null || body == null || !me.IsUp) return;
+
+            if (_reviving != null)
+            {
+                if (_reviveBegin > 0.0f && Time.unscaledTime >= _reviveBegin)
+                {
+                    me.BeginRevive(_reviving);
+                    _reviveBegin = 0.0f;
+                    _reviveDone = Time.unscaledTime + NetPlayer.ReviveTime + 0.3f;
+                }
+
+                if (_reviving.Condition.Value != CoopCondition.Downed)
+                {
+                    Write($"reanimação de {_reviving.DisplayName}: agora {_reviving.Condition.Value}");
+                    _reviving = null;
+                }
+                else if (Time.unscaledTime >= _reviveDone)
+                {
+                    me.FinishRevive(_reviving);
+                    Write($"reanimação de {_reviving.DisplayName} terminada (pedido ao host)");
+                    _reviveDone = float.MaxValue;
+                }
+
+                return;
+            }
+
+            foreach (NetPlayer mate in NetPlayer.All)
+            {
+                if (mate.IsOwner || mate.Condition.Value != CoopCondition.Downed || mate.Puppet == null) continue;
+                // walk up to them (a teleport: nobody is at the keyboard)
+                var controller = body.GetComponent<CharacterController>();
+                if (controller != null) controller.enabled = false;
+                body.transform.position = mate.Puppet.InteractionPoint + Vector3.right * 1.0f;
+                if (controller != null) controller.enabled = true;
+                // the host checks the distance with the position it has, which arrives a moment later
+                _reviving = mate;
+                _reviveBegin = Time.unscaledTime + 0.5f;
+                _reviveDone = float.MaxValue;
+                Write($"reanimando {mate.DisplayName} (sangrando há {NetPlayer.BleedOutTimes[0] - mate.BleedOutLeft:F0} s)");
+                Screenshot("reanimando");
+                return;
+            }
         }
 
         private void Screenshot(string label)

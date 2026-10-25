@@ -55,3 +55,25 @@ Tudo abaixo foi **executado**. O que não foi está nas seções finais.
 - **Sessão longa** (memória e vazamentos): não executado. A memória total ficou estável em cada execução de 20 s (580–680 MB).
 - **Campanha completa** depois das mudanças: não executado.
 - **Testes automatizados**: o Unity Test Framework continua não instalado (Marco 9).
+
+## 7. Segunda execução (limpeza, picos, cooperativo)
+
+| Teste | Resultado |
+|---|---|
+| Builds dev (5) e release (1) depois das mudanças | ✅ sem erros de compilação |
+| Tamanho da build release | ✅ 451 → 416 MB |
+| Picos: dev, onda de 30, 40 s × 2 | ✅ 1 e 0 quadros > 25 ms (antes 5–8, até 61 ms) |
+| Release, 3 cenários de 30 s | ✅ pior quadro 14–16,5 ms |
+| Cooperativo: queda, reanimação nos dois sentidos, sangramento, espectador, volta na onda, fim de jogo da equipe | ✅ (detalhes em `02_MULTIPLAYER.md` §5.4) |
+| Fonte: "•" existe na fonte principal; "◆" não existe em nenhuma (era o quadrado no feed) | ✅ verificado com `TMP_FontAsset.HasCharacter` |
+| Importação de áudio | ✅ 209 efeitos com preload, 5 longos em streaming |
+
+**Não executados**:
+- E segurado de verdade;
+- fim de jogo visto no cliente;
+- 3–4 jogadores;
+- dois PCs;
+- uma partida single-player completa depois das mudanças. As rotas single-player só mudam quando `Net.Active`, exceto três pontos que valem também no single-player:
+  - a regeneração parada em `Untargetable`, que só é ligada no cooperativo;
+  - o pré-carregamento de áudio;
+  - a silhueta reaproveitada.

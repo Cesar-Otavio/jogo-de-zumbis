@@ -46,7 +46,15 @@ namespace Combat
             "Animators.Update", "PreLateUpdate.DirectorUpdateAnimationBegin", "NavMeshManager",
             "PostLateUpdate.PlayerUpdateCanvases", "UGUI.Rendering.UpdateBatches", "Camera.Render", "CullScriptable",
             "Gfx.WaitForPresentOnGfxThread", "Gfx.PresentFrame", "Audio.FMODSystemUpdate", "ParticleSystem.Update",
-            "NetworkEarlyUpdate", "NetworkPreUpdate", "NetworkPostLateUpdate", "GC.Collect"
+            "NetworkEarlyUpdate", "NetworkPreUpdate", "NetworkPostLateUpdate", "GC.Collect",
+            // usual suspects of a hitch
+            "Shader.CreateGPUProgram", "Instantiate", "Loading.AwakeFromLoad", "Destroy", "Physics.Processing",
+            "PostLateUpdate.FinishFrameRendering", "Update.ScriptRunDelayedDynamicFrameRate", "Gfx.WaitForGfxCommandsFromMainThread",
+            // the game's own scripts (ProfilerMarker in their Update)
+            "Combat.ZombieAI.Update", "Combat.EnemyPerception.Update", "Combat.EnemySpawner.Update", "Combat.EnvironmentalEventDirector.Update",
+            "Combat.TensionDirector.Update", "Combat.CombatHUD.Update", "Combat.CampaignHUD.Update", "Combat.PlayerCombat.Update",
+            "Combat.CombatEffects.Update", "Combat.SurfaceFootstepSystem.Update", "Combat.WeatherController.Update", "Combat.PowerGridManager.Update",
+            "Combat.MissionManager.Update", "Combat.DialogueDirector.Update", "Combat.PlayerInjuryFeedback.Update"
         };
 
         // render passes whose GPU time is worth knowing on its own
@@ -242,6 +250,7 @@ namespace Combat
             var markerSums = new Dictionary<string, double>();
             var gpuSums = new Dictionary<string, double>();
             var timings = new FrameTiming[1];
+            var spikes = new List<string>();
             int lightsSum = 0, shadowLightsSum = 0, enemiesSum = 0;
             float end = Time.unscaledTime + _seconds;
             yield return null;
@@ -249,7 +258,8 @@ namespace Combat
             while (Time.unscaledTime < end)
             {
                 yield return null;
-                frame.Add(Time.unscaledDeltaTime * 1000.0f);
+                float ms = Time.unscaledDeltaTime * 1000.0f;
+                frame.Add(ms);
 
                 FrameTimingManager.CaptureFrameTimings();
                 if (FrameTimingManager.GetLatestTimings(1, timings) > 0)
@@ -269,6 +279,33 @@ namespace Combat
 
                 foreach (var pair in markers)
                     if (pair.Value.Valid) markerSums[pair.Key] = (markerSums.TryGetValue(pair.Key, out double s) ? s : 0.0) + pair.Value.LastValue / 1e6;
+
+                // a hitch: note what took the time in that frame (the markers report the previous frame,
+                // which is the one this delta belongs to)
+                if (ms > 25.0f && spikes.Count < 40)
+                {
+                    var line = new StringBuilder($"  {Time.unscaledTime - (end - _seconds):F1} s: {ms:F1} ms ->");
+                    foreach (var pair in markers)
+                    {
+                        if (!pair.Value.Valid) continue;
+                        double m = pair.Value.LastValue / 1e6;
+                        if ((m >= 2.0 || (pair.Key.StartsWith("Combat.") && m >= 0.5)) && pair.Key != "PlayerLoop") line.Append($" {pair.Key} {m:F1}");
+                    }
+
+                    if (counters.TryGetValue("GC Allocated In Frame", out ProfilerRecorder gc) && gc.Valid) line.Append($" | gc {gc.LastValue / 1024} KB");
+                    // with -perf-discover every sampler is recorded: name the heaviest ones of that frame
+                    if (discoverRecorders.Count > 0)
+                    {
+                        var heavy = new List<KeyValuePair<string, long>>();
+                        foreach (var pair in discoverRecorders)
+                            // script methods only ("ZombieAI.Update() [Invoke]"); counters aren't times
+                            if (pair.Key.Contains("()") && pair.Value.elapsedNanoseconds > 1000000) heavy.Add(new KeyValuePair<string, long>(pair.Key, pair.Value.elapsedNanoseconds));
+                        heavy.Sort((a, b) => b.Value.CompareTo(a.Value));
+                        line.Append(" | samplers:");
+                        for (int h = 0; h < heavy.Count && h < 14; h++) line.Append($" {heavy[h].Key} {heavy[h].Value / 1e6:F1}");
+                    }
+                    spikes.Add(line.ToString());
+                }
 
                 foreach (var pair in gpu)
                     gpuSums[pair.Key] = (gpuSums.TryGetValue(pair.Key, out double s) ? s : 0.0) + pair.Value.gpuElapsedNanoseconds / 1e6;
@@ -296,7 +333,7 @@ namespace Combat
             foreach (var pair in gpu) pair.Value.enabled = false;
             foreach (var pair in discoverRecorders) pair.Value.enabled = false;
 
-            Write(frame, cpuMain, cpuRender, gpuFrame, counterSums, counterMax, markerSums, gpuSums, discovered, discoveredCpu,
+            Write(frame, cpuMain, cpuRender, gpuFrame, counterSums, counterMax, markerSums, gpuSums, discovered, discoveredCpu, spikes,
                 lightsSum / (float)samples, shadowLightsSum / (float)samples, enemiesSum / (float)samples);
         }
 
@@ -328,7 +365,7 @@ namespace Combat
 
         private void Write(List<float> frame, List<float> cpuMain, List<float> cpuRender, List<float> gpuFrame,
             Dictionary<string, double> counterSums, Dictionary<string, double> counterMax, Dictionary<string, double> markerSums,
-            Dictionary<string, double> gpuSums, Dictionary<string, double> discovered, Dictionary<string, double> discoveredCpu, float lights, float shadowLights, float enemies)
+            Dictionary<string, double> gpuSums, Dictionary<string, double> discovered, Dictionary<string, double> discoveredCpu, List<string> spikes, float lights, float shadowLights, float enemies)
         {
             int n = Mathf.Max(1, frame.Count);
             var sorted = new List<float>(frame);
@@ -386,6 +423,9 @@ namespace Combat
                 list.Sort((a, b) => b.Value.CompareTo(a.Value));
                 for (int i = 0; i < list.Count && i < 120; i++) detail.AppendLine($"  {list[i].Key}: {F(list[i].Value / n)}");
             }
+
+            detail.AppendLine($"\nframes over 25 ms: {spikes.Count}{(spikes.Count >= 40 ? " (first 40)" : "")} (main-thread markers of 2 ms or more in that frame)");
+            foreach (string spike in spikes) detail.AppendLine(spike);
 
             File.WriteAllText(Path.Combine(_out, $"{_label}.txt"), detail.ToString());
         }

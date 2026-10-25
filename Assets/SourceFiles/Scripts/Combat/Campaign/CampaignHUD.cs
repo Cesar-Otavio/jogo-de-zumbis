@@ -229,7 +229,15 @@ namespace Combat
 
         // ---------------------------------------------------------------- update
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateProfilerMarker = new Unity.Profiling.ProfilerMarker("Combat.CampaignHUD.Update");
+
         private void Update()
+        {
+            using (UpdateProfilerMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             if (ReaderOpen && Keyboard.current != null && (Keyboard.current.eKey.wasPressedThisFrame || Keyboard.current.escapeKey.wasPressedThisFrame)) CloseReader();
 

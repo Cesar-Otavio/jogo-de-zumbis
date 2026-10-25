@@ -14,7 +14,7 @@ namespace Combat
      *
      * On the host the puppet is also what the infected see and hit: hits are handed to the owner.
      */
-    public class NetPuppet : MonoBehaviour
+    public class NetPuppet : MonoBehaviour, IInteractable
     {
         // the parts of the character prefab a puppet keeps; everything else is removed
         private static readonly HashSet<Type> Keep = new HashSet<Type>
@@ -28,6 +28,7 @@ namespace Combat
         public const float InterpolationDelay = 0.1f;
 
         public NetPlayer Owner { get; private set; }
+        public Transform CameraRoot { get; private set; }
         public Health Health { get; private set; }
 
         private Animator _animator;
@@ -140,6 +141,15 @@ namespace Combat
             SetOutfit(outfit);
             BuildFlashlight();
             BuildNameTag();
+
+            // what a spectating teammate's camera follows
+            CameraRoot = new GameObject("SpectateRoot").transform;
+            CameraRoot.SetParent(transform, false);
+            CameraRoot.localPosition = Vector3.up * 1.55f;
+
+            MapMarker marker = MapMarker.Add(gameObject, "ally:" + owner.OwnerClientId, MapMarkerKind.Ally, owner.DisplayName);
+            marker.AlwaysKnown = true;
+            Interactables.Register(this);
         }
 
         public void SetOutfit(int[] choices)
@@ -166,6 +176,8 @@ namespace Combat
 
             Interpolate();
             Health.Mirror(state.Health, state.MaxHealth);
+            // a downed or dead teammate is left alone by the host's infected
+            Health.Untargetable = !Owner.IsUp;
             Animate(state);
             SetWeapon(NetMatch.Weapon(state.Weapon));
             if (_flashlight != null) _flashlight.enabled = state.Has(6) && !state.Has(7);
@@ -300,10 +312,53 @@ namespace Combat
             // the name always faces this machine's camera
             Camera cam = Camera.main;
             if (_nameTag != null && cam != null) _nameTag.transform.rotation = Quaternion.LookRotation(_nameTag.transform.position - cam.transform.position);
+            if (_nameTag != null && Owner != null)
+            {
+                string name = Owner.DisplayName;
+                switch (Owner.Condition.Value)
+                {
+                    case CoopCondition.Downed:
+                        _nameTag.text = $"{name}\n<size=75%><color=#FF6A5A>CAÍDO {Mathf.CeilToInt(Owner.BleedOutLeft)} s</color></size>";
+                        break;
+                    case CoopCondition.Dead:
+                        _nameTag.text = $"{name}\n<size=75%><color=#FF6A5A>MORTO</color></size>";
+                        break;
+                    default:
+                        _nameTag.text = name;
+                        break;
+                }
+
+                // the downed lie on the ground: their name comes down with them
+                Vector3 at = _dead && _ragdoll != null && _ragdoll.IsRagdoll ? _ragdoll.BodyPosition + Vector3.up * 0.9f : transform.position + Vector3.up * 2.15f;
+                _nameTag.transform.position = at;
+            }
+        }
+
+        // ---------------------------------------------------------------- revive (IInteractable)
+
+        public Vector3 InteractionPoint => _ragdoll != null && _ragdoll.IsRagdoll ? _ragdoll.BodyPosition : transform.position + Vector3.up * 0.8f;
+        public float InteractionRange => NetPlayer.ReviveRange;
+
+        public string Prompt
+        {
+            get
+            {
+                if (Owner == null || Owner.Condition.Value != CoopCondition.Downed) return null;
+                NetPlayer me = NetPlayer.Local;
+                if (me == null || !me.IsUp) return null;
+                if (Owner.Reviver.Value != NetPlayer.NoReviver && Owner.Reviver.Value != me.OwnerClientId) return $"{Owner.DisplayName} já está sendo reanimado";
+                return Interactables.Key + $"Segure para reanimar {Owner.DisplayName}";
+            }
+        }
+
+        public void Interact(PlayerCombat player)
+        {
+            if (TeamHUD.Instance != null) TeamHUD.Instance.StartRevive(Owner);
         }
 
         private void OnDestroy()
         {
+            Interactables.Unregister(this);
             if (_weaponModel != null) Destroy(_weaponModel);
         }
     }

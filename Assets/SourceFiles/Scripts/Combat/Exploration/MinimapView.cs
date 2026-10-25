@@ -148,7 +148,7 @@ namespace Combat
             {
                 if (_known.Contains(marker) || !marker.Known) continue;
                 _known.Add(marker);
-                PickupFeed.Report("place:" + marker.Id, null, $"◆ {marker.Label}", 0, MapMarker.ColorOf(marker.Kind));
+                PickupFeed.Report("place:" + marker.Id, null, $"• {marker.Label}", 0, MapMarker.ColorOf(marker.Kind));
                 if (DialogueDirector.Instance != null && !string.IsNullOrEmpty(marker.Id)) DialogueDirector.Instance.Play("poi_" + marker.Id);
             }
         }
@@ -179,6 +179,10 @@ namespace Combat
             _north.gameObject.SetActive(rotates);
 
             float rim = Diameter * 0.5f - 12.0f;
+            // a marker that went away (a teammate who left) takes its dot with it
+            foreach (var pair in _markers)
+                if (pair.Key == null || !MapMarker.All.Contains(pair.Key)) pair.Value.gameObject.SetActive(false);
+
             foreach (MapMarker marker in MapMarker.All)
             {
                 if (!_markers.TryGetValue(marker, out Image image))
@@ -189,7 +193,9 @@ namespace Combat
                 }
 
                 Vector2 offset = Flat(marker.Position - position) * ppm;
-                bool visible = marker.Known && offset.magnitude <= rim;
+                // teammates stay on the rim when they're far, like pins: you can always tell which way they are
+                if (marker.Kind == MapMarkerKind.Ally) offset = Vector2.ClampMagnitude(offset, rim);
+                bool visible = marker.Known && offset.magnitude <= rim + 0.01f;
                 image.gameObject.SetActive(visible);
                 if (!visible) continue;
                 image.rectTransform.anchoredPosition = offset;
@@ -220,7 +226,7 @@ namespace Combat
                 float pulse = 1.0f + Mathf.Sin(Time.unscaledTime * 5.0f) * 0.12f;
                 _objective.rectTransform.localScale = Vector3.one * pulse;
                 float distance = Vector3.Distance(Flat3(target), Flat3(position));
-                _objectiveText.text = $"<color=#FFC74D>◆</color> {label}  ·  {Mathf.RoundToInt(distance)} m";
+                _objectiveText.text = $"<color=#FFC74D>•</color> {label}  ·  {Mathf.RoundToInt(distance)} m";
             }
             else
             {

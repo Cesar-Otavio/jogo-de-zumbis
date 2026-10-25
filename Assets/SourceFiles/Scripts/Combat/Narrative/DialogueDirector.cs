@@ -232,7 +232,15 @@ namespace Combat
 
         // ---------------------------------------------------------------- playback
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.DialogueDirector.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             float dt = Time.unscaledDeltaTime;
             MusicDuck = Mathf.MoveTowards(MusicDuck, Current != null ? MusicDuckLevel : 1.0f, dt * 1.5f);

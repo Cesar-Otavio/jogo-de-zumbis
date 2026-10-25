@@ -84,6 +84,8 @@ namespace Combat
         private ushort _nextId = 1;
         private float _nextSend;
         private EnemySpawner _spawner;
+        private int _lastWave;
+        private bool _gameOver;
 
         // ---- client side
         private readonly Dictionary<ushort, EnemyReplica> _replicas = new Dictionary<ushort, EnemyReplica>();
@@ -183,6 +185,7 @@ namespace Combat
             {
                 StreamEnemies();
                 PublishWaves();
+                CheckTeamOut();
             }
             else ExpireReplicas();
         }
@@ -202,6 +205,32 @@ namespace Combat
             };
             // a network variable only goes out when it changes
             if (!state.Equals(Waves.Value)) Waves.Value = state;
+
+            // a new wave brings back whoever died, and everyone's downs start over
+            bool active = _spawner.WaveInProgress;
+            if (active && _spawner.Wave > _lastWave)
+            {
+                _lastWave = _spawner.Wave;
+                foreach (NetPlayer player in NetPlayer.All) player.ServerNewWave();
+            }
+        }
+
+        // ---------------------------------------------------------------- the whole team out
+
+        // nobody left standing means nobody can revive anyone: the run is over for everyone
+        private void CheckTeamOut()
+        {
+            if (_gameOver || NetPlayer.All.Count == 0) return;
+            foreach (NetPlayer player in NetPlayer.All)
+                if (player.IsUp) return;
+            _gameOver = true;
+            TeamOutRpc();
+        }
+
+        [Rpc(SendTo.ClientsAndHost)]
+        private void TeamOutRpc()
+        {
+            if (GameFlow.Instance != null) GameFlow.Instance.CoopGameOver();
         }
 
         private void MirrorWaves(WaveState before, WaveState now)

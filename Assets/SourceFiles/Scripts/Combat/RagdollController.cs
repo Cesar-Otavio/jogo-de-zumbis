@@ -15,6 +15,8 @@ namespace Combat
         public float SettleTime = 3.5f;
 
         public bool IsRagdoll { get; private set; }
+        // where the body actually lies (the first body is the hips), e.g. to stand back up there
+        public Vector3 BodyPosition => _bodies != null && _bodies.Length > 0 ? _bodies[0].position : transform.position;
         private float _ragdollSince;
         private bool _frozen;
 

@@ -45,10 +45,25 @@ namespace Combat
         }
     }
 
+    public enum CoopCondition : byte
+    {
+        Up,
+        // on the ground, can be revived until the bleed-out time
+        Downed,
+        // out until the host brings them back (next wave); watches the others meanwhile
+        Dead
+    }
+
     /* One connected player (NGO player object). The owner fills in its name, ready flag, outfit and,
      * during a match, the state of the character it is driving; everyone else turns that into a puppet.
      * The host also uses the puppet as a real target for the infected, and sends the hits on it back to
      * the owner, who applies them to their own health (the owner stays in charge of their character).
+     *
+     * Down and revive: a blow that would kill an owner (while they have downs left this wave) puts them
+     * on the ground instead; the host records it and starts a bleed-out clock. A teammate holding the
+     * interact key next to them for ReviveTime asks the host, which checks who, how close and how long
+     * before standing them up. Bleeding out or a down too many is death; the host brings the dead back
+     * at the next wave, and calls game over when nobody is left standing.
      */
     public class NetPlayer : NetworkBehaviour
     {
@@ -62,10 +77,32 @@ namespace Combat
         public readonly NetworkVariable<PlayerState> State = new NetworkVariable<PlayerState>(writePerm: NetworkVariableWritePermission.Owner);
         public readonly NetworkVariable<int> SpawnIndex = new NetworkVariable<int>(-1);
 
+        // ---- co-op life, written by the host only
+        public readonly NetworkVariable<CoopCondition> Condition = new NetworkVariable<CoopCondition>();
+        public readonly NetworkVariable<double> BleedOutAt = new NetworkVariable<double>();
+        public readonly NetworkVariable<byte> Downs = new NetworkVariable<byte>();
+        public readonly NetworkVariable<ulong> Reviver = new NetworkVariable<ulong>(NoReviver);
+        public readonly NetworkVariable<double> ReviveStartedAt = new NetworkVariable<double>();
+        // round trip to the host in ms, measured by the host
+        public readonly NetworkVariable<ushort> Ping = new NetworkVariable<ushort>();
+
+        public const ulong NoReviver = ulong.MaxValue;
+        public const float ReviveTime = 5.0f;
+        public const float ReviveRange = 2.5f;
+        public const float ReviveHealth = 0.3f;
+        // later downs in the same wave bleed out faster, and the blow after the last one is final
+        public static readonly float[] BleedOutTimes = { 30.0f, 20.0f };
+        public static int MaxDownsPerWave => BleedOutTimes.Length;
+
         [Tooltip("State updates per second sent by the owner")]
         public float SendRate = 20.0f;
 
         public string DisplayName => PlayerName.Value.Length > 0 ? PlayerName.Value.ToString() : $"Jogador {OwnerClientId + 1}";
+        public bool IsUp => Condition.Value == CoopCondition.Up;
+        public float BleedOutLeft => Mathf.Max(0.0f, (float)(BleedOutAt.Value - ServerNow));
+        public float ReviveProgress => Reviver.Value == NoReviver ? 0.0f : Mathf.Clamp01((float)(ServerNow - ReviveStartedAt.Value) / ReviveTime);
+        public Vector3 Position => State.Value.Position;
+        private static double ServerNow => NetworkManager.Singleton != null ? NetworkManager.Singleton.ServerTime.Time : 0.0;
         public NetPuppet Puppet { get; private set; }
 
         private PlayerCombat _local;
@@ -76,6 +113,7 @@ namespace Combat
         private bool _wasClimbingUp;
         private float _lastPositionTime;
         private Vector3 _lastPosition;
+        private float _nextPing;
 
         public static NetPlayer For(ulong clientId)
         {
@@ -97,6 +135,7 @@ namespace Combat
             }
 
             Outfit.OnValueChanged += (_, value) => { if (Puppet != null) Puppet.SetOutfit(UnpackOutfit(value)); };
+            Condition.OnValueChanged += OnConditionChanged;
             // the name may arrive a moment after the player object: announce whoever it is once it does
             if (!IsOwner)
             {
@@ -123,6 +162,7 @@ namespace Combat
         {
             if (!IsSpawned) return;
             bool inMatch = NetGame.Instance != null && NetGame.Instance.Started;
+            if (IsServer) ServerUpdate(inMatch);
             if (IsOwner)
             {
                 if (inMatch) Publish();
@@ -144,6 +184,9 @@ namespace Combat
                 if (_local == null) return;
                 // every shot of the local gun is drawn for the others
                 if (_local.Holder != null) _local.Holder.Fired += _ => ReportShot(_local.Holder.LastShotFrom, _local.Holder.LastShotTo);
+                // co-op: a killing blow can be a down instead, and a real death is the host's to know
+                _local.Health.PreventDeath = PreventDeath;
+                _local.Health.Died += _ => ReportDeathRpc();
             }
 
             // one-shot moves are counted as they start, so a late packet still plays them
@@ -184,7 +227,8 @@ namespace Combat
             if (controller != null && controller.IsCrouching) flags |= 16;
             if (_local.Holder != null && _local.Holder.Aiming) flags |= 32;
             if (_local.FlashlightOn) flags |= 64;
-            if (_local.Health.IsDead) flags |= 128;
+            // the others see a downed teammate on the ground the way they see a dead one
+            if (_local.Health.IsDead || _local.IsDowned) flags |= 128;
             state.Flags = (byte)flags;
             State.Value = state;
         }
@@ -214,6 +258,158 @@ namespace Combat
             if (_local == null) _local = FindAnyObjectByType<PlayerCombat>();
             if (_local == null) return;
             _local.Health.TakeDamage(new DamageInfo { Amount = amount, Point = point, Direction = direction, Force = force });
+        }
+
+        // ---------------------------------------------------------------- down, revive, death
+
+        private bool PreventDeath(DamageInfo info)
+        {
+            if (!IsOwner || !Net.Active || _local == null) return false;
+            if (Condition.Value != CoopCondition.Up || Downs.Value >= MaxDownsPerWave) return false;
+            // shown at once here; the host confirms (or overrules with death) a moment later
+            _local.EnterDowned();
+            ReportDownRpc();
+            return true;
+        }
+
+        [Rpc(SendTo.Server)]
+        private void ReportDownRpc()
+        {
+            if (Condition.Value != CoopCondition.Up) return;
+            if (Downs.Value >= MaxDownsPerWave)
+            {
+                SetDead("uma queda a mais nesta onda");
+                return;
+            }
+
+            BleedOutAt.Value = ServerNow + BleedOutTimes[Downs.Value];
+            Downs.Value++;
+            Reviver.Value = NoReviver;
+            Condition.Value = CoopCondition.Downed;
+            if (NetGame.Instance != null) NetGame.Instance.Announce($"{DisplayName} caiu! Ajude antes que seja tarde");
+        }
+
+        [Rpc(SendTo.Server)]
+        private void ReportDeathRpc()
+        {
+            if (Condition.Value != CoopCondition.Dead) SetDead("morte no jogo do dono");
+        }
+
+        private void SetDead(string reason)
+        {
+            Debug.Log($"[Net] {DisplayName} morto: {reason}");
+            Reviver.Value = NoReviver;
+            Condition.Value = CoopCondition.Dead;
+            if (NetGame.Instance != null) NetGame.Instance.Announce($"{DisplayName} morreu (volta na próxima onda)");
+        }
+
+        // the host brings everyone who died back for a new wave, and the downs start over
+        public void ServerNewWave()
+        {
+            if (!IsServer) return;
+            Downs.Value = 0;
+            if (Condition.Value == CoopCondition.Dead) Condition.Value = CoopCondition.Up;
+        }
+
+        // this machine's player starts reviving a downed teammate (the host decides if it counts)
+        public void BeginRevive(NetPlayer target)
+        {
+            if (IsOwner && target != null) BeginReviveRpc(target.OwnerClientId);
+        }
+
+        public void CancelRevive(NetPlayer target)
+        {
+            if (IsOwner && target != null) CancelReviveRpc(target.OwnerClientId);
+        }
+
+        public void FinishRevive(NetPlayer target)
+        {
+            if (IsOwner && target != null) FinishReviveRpc(target.OwnerClientId);
+        }
+
+        // these run on the reviver's own player object on the host; the network's sender id must match it
+        [Rpc(SendTo.Server)]
+        private void BeginReviveRpc(ulong targetClient, RpcParams rpc = default)
+        {
+            if (rpc.Receive.SenderClientId != OwnerClientId) return;
+            NetPlayer target = For(targetClient);
+            if (target == null || target == this || !IsUp || target.Condition.Value != CoopCondition.Downed) return;
+            if (target.Reviver.Value != NoReviver && target.Reviver.Value != OwnerClientId) return;
+            if (Vector3.Distance(Position, target.Position) > ReviveRange + 0.5f) return;
+            target.ReviveStartedAt.Value = ServerNow;
+            target.Reviver.Value = OwnerClientId;
+        }
+
+        [Rpc(SendTo.Server)]
+        private void CancelReviveRpc(ulong targetClient, RpcParams rpc = default)
+        {
+            if (rpc.Receive.SenderClientId != OwnerClientId) return;
+            NetPlayer target = For(targetClient);
+            if (target != null && target.Reviver.Value == OwnerClientId) target.Reviver.Value = NoReviver;
+        }
+
+        [Rpc(SendTo.Server)]
+        private void FinishReviveRpc(ulong targetClient, RpcParams rpc = default)
+        {
+            if (rpc.Receive.SenderClientId != OwnerClientId) return;
+            NetPlayer target = For(targetClient);
+            if (target == null || target.Reviver.Value != OwnerClientId) return;
+            bool valid = IsUp && target.Condition.Value == CoopCondition.Downed &&
+                         ServerNow - target.ReviveStartedAt.Value >= ReviveTime - 0.25 &&
+                         Vector3.Distance(Position, target.Position) <= ReviveRange + 0.5f;
+            target.Reviver.Value = NoReviver;
+            if (!valid) return;
+            target.Condition.Value = CoopCondition.Up;
+            if (NetGame.Instance != null) NetGame.Instance.Announce($"{DisplayName} reanimou {target.DisplayName}");
+        }
+
+        private void ServerUpdate(bool inMatch)
+        {
+            if (Time.unscaledTime >= _nextPing)
+            {
+                _nextPing = Time.unscaledTime + 1.0f;
+                var transport = NetworkManager.NetworkConfig.NetworkTransport;
+                ushort rtt = IsOwnedByServer ? (ushort)0 : (ushort)Mathf.Min(transport.GetCurrentRtt(OwnerClientId), ushort.MaxValue);
+                if (Ping.Value != rtt) Ping.Value = rtt;
+            }
+
+            if (!inMatch || Condition.Value != CoopCondition.Downed) return;
+            if (ServerNow >= BleedOutAt.Value)
+            {
+                SetDead("sangrou até o fim");
+                return;
+            }
+
+            // a reviver who walked off or went down stops counting
+            if (Reviver.Value != NoReviver)
+            {
+                NetPlayer reviver = For(Reviver.Value);
+                if (reviver == null || !reviver.IsUp || Vector3.Distance(reviver.Position, Position) > ReviveRange + 1.0f) Reviver.Value = NoReviver;
+            }
+        }
+
+        // the owner follows what the host decided
+        private void OnConditionChanged(CoopCondition before, CoopCondition now)
+        {
+            if (!IsOwner) return;
+            if (_local == null) _local = FindAnyObjectByType<PlayerCombat>();
+            if (_local == null) return;
+
+            switch (now)
+            {
+                case CoopCondition.Up when before == CoopCondition.Downed:
+                    _local.ExitDowned(ReviveHealth);
+                    break;
+                case CoopCondition.Up when before == CoopCondition.Dead:
+                    _local.RespawnNow();
+                    break;
+                case CoopCondition.Dead:
+                    _local.KillNow();
+                    break;
+                case CoopCondition.Downed:
+                    _local.EnterDowned();
+                    break;
+            }
         }
 
         // ---------------------------------------------------------------- outfit packing

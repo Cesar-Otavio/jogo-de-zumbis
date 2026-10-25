@@ -97,7 +97,15 @@ namespace Combat
             _peakIntensity = Mathf.Max(_peakIntensity, Intensity);
         }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.TensionDirector.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             Intensity = Mathf.Max(0.0f, Intensity - IntensityDecay * Time.deltaTime);
             if (Time.time < _nextUpdate || _player == null) return;

@@ -10,7 +10,9 @@ namespace Combat
         Extraction,
         Workbench,
         SafeArea,
-        Supplies
+        Supplies,
+        // a co-op teammate: always known, moves with them
+        Ally
     }
 
     /* Something worth a mark on the map: places of the story, gates, the helipad, benches. It is
@@ -69,6 +71,7 @@ namespace Combat
                 case MapMarkerKind.Workbench: return new Color(1.0f, 0.78f, 0.3f);
                 case MapMarkerKind.SafeArea: return new Color(0.6f, 1.0f, 0.75f);
                 case MapMarkerKind.Supplies: return new Color(1.0f, 0.9f, 0.6f);
+                case MapMarkerKind.Ally: return new Color(0.35f, 0.8f, 1.0f);
                 default: return new Color(0.88f, 0.88f, 0.9f);
             }
         }
@@ -82,6 +85,7 @@ namespace Combat
                 case MapMarkerKind.Workbench: return "Bancada";
                 case MapMarkerKind.SafeArea: return "Área segura";
                 case MapMarkerKind.Supplies: return "Suprimentos";
+                case MapMarkerKind.Ally: return "Aliado";
                 default: return "Local";
             }
         }

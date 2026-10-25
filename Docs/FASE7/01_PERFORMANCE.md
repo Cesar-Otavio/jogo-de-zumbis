@@ -146,3 +146,52 @@ O nível `Mobile` estava excluído do Windows. A build tinha **um único nível 
 2. **SSAO** (~1,1 ms de GPU em 720p) no Alto: avaliar deixar opcional.
 3. **Picos**: máximos de 25–38 ms em quase todas as execuções e um de 3 s. Investigar compilação de shaders na primeira vez (aquecer variantes) e GC.
 4. **GetStarted_Scene e AI Inference (Sentis)** ainda entram na build (451 MB release). A limpeza vai em seguida, com verificação de referências.
+
+## 7. Marco 1, segunda parte: limpeza e picos de quadro
+
+### 7.1 Limpeza segura
+
+| Item | O que foi feito | Por quê |
+|---|---|---|
+| `GetStarted_Scene` | **desligada da lista de cenas da build** (o arquivo continua no projeto) | sobra do template, não é usada pelo jogo |
+| AI Inference (Sentis) | **continua instalado**; os 107 shaders e compute shaders dele são **descartados só da build** (`Editor/BuildStripping.cs`) | o AI Assistant, a ponte usada para operar a Unity nesta sessão, pode precisar do pacote; nenhum pacote declara dependência dele, mas desinstalar seria um risco sem ganho para o jogo |
+| Pasta do robô Timmy e template | **não removidas** | as pegadas do jogador usam 11 sons de `TimmyRobot/Sfx` (verificado com `AssetDatabase.GetDependencies` da cena) |
+
+- **Efeito medido**:
+  - `resources.assets` da build caiu de 9,3 MB para 148 KB;
+  - build de desenvolvimento: de 525 para 492 MB;
+  - **build release: de 451 para 416 MB**.
+- **Aviso**: os avisos de shader do Sentis ainda aparecem no log da build quando o cache é refeito. Eles vêm da importação; as variantes não entram no jogo.
+
+### 7.2 Picos de quadro: causas encontradas
+
+A sonda passou a registrar, em cada quadro acima de 25 ms, os marcadores que pesaram. Além disso, recebeu marcadores próprios no `Update` de 15 scripts do jogo (`ProfilerMarker`, custo desprezível fora da build de desenvolvimento).
+
+| Causa | Evidência | Correção |
+|---|---|---|
+| **Sons carregados na primeira vez que tocam**: os 219 efeitos estavam com *Preload Audio Data* desligado e *Decompress On Load*, então o primeiro som de cada tipo era lido e descomprimido no meio do quadro | picos de 15–20 ms dentro de `ZombieAI.Update` quando os infectados chegavam ao jogador | *Phase 7 ▸ 4*: 209 efeitos pré-carregados com a cena; 5 músicas e ambientes longos (> 700 KB) em streaming. Memória: +~9 MB |
+| **Silhueta de terror montada na hora**: cada evento clonava um zumbi inteiro e tirava os componentes com `DestroyImmediate` | `EnvironmentalEventDirector.Update` com 21,7 ms num quadro | a figura é montada uma vez no início e reaproveitada (só liga e desliga) |
+| **Atlas dinâmico da fonte**: caracteres novos (acentos, setas) rasterizados durante o jogo | `PlayerUpdateCanvases` / `UGUI.Rendering.UpdateBatches` com 28 ms num quadro | `Campaign/TextWarmup.cs` adiciona os caracteres usados ao fallback no carregamento (só na build). O "◆" do feed e do objetivo, que não existe na fonte e aparecia como quadrado, virou "•" |
+
+### 7.3 Resultado (onda de 30 infectados, 1920×1080, Médio)
+
+| Execução | Quadros > 25 ms | Pior quadro | p99 |
+|---|---|---|---|
+| Antes (dev, 40 s) | 5 a 8 | 29,9 a **61,5 ms** | 14,7–15,3 ms |
+| Depois, 1ª (dev, 40 s) | **1** (25,2 ms, ZombieAI no primeiro contato) | 25,2 ms | 14,7 ms |
+| Depois, 2ª (dev, 40 s) | **0** | **15,9 ms** | 14,7 ms |
+
+### 7.4 Build release final (mesmo PC)
+
+| Cenário | Média | p95 | Pior quadro | CPU principal | GPU | Memória total |
+|---|---|---|---|---|---|---|
+| **Médio**, 1080p, onda de 30 | 11,06 ms (90 FPS) | 12,81 | **16,46** | 9,01 | 6,59 | 538 MB |
+| **Baixo**, 720p, onda de 30 | 6,73 ms (149 FPS) | 7,77 | **14,02** | 6,71 | 3,90 | 528 MB |
+| **Médio**, 1080p, pátio | 8,66 ms | 9,49 | **15,87** | 6,41 | 8,24 | 510 MB |
+
+Na release, nenhum quadro passou de 17 ms nas três execuções de 30 s. Antes, a release tinha máximos de 23–27 ms.
+
+### 7.5 Ainda não identificado
+
+- O pico residual de ~25 ms no primeiro contato dos infectados aconteceu em 1 de 2 execuções de desenvolvimento.
+- Ele fica dentro de `ZombieAI.Update`, mas ainda não sei em qual chamada. O próximo passo é pôr marcadores mais finos no ataque e no caminho.

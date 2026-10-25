@@ -6,7 +6,8 @@
 |---|---|---|
 | P1 | Cooperativo: mundo e economia locais em cada máquina (risco de loot e recompensa em duplicidade) | conhecido desde a Fase 6; Marco 2 |
 | P1 | Cooperativo: Gritador, Tanque, soldados e chefes sem replicação de habilidades | Marco 2 |
-| P2 | Picos isolados de 25–38 ms (e um de 3 s) nas medições | investigar aquecimento de shaders e GC |
+| P2 | Pico residual de ~25 ms no primeiro contato dos infectados (1 em 2 execuções dev; nenhum na release) | marcadores finos no ataque/caminho do `ZombieAI` |
+| P2 | Uma morte de host caído ~1 s depois da queda, vista uma vez na build anterior | não se repetiu; motivos agora no log |
 | P2 | Tela de opções com os nomes novos de qualidade não conferida | conferir |
 | P3 | Aviso "Light.shadowResolution is compatible only with Built-In" da lanterna | cosmético |
 
@@ -32,15 +33,15 @@ Nenhum P0 conhecido.
 
 ## 4. Próximos passos que posso fazer sem nada seu (ordem)
 
-1. **Marco 1 (resto)**:
-   - limpeza segura: tirar a `GetStarted_Scene` da build, avaliar a remoção do AI Inference e das sobras do template, com verificação de referências;
-   - investigar os picos de quadro;
-   - medir CPU por script (física dos ragdolls, percepção).
-2. **Marco 2**:
-   - HUD de equipe;
-   - incapacitação, reanimação, espectador e game over cooperativo;
-   - inimigos especiais, soldados e chefes em rede;
-   - mundo com IDs estáveis;
-   - economia validada.
+**Já feito**: limpeza segura, picos de quadro, HUD de equipe, queda/reanimação/espectador/fim de jogo cooperativo (ver `11_ENTREGA_FINAL.md`).
+
+1. **Marco 2 (continua)**:
+   - Gritador, Tanque, soldados e chefes em rede (habilidades só no host);
+   - mundo com IDs estáveis (portas, energia, baús, itens);
+   - economia e fabricação validadas pelo host;
+   - mostrar a tela de fim de jogo também no log do cliente de teste.
+2. **Marco 1 (resto)**:
+   - marcadores finos no `ZombieAI`, para o pico residual;
+   - CPU com muitos inimigos (física dos ragdolls, percepção).
 3. **Marco 4**: AudioMixer com os grupos pedidos, sem perder os volumes atuais.
-4. **Marco 9**: Unity Test Framework e os primeiros testes (mochila, fabricação, dano, aprovação de conexão).
+4. **Marco 9**: Unity Test Framework e os primeiros testes (mochila, fabricação, dano, aprovação de conexão, reanimação).

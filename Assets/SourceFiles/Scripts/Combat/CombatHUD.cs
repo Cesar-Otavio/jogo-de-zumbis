@@ -612,7 +612,15 @@ namespace Combat
 
         // ---------------------------------------------------------------- update
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.CombatHUD.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             if (Player == null || !_visible) return;
 
@@ -673,7 +681,8 @@ namespace Combat
 
             _controls.alpha = Mathf.Clamp01(1.0f - (Time.timeSinceLevelLoad - 15.0f) / 3.0f) * 0.75f;
 
-            _deathScreen.SetActive(dead);
+            // co-op: the team panel takes over (watching a teammate, back next wave)
+            _deathScreen.SetActive(dead && !Net.Active);
             if (dead)
             {
                 _deathTimer.text = Player.AllowRespawn
@@ -696,7 +705,8 @@ namespace Combat
             }
 
             GameFlow flow = GameFlow.Instance;
-            _lives.gameObject.SetActive(flow != null && flow.Current != GameFlow.State.Menu);
+            // co-op has no lives of its own: the team panel tells who is up
+            _lives.gameObject.SetActive(flow != null && flow.Current != GameFlow.State.Menu && !Net.Active);
             if (flow != null) _lives.text = $"VIDAS <b>{Mathf.Max(0, flow.LivesLeft)}</b>";
         }
 

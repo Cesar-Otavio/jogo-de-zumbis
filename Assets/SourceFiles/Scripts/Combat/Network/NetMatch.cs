@@ -27,6 +27,7 @@ namespace Combat
             }
 
             PlaceLocalPlayer();
+            TeamHUD.Ensure();
             Notice(NetworkManager.Singleton.IsServer ? "Partida cooperativa iniciada" : "Você entrou na partida do Host");
         }
 

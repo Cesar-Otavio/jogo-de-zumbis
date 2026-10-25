@@ -61,3 +61,26 @@ Ver `08_TESTES.md` e `10_PENDENCIAS.md`.
 1. Terminar o **Marco 1**: limpeza segura e picos de quadro.
 2. Seguir para o **Marco 2**: HUD de equipe, depois reanimação e game over cooperativo.
 3. Em paralelo, **você** faz o teste em dois PCs.
+
+## Marco 1 (fim) e Marco 2 (início) — segunda execução
+
+| Item | Estado |
+|---|---|
+| Limpeza: cena do template fora da build; shaders do AI Inference fora da build (pacote mantido) | **CONCLUÍDO E VALIDADO** (−35 MB na release) |
+| Picos de quadro: áudio pré-carregado, silhueta reaproveitada, caracteres da fonte no carregamento | **CONCLUÍDO E VALIDADO** em medição (release sem quadros > 17 ms); 1 pico residual em dev documentado |
+| HUD de equipe (aliados, ping, conexão, minimapa) | **IMPLEMENTADO, AGUARDANDO TESTE** com 3–4 jogadores e em dois PCs; validado no mesmo PC com 2 |
+| Queda, reanimação validada pelo host, espectador, volta na onda, fim de jogo da equipe | **CONCLUÍDO E VALIDADO no mesmo PC** (exceto a tecla E física e a tela do cliente) |
+
+### Novos arquivos
+- `Network/TeamHUD.cs`
+- `Campaign/TextWarmup.cs`
+- `Editor/BuildStripping.cs`
+
+### Alterados
+- **Cooperativo**: `NetPlayer`, `NetPuppet`, `NetGame`, `NetMatch`, `NetAutoTest`, `PlayerCombat`, `Health`, `EnemyPerception`, `RagdollController`, `GameFlow`, `CombatHUD`, `MapMarker`, `MinimapView`, `TacticalMapView`.
+- **Picos e limpeza**: `EnvironmentalEventDirector`, `Editor/CombatSetup.Phase7` (menu 4: áudio), `Diagnostics/PerfProbe`.
+- **Marcadores de profiler** no `Update` de 15 scripts.
+
+### Assets
+- 214 `.meta` de áudio (preload/streaming).
+- `ProjectSettings/EditorBuildSettings.asset` (cena do template desligada).

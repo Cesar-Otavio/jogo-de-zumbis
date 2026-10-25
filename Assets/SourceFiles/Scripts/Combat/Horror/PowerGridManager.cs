@@ -331,7 +331,15 @@ namespace Combat
 
         // ---------------------------------------------------------------- update
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.PowerGridManager.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             bool playing = GameFlow.Instance == null || GameFlow.Instance.Current == GameFlow.State.Playing;
 
