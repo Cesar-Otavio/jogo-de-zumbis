@@ -57,6 +57,9 @@ namespace Combat
         [System.NonSerialized] public float HoldUntil;
 
         public ZombieVariant AppliedVariant { get; private set; }
+        // co-op: what a copy on another machine needs to look the same (attacks started, the animator's speed)
+        public int AttackCount { get; private set; }
+        public float AnimationSpeed => _animator != null ? _animator.GetFloat(_animIDSpeed) : 0.0f;
         public ZombieKind Kind => AppliedVariant != null ? AppliedVariant.Kind : ZombieKind.Common;
         public bool IsDead => _dead;
         public bool IsStaggered => Time.time < _staggerUntil;
@@ -456,6 +459,7 @@ namespace Combat
 
         private void StartAttack(Health target, IBreakable door)
         {
+            AttackCount++;
             _attackStarted = Time.time;
             _attackLanded = false;
             _attackTarget = target;

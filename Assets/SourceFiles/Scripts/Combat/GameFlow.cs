@@ -337,9 +337,18 @@ namespace Combat
             {
                 CampaignManager.Instance.Begin(Progression.CampaignChapter);
             }
+            else if (_spawner != null && Net.HasAuthority)
+            {
+                // co-op host: more survivors, more infected (the difficulty's own multipliers still apply)
+                DifficultySettings waves = Difficulty;
+                if (Net.Listening) waves.EnemyCount *= NetMatch.EnemyCountFor(NetPlayer.All.Count);
+                _spawner.BeginWaves(waves);
+            }
             else if (_spawner != null)
             {
-                _spawner.BeginWaves(Difficulty);
+                // co-op client: the host's infected are shown here; this machine spawns none of its own
+                _spawner.StopWaves();
+                _spawner.enabled = false;
             }
 
             PlayMusic(GameMusic);
@@ -348,9 +357,11 @@ namespace Combat
         private void Pause()
         {
             Current = State.Paused;
-            Time.timeScale = 0.0f;
             ShowOnly(_pausePanel);
             SetCursor(false);
+            // co-op: the menu opens but the world keeps going for everyone
+            if (Net.Active) return;
+            Time.timeScale = 0.0f;
             AudioListener.pause = true;
         }
 
@@ -404,6 +415,17 @@ namespace Combat
 
         private void Reload()
         {
+            // co-op: reloading the scene leaves the session (a restart can't be done for the others)
+            if (Net.Listening)
+            {
+                _startImmediately = false;
+                if (NetSession.Instance != null) NetSession.Instance.Leave();
+            }
+
+            // the network manager outlives scene loads by design; the reloaded scene brings a fresh one, so the
+            // old one goes now (not at the end of the frame, when it would clear the new one's registration)
+            if (Unity.Netcode.NetworkManager.Singleton != null) DestroyImmediate(Unity.Netcode.NetworkManager.Singleton.gameObject);
+
             Time.timeScale = 1.0f;
             AudioListener.pause = false;
             SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex >= 0
@@ -608,6 +630,25 @@ namespace Combat
             }
         }
 
+        // co-op client: a kill the host confirmed for this player (the infected died on the host, not here)
+        public void CreditNetworkKill(bool headshot)
+        {
+            if (Current != State.Playing) return;
+            if (_player != null) _player.CountNetworkKill();
+            int points = ZombiePoints + (headshot ? HeadshotBonus : 0);
+            AddScore(Mathf.RoundToInt(points * Difficulty.ScoreMultiplier), headshot ? "TIRO NA CABEÇA" : "");
+            RunState.AddCredits(ZombieCredits, null);
+            RunState.Kills++;
+            Progression.RecordKill(true);
+            Progression.AddExperience(5, "abate", false);
+        }
+
+        // co-op: the session ended (left, host gone): back to the main menu with a clean scene
+        public void ReturnToMenu()
+        {
+            BackToMenu();
+        }
+
         private void AddScore(int points, string reason)
         {
             Score += points;
@@ -712,11 +753,12 @@ namespace Combat
             _difficultyLabel = Label(menu, "NORMAL", 40, new Vector2(0.17f, 0.38f), new Vector2(0.6f, 0.45f), TextAlignmentOptions.Center, FontStyles.Bold, Color.white);
             SmallButton(menu, ">", new Vector2(0.63f, 0.385f), () => ChangeDifficulty(1));
             _difficultyDescription = Label(menu, "", 22, new Vector2(0.1f, 0.33f), new Vector2(0.9f, 0.378f), TextAlignmentOptions.TopLeft, FontStyles.Normal, new Color(1, 1, 1, 0.75f));
-            CompactButton(menu, "PERSONAGEM", new Vector2(0.1f, 0.265f), OpenWardrobe);
-            CompactButton(menu, "PROGRESSO", new Vector2(0.1f, 0.205f), () => ToggleSidePanel(_progressPanel));
-            CompactButton(menu, "CONTROLES", new Vector2(0.1f, 0.145f), () => ToggleSidePanel(_controlsPanel));
-            CompactButton(menu, "OPÇÕES", new Vector2(0.1f, 0.085f), () => ToggleSidePanel(_optionsPanel));
-            CompactButton(menu, "SAIR", new Vector2(0.1f, 0.025f), Quit);
+            CompactButton(menu, "MULTIJOGADOR", new Vector2(0.1f, 0.29f), () => { if (NetMenuView.Instance != null) NetMenuView.Instance.Show(); });
+            CompactButton(menu, "PERSONAGEM", new Vector2(0.1f, 0.235f), OpenWardrobe);
+            CompactButton(menu, "PROGRESSO", new Vector2(0.1f, 0.18f), () => ToggleSidePanel(_progressPanel));
+            CompactButton(menu, "CONTROLES", new Vector2(0.1f, 0.125f), () => ToggleSidePanel(_controlsPanel));
+            CompactButton(menu, "OPÇÕES", new Vector2(0.1f, 0.07f), () => ToggleSidePanel(_optionsPanel));
+            CompactButton(menu, "SAIR", new Vector2(0.1f, 0.015f), Quit);
 
             BuildWardrobe((RectTransform)_menuPanel.transform);
 

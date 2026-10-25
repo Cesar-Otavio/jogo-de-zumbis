@@ -123,6 +123,16 @@ namespace Combat
             }
         }
 
+        // co-op: the look as numbers, and someone else's look applied to a copy of the character
+        public int[] Choices => _choice != null ? (int[])_choice.Clone() : new int[0];
+
+        public void ShowChoices(int[] choices)
+        {
+            if (_choice == null || choices == null) return;
+            for (int i = 0; i < _choice.Length && i < choices.Length; i++) _choice[i] = Mathf.Clamp(choices[i], 0, Categories[i].Options.Count - 1);
+            ApplyAll();
+        }
+
         public string CurrentLabel(int category)
         {
             return Categories[category].Options[_choice[category]].Label;

@@ -628,6 +628,14 @@ namespace Combat
             if (StartingWeapon != null && !StartUnarmed) Give(new WeaponInstance(StartingWeapon, StartingWeapon.MagazineSize, StartingWeapon.StartReserve));
         }
 
+        // co-op client: the host confirmed a kill this player's shot made (the infected died on the host)
+        public void CountNetworkKill()
+        {
+            Kills++;
+            CombatEffects fx = CombatEffects.Instance;
+            if (fx != null) fx.PlayUI(fx.KillSound, 0.7f);
+        }
+
         private void OnHit(HitReport report)
         {
             LandedHit?.Invoke(report);

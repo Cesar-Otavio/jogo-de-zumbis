@@ -27,7 +27,8 @@ namespace Combat
             if (Open == name) return true;
             if (!CanOpen(name)) return false;
             Open = name;
-            Time.timeScale = SlowMotion;
+            // co-op: one player's backpack can't slow everyone's world down
+            if (!Net.Active) Time.timeScale = SlowMotion;
             Input(false);
             return true;
         }

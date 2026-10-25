@@ -77,8 +77,13 @@ namespace Combat
             Current = Mathf.Min(MaxHealth * RegenCap, Current + RegenRate * Time.deltaTime);
         }
 
+        // co-op: a copy of someone else's character (an infected shown on a client, a teammate's puppet)
+        // hands the hit to whoever owns the real one instead of taking it here; true = handled
+        [NonSerialized] public Func<DamageInfo, bool> Intercept;
+
         public void TakeDamage(DamageInfo info)
         {
+            if (Intercept != null && Intercept(info)) return;
             if (IsDead || Time.time < InvulnerableUntil) return;
 
             if (info.Instigator != null && info.Instigator.TryGetComponent(out Health attacker) &&
@@ -113,6 +118,13 @@ namespace Combat
         {
             if (IsDead) return;
             Current = Mathf.Min(MaxHealth, Current + amount);
+        }
+
+        // co-op copies show the health of the real character elsewhere, without any damage events
+        public void Mirror(float current, float max)
+        {
+            MaxHealth = Mathf.Max(1.0f, max);
+            Current = Mathf.Clamp(current, 0.0f, MaxHealth);
         }
 
         // e.g. tougher enemies on later waves

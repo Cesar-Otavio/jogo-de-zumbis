@@ -68,6 +68,9 @@ namespace Combat
 
         // set by the owner every frame
         [NonSerialized] public Vector3 AimPoint;
+        // the last shot, for drawing it on other machines in co-op
+        [NonSerialized] public Vector3 LastShotFrom;
+        [NonSerialized] public Vector3 LastShotTo;
         [NonSerialized] public bool Aiming;
         [NonSerialized] public bool Sprinting;
         [NonSerialized] public bool Lowered;
@@ -670,6 +673,8 @@ namespace Combat
                 EjectShell();
             }
 
+            LastShotFrom = muzzle;
+            LastShotTo = origin + direction * Mathf.Min(data.Range, toTarget.magnitude > 1.0f ? toTarget.magnitude : data.Range);
             Fired?.Invoke(Current);
             CombatEvents.ReportGunshot(muzzle, _health != null ? _health.Team : 0, data.Suppressed, gameObject);
         }
