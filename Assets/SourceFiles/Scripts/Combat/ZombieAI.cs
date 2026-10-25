@@ -196,6 +196,13 @@ namespace Combat
 
         // time spent here, for the performance probe (Diagnostics/PerfProbe)
         private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.ZombieAI.Update");
+        // and its parts, to find what a hitch inside it was
+        private static readonly Unity.Profiling.ProfilerMarker GroanMarker = new Unity.Profiling.ProfilerMarker("Combat.ZombieAI.Groan");
+        private static readonly Unity.Profiling.ProfilerMarker MoveMarker = new Unity.Profiling.ProfilerMarker("Combat.ZombieAI.Move");
+        private static readonly Unity.Profiling.ProfilerMarker DoorMarker = new Unity.Profiling.ProfilerMarker("Combat.ZombieAI.Door");
+        private static readonly Unity.Profiling.ProfilerMarker SwingMarker = new Unity.Profiling.ProfilerMarker("Combat.ZombieAI.Swing");
+        private static readonly Unity.Profiling.ProfilerMarker BlowMarker = new Unity.Profiling.ProfilerMarker("Combat.ZombieAI.Blow");
+        private static readonly Unity.Profiling.ProfilerMarker AnimatorMarker = new Unity.Profiling.ProfilerMarker("Combat.ZombieAI.Animator");
 
         private void Update()
         {
@@ -217,7 +224,7 @@ namespace Combat
                 return;
             }
 
-            UpdateGroans();
+            using (GroanMarker.Auto()) UpdateGroans();
 
             bool attacking = IsAttacking;
             bool staggered = IsStaggered;
@@ -235,6 +242,7 @@ namespace Combat
                 return;
             }
 
+            MoveMarker.Begin();
             switch (_perception.State)
             {
                 case AwarenessState.Chase:
@@ -258,9 +266,11 @@ namespace Combat
                     break;
             }
 
+            MoveMarker.End();
+
             if (!attacking) _perception.SetAttacking(false);
-            UpdateAttack();
-            UpdateAnimator();
+            using (BlowMarker.Auto()) UpdateAttack();
+            using (AnimatorMarker.Auto()) UpdateAnimator();
         }
 
         private void UpdateGroans()
@@ -306,7 +316,9 @@ namespace Combat
                 return;
             }
 
-            if (BatterDoor(targetPosition)) return;
+            bool door;
+            using (DoorMarker.Auto()) door = BatterDoor(targetPosition);
+            if (door) return;
 
             _agent.isStopped = false;
             _agent.speed = ChaseSpeed;
@@ -466,6 +478,11 @@ namespace Combat
         // ---------------------------------------------------------------- attack
 
         private void StartAttack(Health target, IBreakable door)
+        {
+            using (SwingMarker.Auto()) StartAttackMarked(target, door);
+        }
+
+        private void StartAttackMarked(Health target, IBreakable door)
         {
             AttackCount++;
             _attackStarted = Time.time;

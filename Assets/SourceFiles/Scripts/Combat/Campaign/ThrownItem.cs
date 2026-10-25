@@ -201,6 +201,7 @@ namespace Combat
             _light.shadows = LightShadows.None;
 
             _loop = gameObject.AddComponent<AudioSource>();
+            AudioRouting.Route(_loop, AudioRouting.Channel.Sfx);
             _loop.clip = CampaignAssets.Clip(a => a.FlareLoop);
             _loop.loop = true;
             _loop.spatialBlend = 1.0f;

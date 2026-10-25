@@ -160,10 +160,11 @@ namespace Combat
         public void PlaySound(AudioClip clip, Vector3 position, float volume = 1.0f, float pitchVariation = 0.05f,
             float spatial = 1.0f, float minDistance = 2.0f, float maxDistance = 80.0f, float pitch = 1.0f)
         {
-            PlayOn(clip, position, volume * GameSettings.SfxVolume, pitchVariation, spatial, minDistance, maxDistance, pitch);
+            PlayOn(clip, position, volume * GameSettings.SfxVolume, pitchVariation, spatial, minDistance, maxDistance, pitch, AudioRouting.Channel.Sfx);
         }
 
-        private void PlayOn(AudioClip clip, Vector3 position, float volume, float pitchVariation, float spatial, float minDistance, float maxDistance, float pitch)
+        private void PlayOn(AudioClip clip, Vector3 position, float volume, float pitchVariation, float spatial, float minDistance, float maxDistance, float pitch,
+            AudioRouting.Channel channel)
         {
             if (clip == null) return;
 
@@ -177,6 +178,7 @@ namespace Combat
             filter.cutoffFrequency = occluded ? OccludedCutoff : 22000.0f;
 
             voice.transform.position = position;
+            voice.outputAudioMixerGroup = AudioRouting.Group(channel);
             voice.clip = clip;
             voice.volume = volume * (occluded ? OccludedVolume : 1.0f);
             voice.pitch = pitch * (1.0f + Random.Range(-pitchVariation, pitchVariation));
@@ -207,13 +209,13 @@ namespace Combat
         // interface sounds follow the UI volume, not the effects volume
         public void PlayUI(AudioClip clip, float volume = 0.6f)
         {
-            PlayOn(clip, transform.position, volume * GameSettings.UiVolume, 0.0f, 0.0f, 2.0f, 80.0f, 1.0f);
+            PlayOn(clip, transform.position, volume * GameSettings.UiVolume, 0.0f, 0.0f, 2.0f, 80.0f, 1.0f, AudioRouting.Channel.Ui);
         }
 
         // ambience (wind, rain, thunder, distant events)
         public void PlayAmbient(AudioClip clip, Vector3 position, float volume = 1.0f, float spatial = 0.0f)
         {
-            PlayOn(clip, position, volume * GameSettings.AmbientVolume, 0.08f, spatial, 2.0f, 400.0f, 1.0f);
+            PlayOn(clip, position, volume * GameSettings.AmbientVolume, 0.08f, spatial, 2.0f, 400.0f, 1.0f, AudioRouting.Channel.Ambient);
         }
 
         // ---------------------------------------------------------------- visuals

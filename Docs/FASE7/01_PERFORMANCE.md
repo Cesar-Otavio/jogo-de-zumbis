@@ -195,3 +195,48 @@ Na release, nenhum quadro passou de 17 ms nas três execuções de 30 s. Antes, 
 
 - O pico residual de ~25 ms no primeiro contato dos infectados aconteceu em 1 de 2 execuções de desenvolvimento.
 - Ele fica dentro de `ZombieAI.Update`, mas ainda não sei em qual chamada. O próximo passo é pôr marcadores mais finos no ataque e no caminho.
+
+## 8. Pico residual: marcadores finos no `ZombieAI` e teste do JIT
+
+### 8.1 Marcadores novos
+
+- `ZombieAI.Update` agora se divide em `Combat.ZombieAI.Groan`, `Move`, `Door`, `Swing`, `Blow` e `Animator`.
+- `Blow` inclui o dano no alvo, ou seja, os tratadores de dano do jogador (HUD, sons de ferimento).
+- A sonda (`PerfProbe`) registra os seis.
+- Custo médio por quadro (onda de 30): `Update` 0,23 ms, dos quais `Move` 0,14 e `Animator` 0,06; o resto fica abaixo de 0,02.
+
+### 8.2 O que as medições mostram (build de desenvolvimento, onda de 30, Médio, 1080p)
+
+| Série | Execuções | Quadros > 25 ms | Onde |
+|---|---|---|---|
+| marcadores finos | 2 | 1 (25,6 ms) | `ScriptRunBehaviourUpdate` 17 ms; **nenhuma** parte do `ZombieAI` passou de 0,5 ms |
+| modo `-perf-discover` | 5 | 1 (26,6 ms) | idem; o modo não nomeia métodos de script sem *deep profiling* |
+| A/B do JIT, sem aquecimento | 6 | 0 | — |
+| A/B do JIT, com aquecimento | 6 | 1 (25,5 ms) | idem |
+| sonda isolada | 1 | 0 | — |
+
+- **Conclusão**:
+  - em 20 execuções, 3 quadros de 25–27 ms, cerca de 1 a cada 7 execuções, sempre por volta de 8–14 s;
+  - o `ZombieAI` **não** é a causa nesses três;
+  - o pico de 16 ms dentro do `ZombieAI` visto antes (ver §7.2) não se repetiu;
+  - o tempo extra está num `Update` de outro script, ainda sem marcador (45 scripts do jogo têm `Update` sem marcador).
+- Uma série foi descartada: uma execução com 51 ms coincidiu com o editor recompilando scripts na mesma máquina.
+
+### 8.3 Hipótese testada e descartada: compilação JIT
+
+- **Hipótese**: o build usa **Mono**, que compila cada método na primeira vez que ele roda. Isso explicaria picos que mudam de lugar.
+- **Teste**:
+  - um aquecimento compilou os 2.393 métodos do jogo numa thread de fundo, em cerca de 0,9 s, ao abrir o jogo;
+  - a primeira versão, só com `PrepareMethod`, levou 70 ms para 9.818 métodos: no Mono da Unity ela não compila nada;
+  - comparação em 6 pares alternados.
+- **Resultado**: nenhum efeito.
+  - Média: 10,95 ms com o aquecimento contra 10,90 ms sem.
+  - Picos: 1 com o aquecimento contra 0 sem.
+- O código foi **removido** (sem ganho comprovado, com risco e com custo).
+- **IL2CPP**, que elimina o JIT, não está instalado neste Unity (só Mono). Fica como opção sua pelo Unity Hub, sem prova de que resolve.
+
+### 8.4 Próximo passo
+
+- Marcar os `Update` dos scripts que ainda não têm marcador, começando pelos que rodam em todo quadro com inimigos na tela: `Health`, `HitReactor`, `RagdollController`, `PerceptionTarget`, `WeaponHolder`, `MinimapView`, `LightFlicker`, `LampShadowBudget`.
+- Repetir a série de 20 execuções.
+- O pico é raro (~1 quadro a cada 7 execuções de 40 s) e fica no limite de 25 ms. **Não** é P1.

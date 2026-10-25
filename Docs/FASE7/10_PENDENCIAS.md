@@ -6,8 +6,7 @@
 |---|---|---|
 | P2 | Tanque quebrando barricada vista pelo cliente | implementado, sem teste |
 | P2 | Valores do balanceamento cooperativo | ponto de partida; ajustar depois de jogar em equipe |
-| P2 | Pico de 44 ms num `Update` sem marcador (single-player, 1 vez) | marcar os scripts restantes |
-| P2 | Pico residual de ~25 ms no primeiro contato dos infectados (1 em 2 execuções dev; nenhum na release) | marcadores finos no ataque/caminho do `ZombieAI` |
+| P2 | Pico raro de 25–27 ms num `Update` sem marcador (3 em 20 execuções dev de 40 s; o `ZombieAI` foi descartado com marcadores finos; JIT testado e descartado) | marcar os 45 scripts restantes com `Update` (`01_PERFORMANCE.md` §8) |
 | P2 | Uma morte de host caído ~1 s depois da queda, vista uma vez na build anterior | não se repetiu; motivos agora no log |
 | P2 | Tela de opções com os nomes novos de qualidade não conferida | conferir |
 | P3 | Aviso "Light.shadowResolution is compatible only with Built-In" da lanterna | cosmético |
@@ -38,7 +37,7 @@ Nenhum P0 conhecido.
 
 1. **Marco 2**: feito no mesmo PC (barricada, gerador, apagão, corrida, fabricação pelo host, balanceamento). Falta o **teste em dois PCs (seu)** para considerar o multiplayer completo.
 2. **Marco 1 (resto)**:
-   - marcadores finos no `ZombieAI`, para o pico residual;
+   - marcadores nos `Update` restantes, para o pico raro (o `ZombieAI` já foi descartado);
    - CPU com muitos inimigos (física dos ragdolls, percepção).
-3. **Marco 4**: AudioMixer com os grupos pedidos, sem perder os volumes atuais.
+3. **Marco 4**: AudioMixer feito. Falta só ouvir o resultado em jogo (seu). O resto do Marco 4 (vozes) depende da sua escolha de TTS, gravação ou só legendas.
 4. **Marco 9**: Unity Test Framework e os primeiros testes (mochila, fabricação, dano, aprovação de conexão, reanimação).

@@ -129,6 +129,7 @@ namespace Combat
         private AudioSource Loop(string name, AudioClip clip)
         {
             var source = new GameObject(name).AddComponent<AudioSource>();
+            AudioRouting.Route(source, AudioRouting.Channel.Ambient);
             source.transform.SetParent(transform, false);
             source.clip = clip;
             source.loop = true;

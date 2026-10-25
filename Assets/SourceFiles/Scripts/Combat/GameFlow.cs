@@ -203,6 +203,7 @@ namespace Combat
             }
 
             _music = gameObject.AddComponent<AudioSource>();
+            AudioRouting.Route(_music, AudioRouting.Channel.Music);
             _music.loop = true;
             _music.spatialBlend = 0.0f;
             _music.volume = MusicVolume * GameSettings.MusicVolume;

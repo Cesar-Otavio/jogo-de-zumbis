@@ -56,6 +56,7 @@ namespace Combat
         private void Awake()
         {
             _engine = gameObject.AddComponent<AudioSource>();
+            AudioRouting.Route(_engine, AudioRouting.Channel.Sfx);
             _engine.clip = RunningLoop;
             _engine.loop = true;
             _engine.spatialBlend = 1.0f;

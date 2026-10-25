@@ -82,6 +82,7 @@ namespace Combat
             _distortion.distortionLevel = 0.18f;
 
             _static = gameObject.AddComponent<AudioSource>();
+            AudioRouting.Route(_static, AudioRouting.Channel.Radio);
             _static.spatialBlend = 0.0f;
             _static.loop = true;
             _static.playOnAwake = false;
@@ -244,6 +245,7 @@ namespace Combat
         {
             float dt = Time.unscaledDeltaTime;
             MusicDuck = Mathf.MoveTowards(MusicDuck, Current != null ? MusicDuckLevel : 1.0f, dt * 1.5f);
+            AudioRouting.UpdateDuck(Current != null, dt);
             CheckLowAmmo();
 
             if (Current != null)
@@ -293,6 +295,7 @@ namespace Combat
             CurrentDuration = lead + speech + (radio ? 0.18f : 0.25f);
 
             _highPass.enabled = _lowPass.enabled = _distortion.enabled = radio;
+            AudioRouting.Route(_voice, radio ? AudioRouting.Channel.Radio : AudioRouting.Channel.Dialogue);
             _voice.clip = line.Clip;
             _voice.volume = VoiceVolume * GameSettings.DialogueVolume;
             _voicePending = line.Clip != null;

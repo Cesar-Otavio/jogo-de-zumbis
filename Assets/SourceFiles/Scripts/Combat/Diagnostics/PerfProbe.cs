@@ -54,7 +54,10 @@ namespace Combat
             "Combat.ZombieAI.Update", "Combat.EnemyPerception.Update", "Combat.EnemySpawner.Update", "Combat.EnvironmentalEventDirector.Update",
             "Combat.TensionDirector.Update", "Combat.CombatHUD.Update", "Combat.CampaignHUD.Update", "Combat.PlayerCombat.Update",
             "Combat.CombatEffects.Update", "Combat.SurfaceFootstepSystem.Update", "Combat.WeatherController.Update", "Combat.PowerGridManager.Update",
-            "Combat.MissionManager.Update", "Combat.DialogueDirector.Update", "Combat.PlayerInjuryFeedback.Update"
+            "Combat.MissionManager.Update", "Combat.DialogueDirector.Update", "Combat.PlayerInjuryFeedback.Update",
+            // ZombieAI's parts (Blow includes the damage handlers of whoever it hits)
+            "Combat.ZombieAI.Groan", "Combat.ZombieAI.Move", "Combat.ZombieAI.Door", "Combat.ZombieAI.Swing", "Combat.ZombieAI.Blow",
+            "Combat.ZombieAI.Animator"
         };
 
         // render passes whose GPU time is worth knowing on its own

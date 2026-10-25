@@ -114,6 +114,7 @@ namespace Combat
         {
             _block = new MaterialPropertyBlock();
             _loop = gameObject.AddComponent<AudioSource>();
+            AudioRouting.Route(_loop, AudioRouting.Channel.Sfx);
             _loop.loop = true;
             _loop.spatialBlend = 1.0f;
             _loop.minDistance = 2.0f;

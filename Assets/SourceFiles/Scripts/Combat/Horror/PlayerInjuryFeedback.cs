@@ -49,6 +49,7 @@ namespace Combat
         private AudioSource Loop(AudioClip clip)
         {
             var source = gameObject.AddComponent<AudioSource>();
+            AudioRouting.Route(source, AudioRouting.Channel.Sfx);
             source.clip = clip;
             source.loop = true;
             source.spatialBlend = 0.0f;

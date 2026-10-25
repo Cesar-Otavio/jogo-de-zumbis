@@ -171,6 +171,7 @@ namespace Combat
                 for (int i = 0; i < Mathf.Min(2, sector.Lamps.Count); i++)
                 {
                     AudioSource hum = sector.Lamps[i * Mathf.Max(1, sector.Lamps.Count / 2)].gameObject.AddComponent<AudioSource>();
+                    AudioRouting.Route(hum, AudioRouting.Channel.Ambient);
                     hum.clip = HumLoop;
                     hum.loop = true;
                     hum.spatialBlend = 1.0f;
@@ -188,6 +189,8 @@ namespace Combat
             if (AlarmLoop != null)
             {
                 var alarm = new GameObject("Alarm").AddComponent<AudioSource>();
+                // the alarm is a warning: an effect, not ambience (it isn't ducked)
+                AudioRouting.Route(alarm, AudioRouting.Channel.Sfx);
                 alarm.transform.SetParent(root, false);
                 alarm.transform.position = sector.Center + Vector3.up * 6.0f;
                 alarm.clip = AlarmLoop;

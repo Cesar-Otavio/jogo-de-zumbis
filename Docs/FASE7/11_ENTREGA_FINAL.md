@@ -118,3 +118,19 @@ Ver `08_TESTES.md` e `10_PENDENCIAS.md`.
 
 - **Novo**: `Network/CoopBalance.cs`.
 - **Alterados**: `NetWorld` (conjunto `_taken`, livro de materiais, `CraftRpc`), `NetGame` (balanceamento por onda), `NetMatch` (multiplicador antigo removido), `NetSessionPrefabs` (`Balance`), `NetAutoTest` (`-net-world2`, `-net-race`), `EnemySpawner` (escalas cooperativas e `WaveStarting`), `GameFlow`, `Crafting/Crafting`.
+
+## Marco 1 (picos) e Marco 4 (AudioMixer) — quinta execução
+
+| Item | Estado |
+|---|---|
+| Marcadores finos no `ZombieAI` (6 partes, na sonda) | **CONCLUÍDO E VALIDADO** (o `ZombieAI` não é a causa do pico residual em 20 execuções) |
+| Hipótese do JIT (aquecimento dos métodos) | **TESTADA E DESCARTADA** (A/B de 6 pares sem efeito; código removido) |
+| Pico raro de 25–27 ms | **PARCIAL**: causa num `Update` ainda sem marcador |
+| AudioMixer com Master, Music, SFX, Dialogue, Radio, Ambient e UI | **CONCLUÍDO E VALIDADO no editor** (roteamento de todas as fontes e ducking medidos) |
+| Volumes das opções preservados | **CONCLUÍDO** (mesma escala por fonte; grupos em 0 dB) |
+| Audibilidade das ameaças durante o rádio | **IMPLEMENTADO, AGUARDANDO TESTE** de ouvido (seu) |
+
+- **Novo**: `AudioRouting.cs`, `Editor/CombatSetup.Phase7Audio.cs` (menu 6), `Resources/Audio/GameMixer.mixer`.
+- **Alterados**:
+  - `ZombieAI`, `Diagnostics/PerfProbe` (marcadores);
+  - `CombatEffects`, `GameFlow`, `Narrative/DialogueDirector`, `WeatherController`, `PowerGridManager`, `PowerGenerator`, `PlayerInjuryFeedback`, `FireZone`, `MissionDevice`, `ThrownItem` (roteamento).
