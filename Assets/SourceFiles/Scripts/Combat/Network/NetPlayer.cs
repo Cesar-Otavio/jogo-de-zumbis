@@ -85,6 +85,8 @@ namespace Combat
         public readonly NetworkVariable<double> ReviveStartedAt = new NetworkVariable<double>();
         // round trip to the host in ms, measured by the host
         public readonly NetworkVariable<ushort> Ping = new NetworkVariable<ushort>();
+        // a client player's credits, kept by the host (the host's own are in its RunState); the client mirrors it
+        public readonly NetworkVariable<int> Credits = new NetworkVariable<int>();
 
         public const ulong NoReviver = ulong.MaxValue;
         public const float ReviveTime = 5.0f;
@@ -136,6 +138,7 @@ namespace Combat
 
             Outfit.OnValueChanged += (_, value) => { if (Puppet != null) Puppet.SetOutfit(UnpackOutfit(value)); };
             Condition.OnValueChanged += OnConditionChanged;
+            if (IsOwner && !IsServer) Credits.OnValueChanged += (before, now) => RunState.MirrorCredits(now, now - before);
             // the name may arrive a moment after the player object: announce whoever it is once it does
             if (!IsOwner)
             {
@@ -410,6 +413,37 @@ namespace Combat
                     _local.EnterDowned();
                     break;
             }
+        }
+
+        // ---------------------------------------------------------------- credits and the shop (host-checked)
+
+        // the host paying a client player (kills, waves, chests, bosses)
+        public void GrantCredits(int amount)
+        {
+            if (IsServer && amount > 0 && !IsOwnedByServer) Credits.Value += amount;
+        }
+
+        public void RequestPurchase(int entry, int price)
+        {
+            if (IsOwner) PurchaseRpc(entry, price);
+        }
+
+        // the host checks the entry exists, the price isn't below the shop's and the account covers it
+        [Rpc(SendTo.Server)]
+        private void PurchaseRpc(int entry, int price, RpcParams rpc = default)
+        {
+            if (rpc.Receive.SenderClientId != OwnerClientId) return;
+            ShopManager shop = ShopManager.Instance;
+            bool ok = shop != null && shop.Catalog != null && shop.Catalog.Entries != null && entry >= 0 && entry < shop.Catalog.Entries.Length
+                      && price >= shop.Catalog.Entries[entry].Price && Credits.Value >= price;
+            if (ok) Credits.Value -= price;
+            PurchaseResultRpc(entry, ok);
+        }
+
+        [Rpc(SendTo.Owner)]
+        private void PurchaseResultRpc(int entry, bool ok)
+        {
+            if (ShopManager.Instance != null) ShopManager.Instance.CompleteRemotePurchase(entry, ok);
         }
 
         // ---------------------------------------------------------------- outfit packing

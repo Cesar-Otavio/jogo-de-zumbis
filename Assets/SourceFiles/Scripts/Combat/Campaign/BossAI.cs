@@ -61,7 +61,11 @@ namespace Combat
         private Health _health;
         private Animator _animator;
         private RagdollController _ragdoll;
+        // this machine's player (camera shake); the one being hunted is _target, which in co-op can be a
+        // teammate's puppet (their hits go to them through the puppet's health)
         private PlayerCombat _player;
+        private Health _target;
+        private float _nextTargetPick;
         private float _stateStarted;
         private float _nextMelee;
         private float _nextCharge;
@@ -157,15 +161,21 @@ namespace Combat
         private void Update()
         {
             if (State == Move.Dead) return;
-            if (_player == null) return;
+            if (Time.time >= _nextTargetPick || _target == null)
+            {
+                _nextTargetPick = Time.time + 0.5f;
+                _target = PickTarget();
+            }
+
+            if (_target == null) return;
 
             UpdateLight();
             UpdatePhase();
             _health.DamageTakenMultiplier = Vulnerable ? Definition.VulnerableMultiplier : Lit ? Definition.LightMultiplier : 1.0f;
 
-            Vector3 target = _player.transform.position;
+            Vector3 target = _target.transform.position;
             float distance = Vector3.Distance(transform.position, target);
-            bool playerDown = _player.Health.IsDead;
+            bool playerDown = _target.IsDead || _target.Untargetable;
 
             switch (State)
             {
@@ -291,16 +301,16 @@ namespace Combat
                     {
                         DrawRing(0.0f, false);
                         CampaignAssets.Play(a => a.Shockwave, transform.position, 1.0f, 100.0f);
-                        if (_player != null)
+                        // every survivor in reach is hit; jumping over it or rolling through it avoids the hit
+                        foreach (Health survivor in Health.Living)
                         {
-                            Vector3 offset = _player.transform.position - transform.position;
+                            if (!IsSurvivor(survivor)) continue;
+                            Vector3 offset = survivor.transform.position - transform.position;
                             offset.y = 0.0f;
-                            // jumping over it or rolling through it avoids the hit
-                            bool airborne = !_player.Controller.Grounded;
-                            if (offset.magnitude <= Definition.ShockwaveRadius && !airborne) HitPlayer(Definition.ShockwaveDamage, offset.normalized, 10.0f);
+                            if (offset.magnitude <= Definition.ShockwaveRadius && !Airborne(survivor)) HitSurvivor(survivor, Definition.ShockwaveDamage, offset.normalized, 10.0f);
                         }
 
-                        _player.AddShake(1.2f);
+                        if (_player != null) _player.AddShake(1.2f);
                         _nextShockwave = Time.time + Definition.ShockwaveCooldown;
                         Enter(Move.Recover);
                     }
@@ -347,9 +357,9 @@ namespace Combat
             Breakables.HitAround(transform.position + _chargeDirection * 1.2f, 2.0f, 9999.0f, gameObject);
 
             // the player in the way gets run over, once
-            if (!_chargeHitPlayer && _player != null && !_player.Health.IsDead)
+            if (!_chargeHitPlayer && _target != null && !_target.IsDead)
             {
-                Vector3 offset = _player.transform.position - transform.position;
+                Vector3 offset = _target.transform.position - transform.position;
                 offset.y = 0.0f;
                 if (offset.magnitude < 1.8f * Definition.Scale * 0.7f)
                 {
@@ -395,15 +405,52 @@ namespace Combat
 
         private void HitPlayer(float damage, Vector3 direction, float force)
         {
-            _player.Health.TakeDamage(new DamageInfo
+            if (_target != null) HitSurvivor(_target, damage, direction, force);
+        }
+
+        private void HitSurvivor(Health survivor, float damage, Vector3 direction, float force)
+        {
+            survivor.TakeDamage(new DamageInfo
             {
                 Amount = damage,
-                Point = _player.transform.position + Vector3.up * 1.2f,
+                Point = survivor.transform.position + Vector3.up * 1.2f,
                 Direction = direction,
                 Force = force,
                 Instigator = gameObject
             });
         }
+
+        // the nearest survivor still standing: this machine's player, or in co-op a teammate's puppet
+        private Health PickTarget()
+        {
+            Health best = null;
+            float bestDistance = float.MaxValue;
+            foreach (Health survivor in Health.Living)
+            {
+                if (!IsSurvivor(survivor)) continue;
+                float d = (survivor.transform.position - transform.position).sqrMagnitude;
+                if (d < bestDistance)
+                {
+                    bestDistance = d;
+                    best = survivor;
+                }
+            }
+
+            // nobody left standing: stay on whoever it had, so it stops instead of wandering
+            return best != null ? best : _target != null ? _target : _player != null ? _player.Health : null;
+        }
+
+        private static bool IsSurvivor(Health health) => health != null && health.Team == Factions.Player && !health.IsDead && !health.Untargetable;
+
+        private bool Airborne(Health survivor)
+        {
+            if (_player != null && survivor == _player.Health) return !_player.Controller.Grounded;
+            var puppet = survivor.GetComponent<NetPuppet>();
+            return puppet != null && !puppet.Grounded;
+        }
+
+        // co-op client: the host's boss called out a move
+        public static void ShowRemoteWarning(string text) => Warning?.Invoke(null, text);
 
         // ---------------------------------------------------------------- phases and light
 

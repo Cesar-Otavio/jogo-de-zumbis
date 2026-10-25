@@ -81,6 +81,19 @@ namespace Combat.EditorTools
             Debug.Log($"Audio import: {preloaded} effects preloaded, {streamed} long clips streamed, {unchanged} already right");
         }
 
+        // the co-op world layer (NetWorld) lives next to NetGame on its network prefab
+        [MenuItem("Tools/Combat/Phase 7/5 - Network World")]
+        public static void SetupPhase7NetworkWorld()
+        {
+            const string path = "Assets/SourceFiles/Network/NetGame.prefab";
+            GameObject root = PrefabUtility.LoadPrefabContents(path);
+            bool added = root.GetComponent<NetWorld>() == null;
+            if (added) root.AddComponent<NetWorld>();
+            PrefabUtility.SaveAsPrefabAsset(root, path);
+            PrefabUtility.UnloadPrefabContents(root);
+            Debug.Log(added ? "NetWorld added to NetGame.prefab" : "NetGame.prefab already has NetWorld");
+        }
+
         private static void BuildWindows(string path, BuildOptions options)
         {
             PlayerSettings.enableFrameTimingStats = true;

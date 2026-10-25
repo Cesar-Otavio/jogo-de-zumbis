@@ -97,6 +97,8 @@ namespace Combat.EditorTools
             var go = new GameObject(name);
             go.AddComponent<NetworkObject>();
             go.AddComponent(behaviour);
+            // the shared world (pickups, doors, barricades, chests, power) travels with the match
+            if (behaviour == typeof(NetGame)) go.AddComponent<NetWorld>();
             GameObject prefab = PrefabUtility.SaveAsPrefabAsset(go, path);
             Object.DestroyImmediate(go);
             return prefab;

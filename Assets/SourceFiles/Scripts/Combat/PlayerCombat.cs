@@ -478,6 +478,8 @@ namespace Combat
 
         private void PickUp(WeaponPickup pickup)
         {
+            // co-op: whoever the host gives it to (first come)
+            if (!NetWorld.MayTake(pickup, () => { if (pickup != null) PickUp(pickup); })) return;
             // the same gun only gives its ammo
             foreach (WeaponInstance owned in Slots)
             {
@@ -551,7 +553,8 @@ namespace Combat
 
             Vector3 position = transform.position + Vector3.up * 1.2f + transform.forward * 0.5f;
             Vector3 velocity = transform.forward * 3.0f + Vector3.up * 1.5f;
-            WeaponPickup.Drop(weapon, position, transform.rotation * Quaternion.Euler(0.0f, 90.0f, 0.0f), velocity);
+            // co-op client: the host puts it on the ground for everyone
+            NetWorld.PlayerDropped(WeaponPickup.Drop(weapon, position, transform.rotation * Quaternion.Euler(0.0f, 90.0f, 0.0f), velocity));
         }
 
         private void UpdateNearbyPickup()

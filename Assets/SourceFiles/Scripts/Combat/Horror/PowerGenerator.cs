@@ -132,6 +132,11 @@ namespace Combat
         public void Interact(PlayerCombat player)
         {
             if (IsStarting || IsRunning || Blocked) return;
+            if (NetWorld.Redirect(this, NetWorld.ActGenerator))
+            {
+                if (player != null) player.ShowNotice("Ligando o gerador...");
+                return;
+            }
 
             IsStarting = true;
             _startedAt = Time.time;

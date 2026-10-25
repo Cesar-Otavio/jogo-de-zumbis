@@ -15,6 +15,9 @@ namespace Combat
      *                              bullet uses (its Health, which hands the hit to the host)
      *   -net-revive                when a teammate is down, walk up to them and revive them through the same
      *                              calls the HUD makes while the interact key is held (the host checks it)
+     *   -net-world                 once the match runs, walk to a closed chest and open it, take what falls
+     *                              out, use the nearest door and buy ammo in the break, the way the interact
+     *                              key and the shop would (all of it is the host's to allow)
      */
     public class NetAutoTest : MonoBehaviour
     {
@@ -23,6 +26,11 @@ namespace Combat
         private string _log;
         private bool _hit;
         private bool _revive;
+        private bool _world;
+        private int _worldStep;
+        private float _nextWorldStep;
+        private InteractiveDoor _doorTested;
+        private bool _doorWasOpen;
         private NetPlayer _reviving;
         private float _reviveDone;
         private float _reviveBegin;
@@ -47,6 +55,7 @@ namespace Combat
                     case "-net-log": _log = next; break;
                     case "-net-hit": _hit = true; break;
                     case "-net-revive": _revive = true; break;
+                    case "-net-world": _world = true; break;
                 }
             }
 
@@ -81,6 +90,7 @@ namespace Combat
 
             if (_hit && Net.Active) HitNearest();
             if (_revive && Net.Active) ReviveDowned();
+            if (_world && Net.Active) WorldStep();
         }
 
         private void Report()
@@ -107,6 +117,24 @@ namespace Combat
             {
                 if (player.IsOwner || player.Puppet == null) continue;
                 line.Append($" | boneco {player.DisplayName} em {player.Puppet.transform.position} vida {player.Puppet.Health.Current:F0} arma {player.State.Value.Weapon}");
+            }
+
+            if (Net.Active)
+            {
+                int open = 0;
+                foreach (LootCrate crate in LootCrate.All) if (crate.IsOpen) open++;
+                int doors = 0;
+                foreach (InteractiveDoor door in InteractiveDoor.All) if (door.IsOpen) doors++;
+                line.Append($" | baús abertos {open}/{LootCrate.All.Count} portas abertas {doors}/{InteractiveDoor.All.Count}");
+                line.Append($" | no chão: armas {FindObjectsByType<WeaponPickup>().Length} munição/kits {FindObjectsByType<ConsumablePickup>().Length} itens {FindObjectsByType<ItemPickup>().Length} materiais {FindObjectsByType<WorldItem>().Length}");
+                int soldiers = 0, bosses = 0;
+                foreach (EnemyReplica r in FindObjectsByType<EnemyReplica>())
+                {
+                    if (r.Kind == EnemyKind.Soldier) soldiers++;
+                    if (r.Kind == EnemyKind.Boss) bosses++;
+                }
+
+                line.Append($" | réplicas soldado {soldiers} chefe {bosses} (tiros vistos {EnemyReplica.ShotsSeen}, gritos {EnemyReplica.ScreamsSeen}, barra de chefe {(EnemyReplica.ActiveBoss != null ? EnemyReplica.ActiveBoss.Boss.DisplayName : "-")})");
             }
 
             EnemyReplica[] replicas = FindObjectsByType<EnemyReplica>();
@@ -209,6 +237,144 @@ namespace Combat
                 Screenshot("reanimando");
                 return;
             }
+        }
+
+        private void WorldStep()
+        {
+            if (Time.unscaledTime < _nextWorldStep) return;
+            _nextWorldStep = Time.unscaledTime + 3.0f;
+            PlayerCombat me = FindAnyObjectByType<PlayerCombat>();
+            if (me == null || me.Health.IsDead) return;
+
+            switch (_worldStep)
+            {
+                case 0:
+                    LootCrate crate = null;
+                    float best = float.MaxValue;
+                    foreach (LootCrate c in LootCrate.All)
+                    {
+                        float d = Vector3.Distance(c.transform.position, me.transform.position);
+                        if (!c.IsOpen && d < best)
+                        {
+                            best = d;
+                            crate = c;
+                        }
+                    }
+
+                    if (crate == null) return;
+                    Teleport(me, crate.transform.position - crate.transform.forward * 1.3f);
+                    _worldStep++;
+                    _nextWorldStep = Time.unscaledTime + 1.0f;
+                    Write($"indo ao baú em {crate.transform.position} ({best:F0} m)");
+                    return;
+                case 1:
+                    foreach (LootCrate c in LootCrate.All)
+                    {
+                        if (c.IsOpen || Vector3.Distance(c.Center, me.transform.position) > 3.0f) continue;
+                        Write($"abrindo baú (créditos antes {RunState.Credits})");
+                        c.Open(me);
+                        break;
+                    }
+
+                    _worldStep++;
+                    return;
+                case 2:
+                case 3:
+                case 4:
+                    // what fell out: step on the boxes, use the rest
+                    Vector3 here = me.transform.position;
+                    foreach (WorldItem item in FindObjectsByType<WorldItem>())
+                    {
+                        if (Vector3.Distance(item.transform.position, here) > 4.0f) continue;
+                        Write($"pegando material {item.ItemId}");
+                        item.Interact(me);
+                        break;
+                    }
+
+                    foreach (ConsumablePickup box in FindObjectsByType<ConsumablePickup>())
+                    {
+                        if (Vector3.Distance(box.transform.position, here) > 4.0f) continue;
+                        Write($"pegando {box.Type}");
+                        Teleport(me, box.transform.position);
+                        break;
+                    }
+
+                    foreach (WeaponPickup gun in FindObjectsByType<WeaponPickup>())
+                    {
+                        if (Vector3.Distance(gun.transform.position, here) > 4.0f) continue;
+                        Write($"pegando arma {gun.Data.DisplayName}");
+                        Teleport(me, gun.transform.position);
+                        me.GetComponent<StarterAssets.StarterAssetsInputs>().interact = true;
+                        break;
+                    }
+
+                    _worldStep++;
+                    return;
+                case 5:
+                    InteractiveDoor door = null;
+                    float nearest = float.MaxValue;
+                    foreach (InteractiveDoor d in InteractiveDoor.All)
+                    {
+                        float dist = Vector3.Distance(d.InteractionPoint, me.transform.position);
+                        if (!d.IsBroken && !d.Locked && d.HasPower && dist < nearest)
+                        {
+                            nearest = dist;
+                            door = d;
+                        }
+                    }
+
+                    if (door != null)
+                    {
+                        Teleport(me, door.InteractionPoint - door.transform.forward * 1.2f);
+                        _doorTested = door;
+                        _doorWasOpen = door.IsOpen;
+                    }
+
+                    _worldStep++;
+                    _nextWorldStep = Time.unscaledTime + 1.0f;
+                    return;
+                case 6:
+                    if (_doorTested != null)
+                    {
+                        Write($"porta usada (estava {(_doorWasOpen ? "aberta" : "fechada")})");
+                        _doorTested.Interact(me);
+                    }
+
+                    _worldStep++;
+                    return;
+                case 7:
+                    if (_doorTested != null) Write($"porta agora {(_doorTested.IsOpen ? "aberta" : "fechada")} (mudou: {_doorTested.IsOpen != _doorWasOpen})");
+                    _worldStep++;
+                    return;
+                case 8:
+                    ShopManager shop = ShopManager.Instance;
+                    EnemySpawner spawner = FindAnyObjectByType<EnemySpawner>();
+                    if (shop == null || spawner == null || !spawner.InIntermission) return;
+                    if (!ShopManager.IsOpen) shop.Open();
+                    foreach (ShopCatalog.Entry entry in shop.Catalog.Entries)
+                    {
+                        if (entry.Kind != ShopItemKind.Ammo || shop.Unavailable(entry) != null) continue;
+                        Write($"comprando {entry.Id} por {shop.PriceOf(entry)} (créditos {RunState.Credits})");
+                        shop.TryBuy(entry);
+                        break;
+                    }
+
+                    _worldStep++;
+                    return;
+                case 9:
+                    Write($"depois da compra: créditos {RunState.Credits}");
+                    if (ShopManager.IsOpen && ShopManager.Instance != null) ShopManager.Instance.Close();
+                    _worldStep++;
+                    return;
+            }
+        }
+
+        private static void Teleport(PlayerCombat body, Vector3 position)
+        {
+            var controller = body.GetComponent<CharacterController>();
+            if (controller != null) controller.enabled = false;
+            body.transform.position = position;
+            if (controller != null) controller.enabled = true;
         }
 
         private void Screenshot(string label)

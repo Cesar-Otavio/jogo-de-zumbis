@@ -74,7 +74,8 @@ namespace Combat
             amount = Mathf.Clamp(amount, 1, stack.Count);
             if (!Backpack.RemoveAt(slot, amount)) return false;
             Vector3 at = player.transform.position + player.transform.forward * 0.9f + Vector3.up * 0.1f;
-            WorldItem.Spawn(id, amount, at);
+            // co-op client: the host puts it on the ground for everyone
+            NetWorld.PlayerDropped(WorldItem.Spawn(id, amount, at));
             return true;
         }
     }

@@ -29,6 +29,7 @@ namespace Combat
 
         public NetPlayer Owner { get; private set; }
         public Transform CameraRoot { get; private set; }
+        public bool Grounded => !_hasState || _last.Has(0);
         public Health Health { get; private set; }
 
         private Animator _animator;

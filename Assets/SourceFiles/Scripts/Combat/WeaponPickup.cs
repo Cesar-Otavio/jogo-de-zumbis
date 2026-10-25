@@ -41,6 +41,8 @@ namespace Combat
             All.Remove(this);
         }
 
+        private void OnDestroy() => NetWorld.Unregister(this);
+
         private void Start()
         {
             _born = Time.time;
@@ -52,6 +54,7 @@ namespace Combat
 
             if (Magazine < 0) Magazine = Data.MagazineSize;
             if (Reserve < 0) Reserve = Data.StartReserve;
+            NetWorld.Register(this);
 
             GameObject visual = Instantiate(Data.Model, transform);
             visual.name = "Visual";

@@ -403,7 +403,18 @@ namespace Combat
                 if (active != null && !active.Health.IsDead) boss = active;
             }
 
-            _bossBar.SetActive(boss != null);
+            // co-op client: the boss is the host's; its replica carries what the bar shows
+            EnemyReplica remote = boss == null ? EnemyReplica.ActiveBoss : null;
+            if (remote != null)
+            {
+                _bossBar.SetActive(true);
+                _bossFill.rectTransform.anchorMax = new Vector2(remote.Health.Normalized, 1.0f);
+                _bossFill.color = remote.BossVulnerable ? new Color(1.0f, 0.75f, 0.2f) : remote.BossLit ? new Color(1.0f, 0.95f, 0.6f) : new Color(0.85f, 0.15f, 0.12f);
+                string remoteState = remote.BossVulnerable ? "  <color=#FFC74D>VULNERÁVEL</color>" : remote.BossLit ? "  <color=#FFF2A0>EXPOSTA À LUZ</color>" : "";
+                _bossName.text = remote.Boss.DisplayName.ToUpperInvariant() + remoteState;
+            }
+
+            _bossBar.SetActive(boss != null || remote != null);
             if (boss != null)
             {
                 _bossFill.rectTransform.anchorMax = new Vector2(boss.Health.Normalized, 1.0f);

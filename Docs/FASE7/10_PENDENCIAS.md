@@ -4,8 +4,9 @@
 
 | Prioridade | Item | Situação |
 |---|---|---|
-| P1 | Cooperativo: mundo e economia locais em cada máquina (risco de loot e recompensa em duplicidade) | conhecido desde a Fase 6; Marco 2 |
-| P1 | Cooperativo: Gritador, Tanque, soldados e chefes sem replicação de habilidades | Marco 2 |
+| P1 | Corrida real de dois jogadores no mesmo item / baú | lógica de "primeiro pedido" implementada; corrida não provocada em teste |
+| P2 | Barricadas, gerador e apagão do cliente | implementados, sem teste |
+| P2 | Pico de 44 ms num `Update` sem marcador (single-player, 1 vez) | marcar os scripts restantes |
 | P2 | Pico residual de ~25 ms no primeiro contato dos infectados (1 em 2 execuções dev; nenhum na release) | marcadores finos no ataque/caminho do `ZombieAI` |
 | P2 | Uma morte de host caído ~1 s depois da queda, vista uma vez na build anterior | não se repetiu; motivos agora no log |
 | P2 | Tela de opções com os nomes novos de qualidade não conferida | conferir |
@@ -35,11 +36,13 @@ Nenhum P0 conhecido.
 
 **Já feito**: limpeza segura, picos de quadro, HUD de equipe, queda/reanimação/espectador/fim de jogo cooperativo (ver `11_ENTREGA_FINAL.md`).
 
-1. **Marco 2 (continua)**:
-   - Gritador, Tanque, soldados e chefes em rede (habilidades só no host);
-   - mundo com IDs estáveis (portas, energia, baús, itens);
-   - economia e fabricação validadas pelo host;
-   - mostrar a tela de fim de jogo também no log do cliente de teste.
+1. **Marco 2 (resto)**:
+   - testes de barricada, gerador e apagão pelo cliente;
+   - corrida de dois jogadores no mesmo item;
+   - fabricação validada pelo host;
+   - fim de jogo visto no log do cliente;
+   - balanceamento cooperativo (ondas por jogadores vivos).
+   - Depois disso o Modo Infinito cooperativo fica completo, faltando o teste em dois PCs (seu).
 2. **Marco 1 (resto)**:
    - marcadores finos no `ZombieAI`, para o pico residual;
    - CPU com muitos inimigos (física dos ragdolls, percepção).

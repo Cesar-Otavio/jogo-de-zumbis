@@ -5,23 +5,34 @@ using UnityEngine;
 
 namespace Combat
 {
-    // one infected as seen by everyone: what the clients need to draw it, nothing they could use to decide anything
+    public static class EnemyKind
+    {
+        public const byte Zombie = 0;
+        public const byte Soldier = 1;
+        public const byte Boss = 2;
+    }
+
+    // one enemy as seen by everyone: what the clients need to draw it, nothing they could use to decide anything
     public struct EnemyState : INetworkSerializable
     {
         public ushort Id;
+        public byte Kind;
+        // zombie / soldier prefab in the spawner's lists, or the boss in the boss list
         public byte Prefab;
-        // 255 = common zombie
+        // zombie: variant (255 = common); soldier: gun in its loadout; boss: its current move
         public byte Variant;
         public Vector3 Position;
         public float Yaw;
         public float Speed;
-        // bit 0 dead, bits 1-7 attack counter (a change plays the attack)
+        // bit 0 dead; zombie: bits 1-7 attack counter (a change plays the attack);
+        // soldier: bit 1 aiming, bit 2 gun lowered; boss: bit 1 vulnerable, bit 2 lit, bits 3-7 phase
         public byte Flags;
         public byte Health;
 
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
             serializer.SerializeValue(ref Id);
+            serializer.SerializeValue(ref Kind);
             serializer.SerializeValue(ref Prefab);
             serializer.SerializeValue(ref Variant);
             serializer.SerializeValue(ref Position);
@@ -56,7 +67,8 @@ namespace Combat
     /* The shared side of a co-op match, spawned once by the host:
      *   lobby    - room name, mode, difficulty and who is ready (on each NetPlayer)
      *   start    - the host starts the match for everyone at once; nobody starts their own waves
-     *   enemies  - the host's infected streamed ten times a second; clients show replicas (EnemyReplica)
+     *   enemies  - the host's infected, soldiers and bosses streamed ten times a second; clients show
+     *              replicas (EnemyReplica); what they do once (a scream, a shot, a boss's warning) comes as an event
      *   damage   - a client's hit on a replica is a request the host checks (range, rate, size) before applying
      *   waves    - the host's wave number, intermission and enemies left, mirrored on the clients' spawner
      */
@@ -86,6 +98,8 @@ namespace Combat
         private EnemySpawner _spawner;
         private int _lastWave;
         private bool _gameOver;
+        private readonly Dictionary<Health, (Animator animator, bool hasSpeed)> _animators = new Dictionary<Health, (Animator, bool)>();
+        private List<BossDefinition> _bosses;
 
         // ---- client side
         private readonly Dictionary<ushort, EnemyReplica> _replicas = new Dictionary<ushort, EnemyReplica>();
@@ -105,6 +119,11 @@ namespace Combat
             Waves.OnValueChanged += MirrorWaves;
             if (IsServer)
             {
+                if (_spawner != null) _spawner.WaveCleared += OnWaveClearedOnHost;
+                ScreamerBehaviour.ChargeStarted += OnScreamCharge;
+                ScreamerBehaviour.Screamed += OnScream;
+                BossAI.Warning += OnBossWarning;
+                BossAI.Defeated += OnBossDefeated;
                 Room.Value = NetSession.Instance != null ? NetSession.Instance.RoomName : "Sala";
                 MaxPlayers.Value = NetSession.Instance != null ? NetSession.Instance.MaxPlayers : 4;
                 DifficultyLevel.Value = (int)GameDifficulty.Current;
@@ -114,6 +133,11 @@ namespace Combat
         public override void OnNetworkDespawn()
         {
             Waves.OnValueChanged -= MirrorWaves;
+            if (_spawner != null) _spawner.WaveCleared -= OnWaveClearedOnHost;
+            ScreamerBehaviour.ChargeStarted -= OnScreamCharge;
+            ScreamerBehaviour.Screamed -= OnScream;
+            BossAI.Warning -= OnBossWarning;
+            BossAI.Defeated -= OnBossDefeated;
             if (_spawner != null && !IsServer) _spawner.StopMirror();
             if (Instance == this) Instance = null;
             foreach (EnemyReplica replica in _replicas.Values) if (replica != null) Destroy(replica.gameObject);
@@ -247,27 +271,10 @@ namespace Combat
             _snapshot.Clear();
             foreach (Health health in Health.Living)
             {
-                if (health == null || health.Team != Factions.Infected) continue;
-                ZombieAI zombie = health.GetComponent<ZombieAI>();
-                if (zombie == null) continue;
-                if (!_ids.TryGetValue(health, out ushort id))
-                {
-                    id = _nextId++;
-                    _ids[health] = id;
-                    _byId[id] = health;
-                }
-
-                _snapshot.Add(new EnemyState
-                {
-                    Id = id,
-                    Prefab = (byte)PrefabIndex(zombie),
-                    Variant = (byte)VariantIndex(zombie.AppliedVariant),
-                    Position = health.transform.position,
-                    Yaw = health.transform.eulerAngles.y,
-                    Speed = zombie.AnimationSpeed,
-                    Flags = (byte)((health.IsDead ? 1 : 0) | ((zombie.AttackCount & 0x7F) << 1)),
-                    Health = (byte)Mathf.CeilToInt(Mathf.Clamp01(health.Normalized) * 255.0f)
-                });
+                if (health == null || health.Team == Factions.Player) continue;
+                if (!Describe(health, out EnemyState state)) continue;
+                state.Id = IdOf(health);
+                _snapshot.Add(state);
             }
 
             // forget the ones that are gone (despawned corpses)
@@ -277,6 +284,7 @@ namespace Combat
             {
                 _byId.Remove(_ids[dead]);
                 _ids.Remove(dead);
+                _animators.Remove(dead);
             }
 
             // small chunks keep each message well under one packet
@@ -290,16 +298,184 @@ namespace Combat
             }
         }
 
-        private int PrefabIndex(ZombieAI zombie)
+        // what the clients need of one enemy; false for anything they can't draw
+        private bool Describe(Health health, out EnemyState state)
         {
-            if (_spawner == null || _spawner.ZombiePrefabs == null) return 0;
-            string name = zombie.name.Replace("(Clone)", "").Trim();
-            for (int i = 0; i < _spawner.ZombiePrefabs.Length; i++)
+            state = new EnemyState
             {
-                if (_spawner.ZombiePrefabs[i] != null && _spawner.ZombiePrefabs[i].name == name) return i;
+                Position = health.transform.position,
+                Yaw = health.transform.eulerAngles.y,
+                Health = (byte)Mathf.CeilToInt(Mathf.Clamp01(health.Normalized) * 255.0f)
+            };
+            int dead = health.IsDead ? 1 : 0;
+
+            // a boss is built on an infected body (its ZombieAI switched off), so it's checked first
+            BossAI boss = health.GetComponent<BossAI>();
+            if (boss != null)
+            {
+                int index = Bosses.IndexOf(boss.Definition);
+                if (index < 0) return false;
+                state.Kind = EnemyKind.Boss;
+                state.Prefab = (byte)index;
+                state.Variant = (byte)boss.State;
+                state.Speed = AnimatorSpeed(health);
+                state.Flags = (byte)(dead | (boss.Vulnerable ? 2 : 0) | (boss.Lit ? 4 : 0) | ((Mathf.Min(boss.Phase, 31)) << 3));
+                return true;
+            }
+
+            ZombieAI zombie = health.GetComponent<ZombieAI>();
+            if (zombie != null)
+            {
+                state.Kind = EnemyKind.Zombie;
+                state.Prefab = (byte)PrefabIndex(_spawner != null ? _spawner.ZombiePrefabs : null, zombie.name);
+                state.Variant = (byte)VariantIndex(zombie.AppliedVariant);
+                state.Speed = zombie.AnimationSpeed;
+                state.Flags = (byte)(dead | ((zombie.AttackCount & 0x7F) << 1));
+                return true;
+            }
+
+            EnemyShooterAI soldier = health.GetComponent<EnemyShooterAI>();
+            if (soldier != null)
+            {
+                WeaponHolder holder = soldier.GetComponent<WeaponHolder>();
+                state.Kind = EnemyKind.Soldier;
+                state.Prefab = (byte)PrefabIndex(_spawner != null ? _spawner.SoldierPrefabs : null, soldier.name);
+                state.Variant = (byte)LoadoutIndex(soldier, holder);
+                state.Speed = AnimatorSpeed(health);
+                state.Flags = (byte)(dead | (holder != null && holder.Aiming ? 2 : 0) | (holder != null && holder.Lowered ? 4 : 0));
+                return true;
+            }
+
+            return false;
+        }
+
+        private ushort IdOf(Health health)
+        {
+            if (_ids.TryGetValue(health, out ushort id)) return id;
+            id = _nextId++;
+            _ids[health] = id;
+            _byId[id] = health;
+
+            // a soldier's shots are drawn on every client
+            WeaponHolder holder = health.GetComponent<EnemyShooterAI>() != null ? health.GetComponent<WeaponHolder>() : null;
+            if (holder != null)
+            {
+                ushort shooter = id;
+                holder.Fired += _ =>
+                {
+                    if (IsSpawned) EnemyShotRpc(shooter, holder.LastShotFrom, holder.LastShotTo);
+                };
+            }
+
+            return id;
+        }
+
+        private float AnimatorSpeed(Health health)
+        {
+            if (!_animators.TryGetValue(health, out var entry))
+            {
+                Animator animator = health.GetComponentInChildren<Animator>();
+                bool has = false;
+                if (animator != null)
+                    foreach (AnimatorControllerParameter parameter in animator.parameters)
+                        if (parameter.name == "Speed" && parameter.type == AnimatorControllerParameterType.Float) has = true;
+                entry = (animator, has);
+                _animators[health] = entry;
+            }
+
+            return entry.animator != null && entry.hasSpeed ? entry.animator.GetFloat("Speed") : 0.0f;
+        }
+
+        private static int PrefabIndex(GameObject[] prefabs, string instanceName)
+        {
+            if (prefabs == null) return 0;
+            string name = instanceName.Replace("(Clone)", "").Trim();
+            for (int i = 0; i < prefabs.Length; i++)
+            {
+                if (prefabs[i] != null && prefabs[i].name == name) return i;
             }
 
             return 0;
+        }
+
+        private static int LoadoutIndex(EnemyShooterAI soldier, WeaponHolder holder)
+        {
+            if (holder == null || holder.Current == null || soldier.Loadout == null) return 255;
+            return Mathf.Max(0, System.Array.IndexOf(soldier.Loadout, holder.Current.Data));
+        }
+
+        // every boss either side can field, in the same order on every machine
+        public List<BossDefinition> Bosses
+        {
+            get
+            {
+                if (_bosses != null) return _bosses;
+                _bosses = new List<BossDefinition>();
+                if (_spawner != null)
+                {
+                    if (_spawner.MidBoss != null) _bosses.Add(_spawner.MidBoss);
+                    if (_spawner.FinalBoss != null && !_bosses.Contains(_spawner.FinalBoss)) _bosses.Add(_spawner.FinalBoss);
+                }
+
+                CampaignManager campaign = CampaignManager.Instance;
+                if (campaign != null && campaign.Campaign != null && campaign.Campaign.Chapters != null)
+                    foreach (var chapter in campaign.Campaign.Chapters)
+                        if (chapter.Boss != null && !_bosses.Contains(chapter.Boss)) _bosses.Add(chapter.Boss);
+                return _bosses;
+            }
+        }
+
+        // ---------------------------------------------------------------- one-off enemy events (host -> clients)
+
+        public const byte EventScreamCharge = 1;
+        public const byte EventScream = 2;
+
+        private void OnScreamCharge(ScreamerBehaviour screamer) => SendEnemyEvent(screamer, EventScreamCharge);
+        private void OnScream(ScreamerBehaviour screamer) => SendEnemyEvent(screamer, EventScream);
+
+        private void SendEnemyEvent(Component enemy, byte kind)
+        {
+            if (!IsSpawned || enemy == null) return;
+            Health health = enemy.GetComponent<Health>();
+            if (health != null) EnemyEventRpc(IdOf(health), kind);
+        }
+
+        [Rpc(SendTo.NotServer)]
+        private void EnemyEventRpc(ushort id, byte kind)
+        {
+            if (_replicas.TryGetValue(id, out EnemyReplica replica) && replica != null) replica.PlayEvent(kind);
+        }
+
+        [Rpc(SendTo.NotServer, Delivery = RpcDelivery.Unreliable)]
+        private void EnemyShotRpc(ushort id, Vector3 from, Vector3 to)
+        {
+            if (_replicas.TryGetValue(id, out EnemyReplica replica) && replica != null) replica.PlayShot(from, to);
+        }
+
+        private void OnBossWarning(BossAI boss, string text)
+        {
+            if (boss != null && IsSpawned) BossWarningRpc(text);
+        }
+
+        [Rpc(SendTo.NotServer)]
+        private void BossWarningRpc(FixedString128Bytes text)
+        {
+            BossAI.ShowRemoteWarning(text.ToString());
+        }
+
+        // the wave's pay for every client player, as GameFlow pays this machine's own
+        private void OnWaveClearedOnHost(int wave)
+        {
+            if (!Started) return;
+            foreach (NetPlayer player in NetPlayer.All) player.GrantCredits(40 + 10 * wave);
+        }
+
+        // a boss down pays everyone in the team, not only whoever landed the last hit
+        private void OnBossDefeated(BossAI boss)
+        {
+            if (boss == null || boss.Definition == null) return;
+            foreach (NetPlayer player in NetPlayer.All)
+                if (!player.IsOwnedByServer) player.GrantCredits(boss.Definition.Credits);
         }
 
         private int VariantIndex(ZombieVariant variant)
@@ -325,7 +501,7 @@ namespace Combat
                 {
                     // a corpse the client never saw alive isn't worth creating
                     if ((state.Flags & 1) != 0) continue;
-                    replica = EnemyReplica.Create(state, ZombiePrefab(state.Prefab), ZombieVariantAt(state.Variant));
+                    replica = CreateReplica(state);
                     if (replica == null) continue;
                     _replicas[state.Id] = replica;
                 }
@@ -349,6 +525,25 @@ namespace Combat
                 if (_replicas.TryGetValue(id, out EnemyReplica replica) && replica != null) Destroy(replica.gameObject);
                 _replicas.Remove(id);
             }
+        }
+
+        private EnemyReplica CreateReplica(EnemyState state)
+        {
+            switch (state.Kind)
+            {
+                case EnemyKind.Soldier:
+                    return EnemyReplica.CreateSoldier(state, SoldierPrefab(state.Prefab));
+                case EnemyKind.Boss:
+                    return state.Prefab < Bosses.Count ? EnemyReplica.CreateBoss(state, Bosses[state.Prefab], ZombiePrefab(0)) : null;
+                default:
+                    return EnemyReplica.Create(state, ZombiePrefab(state.Prefab), ZombieVariantAt(state.Variant));
+            }
+        }
+
+        private GameObject SoldierPrefab(byte index)
+        {
+            if (_spawner == null || _spawner.SoldierPrefabs == null || _spawner.SoldierPrefabs.Length == 0) return null;
+            return _spawner.SoldierPrefabs[Mathf.Clamp(index, 0, _spawner.SoldierPrefabs.Length - 1)];
         }
 
         private GameObject ZombiePrefab(byte index)
@@ -394,7 +589,14 @@ namespace Combat
                 Instigator = shooter.Puppet.gameObject
             });
 
-            if (target.IsDead) KillConfirmedRpc(headshot, RpcTarget.Single(sender, RpcTargetUse.Temp));
+            if (target.IsDead && GameFlow.Instance != null)
+            {
+                // what the kill is worth is the host's call; the credits go into the shooter's account
+                int points = GameFlow.Instance.KillPoints(target, headshot);
+                int credits = GameFlow.Instance.KillCredits(target);
+                shooter.GrantCredits(credits);
+                KillConfirmedRpc(points, IsSpecial(target), RpcTarget.Single(sender, RpcTargetUse.Temp));
+            }
         }
 
         // 40 hits a second covers a shotgun's pellets; more than that is not a gun
@@ -407,10 +609,16 @@ namespace Combat
             return budget.hits <= 40;
         }
 
-        [Rpc(SendTo.SpecifiedInParams)]
-        private void KillConfirmedRpc(bool headshot, RpcParams rpc)
+        private static bool IsSpecial(Health target)
         {
-            NetMatch.KillConfirmed(headshot);
+            ZombieAI zombie = target.GetComponent<ZombieAI>();
+            return zombie != null && zombie.Kind != ZombieKind.Common;
+        }
+
+        [Rpc(SendTo.SpecifiedInParams)]
+        private void KillConfirmedRpc(int points, bool special, RpcParams rpc)
+        {
+            NetMatch.KillConfirmed(points, special);
         }
     }
 }

@@ -26,10 +26,19 @@ namespace Combat
 
         public static void AddCredits(int amount, string reason)
         {
-            if (amount <= 0) return;
+            // co-op client: credits are an account the host keeps (NetPlayer.Credits), mirrored below
+            if (amount <= 0 || Net.IsClientOnly) return;
             Credits += amount;
             CreditsEarned += amount;
             CreditsChanged?.Invoke(amount, reason);
+        }
+
+        // co-op client: the host changed this player's account
+        public static void MirrorCredits(int value, int delta)
+        {
+            Credits = value;
+            if (delta > 0) CreditsEarned += delta;
+            if (delta != 0) CreditsChanged?.Invoke(delta, null);
         }
 
         // the only way to spend: checks the balance and takes it in one step

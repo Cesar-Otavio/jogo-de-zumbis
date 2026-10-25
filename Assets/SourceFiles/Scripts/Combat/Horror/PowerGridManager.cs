@@ -342,11 +342,13 @@ namespace Combat
         private void UpdateMarked()
         {
             bool playing = GameFlow.Instance == null || GameFlow.Instance.Current == GameFlow.State.Playing;
+            // co-op client: the power is the host's (NetWorld mirrors its sectors); no faults of its own here
+            bool own = !Net.IsClientOnly;
 
             for (int i = 0; i < Sectors.Length; i++)
             {
                 PowerSector sector = Sectors[i];
-                if (sector.State == PowerState.Emergency && sector.BlackoutAt > 0.0f && Time.time >= sector.BlackoutAt) SetState(i, PowerState.Blackout);
+                if (own && sector.State == PowerState.Emergency && sector.BlackoutAt > 0.0f && Time.time >= sector.BlackoutAt) SetState(i, PowerState.Blackout);
 
                 // ringing alarms draw the infected
                 if (sector.AlarmUntil > 0.0f)
@@ -367,7 +369,7 @@ namespace Combat
 
             // the clock only runs during a game: the menu doesn't count towards the first failure
             if (!playing) _nextFailure = Mathf.Max(_nextFailure, Time.time + FirstFailureDelay);
-            if (playing && RandomFailures && AllowFailures && Time.time >= _nextFailure && Sectors.Length > 0)
+            if (own && playing && RandomFailures && AllowFailures && Time.time >= _nextFailure && Sectors.Length > 0)
             {
                 _nextFailure = Time.time + UnityEngine.Random.Range(FailureInterval.x, FailureInterval.y);
                 // never more than half of the base down at once

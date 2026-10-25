@@ -42,6 +42,10 @@ namespace Combat
             All.Remove(this);
         }
 
+        private void OnDestroy() => NetWorld.Unregister(this);
+
+        public float Lifetime => _lifetime;
+
         public static ConsumablePickup Spawn(Kind kind, Vector3 position, float lifetime)
         {
             var go = new GameObject(kind == Kind.Ammo ? "AmmoBox" : "Medkit");
@@ -58,6 +62,7 @@ namespace Combat
             _born = Time.time;
             _player = FindAnyObjectByType<PlayerCombat>();
             BuildVisual();
+            NetWorld.Register(this);
         }
 
         private void BuildVisual()
@@ -110,6 +115,7 @@ namespace Combat
                 if (Time.time < _respawnAt) return;
                 _respawnAt = -1.0f;
                 SetShown(true);
+                NetWorld.Shown(this);
             }
 
             float t = Time.time - _born;
@@ -124,7 +130,31 @@ namespace Combat
 
             if (_player == null || _player.Health.IsDead) return;
             if ((_player.transform.position - transform.position).sqrMagnitude > PickupRadius * PickupRadius) return;
+            // co-op: whoever the host gives it to (first come)
+            if (!CanConsume() || !NetWorld.MayTake(this, () => { if (this != null && TryConsume()) Taken(); })) return;
             if (TryConsume()) Taken();
+        }
+
+        // what TryConsume would do, without doing it
+        private bool CanConsume()
+        {
+            if (Type == Kind.Health)
+            {
+                if (_player.Health.Current < _player.Health.MaxHealth - 0.5f) return true;
+                InventoryManager inventory = _player.GetComponent<InventoryManager>();
+                return inventory != null && inventory.CanTake(QuickItem.Medkit);
+            }
+
+            foreach (WeaponInstance weapon in _player.Slots)
+                if (weapon != null) return true;
+            return false;
+        }
+
+        // co-op host: a client took this fixed (respawning) one
+        public void TakenRemotely()
+        {
+            if (RespawnDelay > 0.0f) Taken();
+            else Destroy(gameObject);
         }
 
         private bool TryConsume()
@@ -166,6 +196,7 @@ namespace Combat
             {
                 _respawnAt = Time.time + RespawnDelay;
                 SetShown(false);
+                NetWorld.Hidden(this);
             }
             else
             {

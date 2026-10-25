@@ -18,7 +18,8 @@ namespace Combat
 
         private void Update()
         {
-            if (_pickup != null) return;
+            // co-op client: guns on the ground are the host's to place
+            if (_pickup != null || Net.IsClientOnly) return;
 
             if (_respawnAt <= 0.0f)
             {

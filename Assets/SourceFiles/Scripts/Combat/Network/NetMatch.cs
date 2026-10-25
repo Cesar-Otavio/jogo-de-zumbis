@@ -28,6 +28,8 @@ namespace Combat
 
             PlaceLocalPlayer();
             TeamHUD.Ensure();
+            // the shared world: places indexed, pickups announced by the host (cleared on clients)
+            NetWorld.Begin();
             Notice(NetworkManager.Singleton.IsServer ? "Partida cooperativa iniciada" : "Você entrou na partida do Host");
         }
 
@@ -100,9 +102,9 @@ namespace Combat
             Debug.Log("[Net] " + text);
         }
 
-        public static void KillConfirmed(bool headshot)
+        public static void KillConfirmed(int points, bool special)
         {
-            if (GameFlow.Instance != null) GameFlow.Instance.CreditNetworkKill(headshot);
+            if (GameFlow.Instance != null) GameFlow.Instance.CreditNetworkKill(points, special);
         }
     }
 }

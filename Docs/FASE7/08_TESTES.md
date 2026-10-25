@@ -77,3 +77,9 @@ Tudo abaixo foi **executado**. O que não foi está nas seções finais.
   - a regeneração parada em `Untargetable`, que só é ligada no cooperativo;
   - o pré-carregamento de áudio;
   - a silhueta reaproveitada.
+
+## 8. Terceira execução (inimigos especiais, mundo, economia)
+
+Ver `02_MULTIPLAYER.md` §6.4 (12 testes executados e o que ficou de fora).
+
+**Regressão single-player**: a sonda (onda de 30, Médio, 1080p, 30 s) rodou sem exceção, com 12,5 ms de média. Ela registrou dois picos de 26 e 44 ms em `Update`: um no `ZombieAI` (o residual já conhecido) e outro num script ainda sem marcador.

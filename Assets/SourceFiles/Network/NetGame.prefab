@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 2727311515630803257}
   - component: {fileID: 1087206180223398155}
   - component: {fileID: 6214834230037976418}
+  - component: {fileID: 8398151465401773407}
   m_Layer: 0
   m_Name: NetGame
   m_TagString: Untagged
@@ -74,3 +75,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Combat.NetGame
   ShowTopMostFoldoutHeaderGroup: 1
   SendRate: 10
+--- !u!114 &8398151465401773407
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9086580039946656752}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4ad0b8cd95258b74681898c1597b9fb2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Combat.NetWorld
+  ShowTopMostFoldoutHeaderGroup: 1
+  StateRate: 4

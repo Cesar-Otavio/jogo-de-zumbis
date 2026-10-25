@@ -177,6 +177,21 @@ namespace Combat
             if (_lastPurchaseFrame == Time.frameCount || !IsOpen) return false;
             _lastPurchaseFrame = Time.frameCount;
 
+            // co-op client: the host keeps this player's credits and says if the purchase goes through
+            if (Net.IsClientOnly && NetPlayer.Local != null)
+            {
+                int index = System.Array.IndexOf(Catalog.Entries, entry);
+                if (Unavailable(entry) != null || index < 0 || _purchasePending)
+                {
+                    CampaignAssets.PlayUI(a => a.ShopDeny, 0.6f);
+                    return false;
+                }
+
+                _purchasePending = true;
+                NetPlayer.Local.RequestPurchase(index, PriceOf(entry));
+                return true;
+            }
+
             if (Unavailable(entry) != null || !RunState.TrySpend(PriceOf(entry)))
             {
                 CampaignAssets.PlayUI(a => a.ShopDeny, 0.6f);
@@ -188,6 +203,25 @@ namespace Combat
             CampaignAssets.PlayUI(a => a.ShopBuy, 0.7f);
             Refresh();
             return true;
+        }
+
+        private bool _purchasePending;
+
+        // co-op client: the host's answer to a purchase (credits already taken from the account if ok)
+        public void CompleteRemotePurchase(int index, bool ok)
+        {
+            _purchasePending = false;
+            if (!ok || Catalog == null || index < 0 || index >= Catalog.Entries.Length)
+            {
+                CampaignAssets.PlayUI(a => a.ShopDeny, 0.6f);
+                return;
+            }
+
+            ShopCatalog.Entry entry = Catalog.Entries[index];
+            Apply(entry);
+            _bought[entry.Id] = (_bought.TryGetValue(entry.Id, out int count) ? count : 0) + 1;
+            CampaignAssets.PlayUI(a => a.ShopBuy, 0.7f);
+            Refresh();
         }
 
         private void Apply(ShopCatalog.Entry entry)

@@ -646,16 +646,36 @@ namespace Combat
         }
 
         // co-op client: a kill the host confirmed for this player (the infected died on the host, not here)
-        public void CreditNetworkKill(bool headshot)
+        // co-op client: the host confirmed a kill of this player's and set what it's worth (the credits
+        // arrive in this player's account on the host, mirrored by NetPlayer)
+        public void CreditNetworkKill(int points, bool special)
         {
             if (Current != State.Playing) return;
             if (_player != null) _player.CountNetworkKill();
-            int points = ZombiePoints + (headshot ? HeadshotBonus : 0);
-            AddScore(Mathf.RoundToInt(points * Difficulty.ScoreMultiplier), headshot ? "TIRO NA CABEÇA" : "");
-            RunState.AddCredits(ZombieCredits, null);
+            AddScore(Mathf.RoundToInt(points * Difficulty.ScoreMultiplier), "");
             RunState.Kills++;
+            if (special) RunState.SpecialKills++;
             Progression.RecordKill(true);
-            Progression.AddExperience(5, "abate", false);
+            Progression.AddExperience(special ? 15 : 5, "abate", false);
+        }
+
+        // what a kill is worth, the same rule as this machine's own kills (OnLandedHit, OnAnyDied)
+        public int KillPoints(Health victim, bool headshot)
+        {
+            var zombie = victim.GetComponent<ZombieAI>();
+            var boss = victim.GetComponent<BossAI>();
+            int points = boss != null ? boss.Definition.Score : zombie != null ? ZombiePoints : SoldierPoints;
+            if (zombie != null && zombie.AppliedVariant != null) points += zombie.AppliedVariant.BonusPoints;
+            return points + (headshot ? HeadshotBonus : 0);
+        }
+
+        public int KillCredits(Health victim)
+        {
+            if (victim.GetComponent<BossAI>() != null) return 0;
+            var zombie = victim.GetComponent<ZombieAI>();
+            int credits = zombie != null ? ZombieCredits : SoldierCredits;
+            if (zombie != null && zombie.Kind != ZombieKind.Common) credits += SpecialCredits;
+            return credits;
         }
 
         // co-op: the session ended (left, host gone): back to the main menu with a clean scene

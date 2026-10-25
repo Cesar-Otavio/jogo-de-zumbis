@@ -84,3 +84,23 @@ Ver `08_TESTES.md` e `10_PENDENCIAS.md`.
 ### Assets
 - 214 `.meta` de áudio (preload/streaming).
 - `ProjectSettings/EditorBuildSettings.asset` (cena do template desligada).
+
+## Marco 2 — terceira execução (inimigos especiais, mundo e economia)
+
+| Item | Estado |
+|---|---|
+| Soldados em rede (movimento, arma, tiros, morte) | **CONCLUÍDO E VALIDADO no mesmo PC** |
+| Chefes em rede (corpo, barra, avisos; alvo = sobrevivente mais próximo) | **CONCLUÍDO E VALIDADO no mesmo PC** (investida e onda de choque contra um boneco não foram provocadas em teste) |
+| Gritador (grito só no host, evento no cliente) e Tanque (som do golpe) | **CONCLUÍDO E VALIDADO no mesmo PC** (Gritador); Tanque **IMPLEMENTADO, AGUARDANDO TESTE** |
+| Itens no chão com ID e reserva no host | **CONCLUÍDO E VALIDADO no mesmo PC** (sem corrida real) |
+| Portas e baús | **CONCLUÍDO E VALIDADO no mesmo PC** |
+| Barricadas, gerador, apagão | **IMPLEMENTADO, AGUARDANDO TESTE** |
+| Créditos na conta do host e compras aprovadas pelo host | **CONCLUÍDO E VALIDADO no mesmo PC** |
+| Fabricação validada pelo host | **NÃO INICIADO** (local) |
+
+- **Novo**: `Network/NetWorld.cs`.
+- **Alterados**:
+  - rede: `NetGame`, `EnemyReplica` (reescrito), `NetPlayer`, `NetMatch`, `NetAutoTest`;
+  - jogo: `BossAI`, `CampaignHUD`, `GameFlow`, `RunState`, `ShopManager`, `LootCrate`, `InteractiveDoor`, `BarricadePoint`, `PowerGenerator`, `PowerGridManager`, `ConsumablePickup`, `ItemPickup`, `WorldItem`, `WeaponPickup`, `WeaponSpawnPoint`, `PlayerCombat`, `ItemActions`;
+  - editor: `Editor/CombatSetup.Phase6/Phase7` (menu 5: `NetWorld` no prefab).
+- **Prefab**: `Network/NetGame.prefab` ganhou o componente `NetWorld`.

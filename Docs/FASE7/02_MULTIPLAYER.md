@@ -16,10 +16,10 @@ Legenda dos estados: ✅ concluído e validado · 🧪 implementado, aguardando 
 | Pular o intervalo (N) | ✅ | só o host (é ele quem roda as ondas) |
 | Missões laterais do Infinito | 🟡 | só existem no host. O cliente não as vê; ficou bloqueado de propósito, para não criar missões locais divergentes |
 | Loja aberta segurando o intervalo | 🟡 | só a loja do **host** segura o fim do intervalo |
-| Soldados, Gritador, Tanque, chefes | ⛔ | só `ZombieAI` comum é replicado. As variantes aparecem com a aparência certa, mas habilidades como o grito e a quebra de barricada não estão sincronizadas |
+| Soldados, Gritador, Tanque, chefes | ✅ (mesmo PC) | ver §6.1 (o golpe do Tanque contra barricada não foi provocado em teste) |
 | Incapacitação, reanimação, espectador, game over cooperativo | ✅ (mesmo PC) | ver §5 |
-| Mundo (portas, energia, baús, itens, materiais, bancadas) | ⛔ | local em cada máquina: risco de loot duplicado |
-| Economia validada pelo host (créditos, compras, munição, fabricação) | ⛔ | hoje cada jogador tem a sua economia local |
+| Mundo (portas, energia, baús, itens, materiais, bancadas) | 🟡 | portas, baús e itens: ✅ (mesmo PC); barricadas, energia e gerador: implementados, sem teste; bancadas: locais. Ver §6.2 |
+| Economia validada pelo host (créditos, compras, munição, fabricação) | 🟡 | créditos e compras: ✅ (mesmo PC); munição e fabricação: locais. Ver §6.3 |
 | HUD de equipe (vida dos aliados, distância, ping, aliados no minimapa) | ✅ (mesmo PC) | ver §5.2; layout conferido só nas capturas do host |
 | Teste em dois PCs (LAN/Radmin/Hamachi) | ⛔ **bloqueado** | precisa de um segundo computador |
 
@@ -129,3 +129,78 @@ O cliente de teste usa `-net-revive`: vai até o aliado caído e faz as mesmas c
 - dois PCs;
 - a tela de fim de jogo no **cliente** (o comando é o mesmo RPC para todos, mas só vi a do host);
 - gamepad no espectador.
+
+## 6. Marco 2 (terceira execução): especiais, soldados, chefes, mundo e economia
+
+### 6.1 Inimigos
+
+| Item | Como ficou |
+|---|---|
+| Fluxo do host | zumbis, **soldados** e **chefes** (`EnemyState.Kind`), 10 vezes por segundo |
+| Soldado no cliente | mesmo prefab e mesma arma do host (índice no *loadout*), no mesmo rig de arma: mirando ou baixada conforme o host. Os **tiros do host** chegam como evento (traçante e som). Morre em ragdoll |
+| Chefe no cliente | o corpo, a escala e as animações do chefe; **barra de vida** com "VULNERÁVEL" e "EXPOSTA À LUZ" e os **avisos** ("INVESTIDA!", "ONDA DE CHOQUE!") no HUD do cliente |
+| Chefe no host | antes só perseguia o jogador do host. Agora persegue **o sobrevivente vivo mais próximo**, incluindo os bonecos dos aliados. A onda de choque acerta todos no raio, com a regra do pulo valendo para os bonecos também |
+| Gritador | o grito roda **só no host**, que manda um evento de "carregando" e outro de "grito" (som e legenda no cliente). O chamado de inimigos acontece uma vez, no host |
+| Tanque | o golpe pesado tem o som de preparação também no cliente. A barricada que ele quebra no host aparece quebrada no cliente (§6.2) |
+| Valor de cada abate | calculado pelo host (pontos por tipo, variante e cabeça; créditos por tipo); o cliente recebe pontos e um sinal de "especial" |
+
+### 6.2 Mundo (`Network/NetWorld.cs`, no prefab `NetGame`)
+
+| Coisa | Como ficou |
+|---|---|
+| Itens no chão (munição, kits, itens rápidos, materiais, armas) | **só o host cria**, com ID, e avisa os clientes. As cópias locais do cliente são apagadas no início da partida |
+| Pegar | **reserva no host**: o primeiro pedido que chega leva; os outros veem o item sumir. O host confere se o jogador está de pé e a até 6 m |
+| Largar (arma, material descartado) | o cliente **pede** ao host, que cria o item para todos. O host confere tipo, quantidade, distância e um limite de 6 por segundo |
+| Pontos de arma | só o host recoloca as armas |
+| Portas | o cliente pede abrir, fechar ou tirar a barricada; o host decide (trancada, sem energia) e devolve o kit ou a mensagem |
+| Barricadas | montar, reforçar ou tirar viram pedido; o kit é gasto ou devolvido quando o host responde. Vida e dano vêm do host |
+| Baús | o cliente pede para abrir; o host abre, o conteúdo aparece para todos e os **15 créditos vão para a conta do cliente** |
+| Energia | os setores (normal, emergência, apagão) vêm do host. O cliente não tem falhas próprias; o gerador vira pedido |
+| Estado | o host manda portas, barricadas, baús e setores **só quando algo muda**, conferindo 4 vezes por segundo |
+| IDs dos lugares | a mesma lista nas duas máquinas, ordenada pela posição na cena |
+
+### 6.3 Economia
+
+- **Créditos do cliente**: uma conta no host (`NetPlayer.Credits`); o cliente só espelha o saldo (`RunState.MirrorCredits`) e não credita nada sozinho.
+- **O host paga**:
+  - abates (pelo tipo);
+  - fim de onda (40 + 10 × onda);
+  - baú (15);
+  - chefe derrotado (o valor do chefe, para **todos** da equipe).
+- **Compra**: o cliente pede; o host confere se o item existe, se o preço não é menor que o da loja e se o saldo cobre; desconta e responde; só então o cliente recebe o item.
+- **Ainda local**:
+  - munição gasta;
+  - a fabricação: os materiais vêm de coletas validadas, mas o host não confere a receita;
+  - os pontos do placar.
+
+### 6.4 Testes (editor como host + build como cliente com `-net-world -net-hit`, mesmo PC)
+
+| Teste | Resultado |
+|---|---|
+| Itens no chão iguais nas duas máquinas no início | ✅ 21 armas, 38 caixas, 12 materiais nas duas |
+| Cliente abre baú | ✅ o host abriu o nº 8 e criou uma M4 e fiação; 15 créditos na conta do cliente |
+| Cliente pega o que caiu | ✅ "pickup 72 (CrateLoot_M4) goes to 1"; o cliente ficou com a M4 (índice 4) |
+| Host pega uma caixa fixa (que reaparece) | ✅ sumiu também no cliente (38 → 36 visíveis) |
+| Porta usada pelo cliente | ✅ aberta nas duas máquinas (1/8) |
+| Soldado e chefe no cliente | ✅ "réplicas soldado 1 chefe 1", barra "Experimento 07" |
+| Tiros do soldado no cliente | ✅ 47 traçantes; o cliente levou dano dos tiros do host (100 → 60) |
+| Grito do Gritador | ✅ 1 grito no cliente (um evento só) |
+| Conta do cliente | ✅ 45 = 3 abates × 10 + 15 do baú; depois 630 com o chefe derrotado |
+| Compra no intervalo | ✅ munição: 660 → 600, aprovada pelo host |
+| Single-player depois das mudanças (sonda, onda de 30) | ✅ sem exceções, 12,5 ms de média |
+| Console do host / log do cliente | ✅ sem erros e sem aviso de "mundo diferente" |
+
+**Não testado**:
+- dois jogadores pegando **o mesmo** item ao mesmo tempo. A regra é "o primeiro pedido que chega ao host", e o segundo recebe "already gone", mas a corrida real não foi provocada;
+- barricada montada pelo cliente;
+- gerador pedido pelo cliente;
+- apagão espelhado;
+- Tanque quebrando barricada com o cliente olhando;
+- 3–4 jogadores;
+- dois PCs.
+
+**Limitações conhecidas**:
+- arma largada por cliente perde as melhorias (vai pela arma base);
+- os baús reabastecem a cada onda nas duas máquinas;
+- os soldados réplica não mostram recarga;
+- os golpes especiais do chefe (investida, onda de choque) aparecem pelo movimento e pelos avisos, sem animação extra.

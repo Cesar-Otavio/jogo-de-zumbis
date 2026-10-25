@@ -41,6 +41,7 @@ namespace Combat
 
         private void OnEnable() => Interactables.Register(this);
         private void OnDisable() => Interactables.Unregister(this);
+        private void OnDestroy() => NetWorld.Unregister(this);
 
         private int Room()
         {
@@ -51,6 +52,7 @@ namespace Combat
         private void Start()
         {
             _born = Time.time + Random.value * 3.0f;
+            NetWorld.Register(this);
             _visual = new GameObject("Visual").transform;
             _visual.SetParent(transform, false);
 
@@ -97,6 +99,8 @@ namespace Combat
 
         public void Interact(PlayerCombat player)
         {
+            // co-op: whoever the host gives it to (first come)
+            if (Room() <= 0 || !NetWorld.MayTake(this, () => { if (this != null) Interact(player); })) return;
             int taken;
             if (Backpack.TryQuickItem(ItemId, out QuickItem quick) && InventoryManager.Player != null)
             {

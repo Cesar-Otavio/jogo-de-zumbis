@@ -18,6 +18,8 @@ namespace Combat
         [Range(0, 1)] public float ItemChance = 0.45f;
 
         public bool IsOpen { get; private set; }
+        // what a chest found pays
+        public const int Credits = 15;
         public Vector3 Center => transform.position + Vector3.up * 0.4f;
 
         private Transform _lid;
@@ -115,9 +117,13 @@ namespace Combat
             return "scrap";
         }
 
-        public void Open(PlayerCombat player)
+        public void Open(PlayerCombat player) => Open(player, true);
+
+        // payOpener false: co-op host opening it for a client, whose account the host pays instead
+        public void Open(PlayerCombat player, bool payOpener)
         {
             if (IsOpen) return;
+            if (NetWorld.Redirect(this, NetWorld.ActCrate)) return;
 
             IsOpen = true;
             _openTime = Time.time;
@@ -154,15 +160,27 @@ namespace Combat
             }
 
             // a chest found pays a few credits too
-            RunState.AddCredits(15, "baú");
+            if (!payOpener) return;
+            RunState.AddCredits(Credits, "baú");
             ItemCatalog catalog = ItemCatalog.Instance;
-            PickupFeed.Report("credits", catalog != null ? catalog.CreditsIcon : null, "Créditos militares", 15, PickupFeed.TintOf(ItemCategory.Currency));
+            PickupFeed.Report("credits", catalog != null ? catalog.CreditsIcon : null, "Créditos militares", Credits, PickupFeed.TintOf(ItemCategory.Currency));
         }
 
         // a new wave: shut and restock
         public void Restock()
         {
             IsOpen = false;
+        }
+
+        // co-op client: the host's chest opened (or closed for a new wave)
+        public void MirrorOpen(bool open)
+        {
+            if (open == IsOpen) return;
+            IsOpen = open;
+            if (!open) return;
+            _openTime = Time.time;
+            CombatEffects fx = CombatEffects.Instance;
+            if (fx != null) fx.PlaySound(fx.CrateOpenSound, Center, 0.9f);
         }
 
         private WeaponData PickWeapon()
