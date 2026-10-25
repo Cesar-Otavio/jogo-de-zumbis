@@ -41,9 +41,14 @@ namespace Combat
             return null;
         }
 
+        // co-op client: a craft the host has just allowed (it keeps this player's materials: NetWorld)
+        internal static bool RemoteApproved;
+
         public static bool Craft(CraftingRecipe recipe, CraftingStationType? station)
         {
             if (_lastCraftFrame == Time.frameCount || CannotCraft(recipe, station) != null) return false;
+            if (!RemoteApproved && NetWorld.RedirectCraft(recipe, station)) return false;
+            RemoteApproved = false;
             _lastCraftFrame = Time.frameCount;
 
             foreach (CraftingRecipe.Ingredient ingredient in recipe.Ingredients)

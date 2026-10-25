@@ -9,5 +9,7 @@ namespace Combat
         public GameObject Game;
         public GameObject Character;
         public WeaponData[] Weapons = new WeaponData[0];
+        [Tooltip("How co-op waves grow with the team")]
+        public CoopBalance Balance = new CoopBalance();
     }
 }

@@ -8,11 +8,7 @@ namespace Combat
      */
     public static class NetMatch
     {
-        // relative number of infected by number of players (the difficulty's own multipliers still apply)
-        private static readonly float[] EnemyScale = { 1.0f, 1.0f, 1.55f, 2.1f, 2.65f };
-
-        public static float EnemyCountFor(int players) => EnemyScale[Mathf.Clamp(players, 1, 4)];
-
+        // (how waves grow with the team: CoopBalance)
         public static void Begin(GameMode mode)
         {
             if (GameFlow.Instance == null) return;

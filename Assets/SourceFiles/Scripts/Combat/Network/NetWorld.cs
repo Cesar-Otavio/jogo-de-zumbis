@@ -50,6 +50,9 @@ namespace Combat
      *              where the host says: it gives each one an id and tells the clients to make it. Taking one
      *              is a claim: the first claim the host receives wins, the others see it vanish. A player's
      *              own drop (a gun, a discarded material) is asked of the host, which makes it for everyone.
+     *   crafting - every material a client has came through a claim here, so the host keeps a book of each
+     *              client's materials; a craft is a request the host checks against the book (and the bench
+     *              nearby) before the client makes it, and a material dropped comes off the book.
      *   places   - doors, barricades, chests and the power sectors are found in the scene in the same order
      *              on every machine. The host sends their state when it changes; what a client does to one
      *              (open a door, build a barricade, open a chest, crank a generator) is a request the host
@@ -71,7 +74,12 @@ namespace Combat
         // client: claims waiting for the host, and claims it granted
         private readonly Dictionary<ushort, Action> _pending = new Dictionary<ushort, Action>();
         private readonly HashSet<ushort> _granted = new HashSet<ushort>();
+        // host: pickups already given to someone. Marked at once: Destroy only happens at the end of the
+        // frame, and a second claim arriving in the same frame must not find the pickup still there
+        private readonly HashSet<ushort> _taken = new HashSet<ushort>();
         private readonly Dictionary<ulong, (float windowStart, int drops)> _dropBudget = new Dictionary<ulong, (float, int)>();
+        // host: the materials each client player has (claims in, crafts and drops out)
+        private readonly Dictionary<ulong, Dictionary<string, int>> _materials = new Dictionary<ulong, Dictionary<string, int>>();
 
         // ---- places (both sides, same order everywhere)
         private InteractiveDoor[] _doors = new InteractiveDoor[0];
@@ -104,6 +112,7 @@ namespace Combat
             Instance.Index();
             if (Instance.IsServer) Instance.AnnounceExisting();
             else Instance.ClearLocalPickups();
+            Instance._materials.Clear();
             Instance._sentDoors = Instance._sentBarricades = Instance._sentCrates = Instance._sentSectors = null;
         }
 
@@ -154,6 +163,7 @@ namespace Combat
             Instance._pickups.Remove(id);
             Instance._pending.Remove(id);
             Instance._granted.Remove(id);
+            Instance._taken.Remove(id);
             // gone from the host: gone for everyone
             if (Instance.IsServer && Instance.IsSpawned) Instance.PickupGoneRpc(id);
         }
@@ -164,7 +174,8 @@ namespace Combat
         {
             if (!Active || pickup == null) return true;
             if (!Instance._pickupIds.TryGetValue(pickup, out ushort id)) return !ClientSide;
-            if (Instance.IsServer) return true;
+            // the host's own player: the same first-come rule as everyone's claims
+            if (Instance.IsServer) return Instance._taken.Add(id);
             if (Instance._granted.Remove(id)) return true;
             if (Instance._pending.ContainsKey(id)) return false;
             Instance._pending[id] = retry;
@@ -184,6 +195,7 @@ namespace Combat
         {
             if (HostSide && Instance._pickupIds.TryGetValue(pickup, out ushort id) && Describe(pickup, out PickupInfo info))
             {
+                Instance._taken.Remove(id);
                 info.Id = id;
                 Instance.SpawnPickupRpc(info);
             }
@@ -321,7 +333,7 @@ namespace Combat
         {
             ulong sender = rpc.Receive.SenderClientId;
             // the first claim wins; the pickup then leaves the host, which tells everyone it's gone
-            if (!_pickups.TryGetValue(id, out MonoBehaviour pickup) || pickup == null)
+            if (!_pickups.TryGetValue(id, out MonoBehaviour pickup) || pickup == null || _taken.Contains(id))
             {
                 Debug.Log($"[Net] pickup {id} claimed by {sender}: already gone");
                 ClaimAnswerRpc(id, false, RpcTarget.Single(sender, RpcTargetUse.Temp));
@@ -336,7 +348,9 @@ namespace Combat
                 return;
             }
 
+            _taken.Add(id);
             Debug.Log($"[Net] pickup {id} ({pickup.name}) goes to {sender}");
+            if (pickup is WorldItem material) AddMaterial(sender, material.ItemId, material.Amount);
             ClaimAnswerRpc(id, true, RpcTarget.Single(sender, RpcTargetUse.Temp));
             if (pickup is ConsumablePickup consumable && consumable.RespawnDelay > 0.0f) consumable.TakenRemotely();
             else Destroy(pickup.gameObject);
@@ -364,6 +378,13 @@ namespace Combat
             if (info.Type == PickupInfo.Material && ItemCatalog.Find(info.Name.ToString()) == null) return;
             if (info.Type != PickupInfo.Weapon && info.Type != PickupInfo.Material) return;
             info.Amount = (short)Mathf.Clamp(info.Amount, 0, 500);
+            // only materials that player has can be dropped (no making things out of thin air)
+            if (info.Type == PickupInfo.Material && !TakeMaterial(sender, info.Name.ToString(), info.Amount))
+            {
+                Debug.Log($"[Net] {sender} dropping {info.Amount} {info.Name} refused: the book says they don't have it");
+                return;
+            }
+
             info.Extra = (short)Mathf.Clamp(info.Extra, 0, 999);
             // made here like any host pickup: its Start announces it to everyone
             Create(info);
@@ -376,6 +397,81 @@ namespace Combat
             budget.drops++;
             _dropBudget[sender] = budget;
             return budget.drops <= MaxDropsPerSecond;
+        }
+
+        // ================================================================ crafting
+
+        private void AddMaterial(ulong client, string id, int amount)
+        {
+            if (amount <= 0 || string.IsNullOrEmpty(id)) return;
+            if (!_materials.TryGetValue(client, out var book)) _materials[client] = book = new Dictionary<string, int>();
+            book[id] = (book.TryGetValue(id, out int have) ? have : 0) + amount;
+        }
+
+        private bool TakeMaterial(ulong client, string id, int amount)
+        {
+            if (!_materials.TryGetValue(client, out var book) || !book.TryGetValue(id, out int have) || have < amount) return false;
+            book[id] = have - amount;
+            return true;
+        }
+
+        public int MaterialsOf(ulong client, string id) => _materials.TryGetValue(client, out var book) && book.TryGetValue(id, out int have) ? have : 0;
+
+        // a client's craft: ask the host first (true = this machine waits for the answer)
+        public static bool RedirectCraft(CraftingRecipe recipe, CraftingStationType? station)
+        {
+            if (!ClientSide || recipe == null || CraftingCatalog.Instance == null) return false;
+            int index = System.Array.IndexOf(CraftingCatalog.Instance.Recipes, recipe);
+            if (index < 0) return false;
+            Instance.CraftRpc((ushort)index, station.HasValue ? (byte)station.Value : (byte)255);
+            return true;
+        }
+
+        [Rpc(SendTo.Server)]
+        private void CraftRpc(ushort index, byte station, RpcParams rpc = default)
+        {
+            ulong sender = rpc.Receive.SenderClientId;
+            NetPlayer player = NetPlayer.For(sender);
+            CraftingCatalog catalog = CraftingCatalog.Instance;
+            string refusal = null;
+            CraftingRecipe recipe = catalog != null && index < catalog.Recipes.Length ? catalog.Recipes[index] : null;
+            if (player == null || !player.IsUp || recipe == null) refusal = "Receita inválida";
+            else if (recipe.Station != CraftingStationType.Anywhere && !NearStation(player, recipe.Station)) refusal = $"Requer {Crafting.StationName(recipe.Station)}";
+            else
+            {
+                foreach (CraftingRecipe.Ingredient ingredient in recipe.Ingredients)
+                    if (MaterialsOf(sender, ingredient.ItemId) < ingredient.Count) refusal = "O host não registrou esses materiais";
+            }
+
+            if (refusal == null)
+                foreach (CraftingRecipe.Ingredient ingredient in recipe.Ingredients) TakeMaterial(sender, ingredient.ItemId, ingredient.Count);
+            Debug.Log($"[Net] {sender} crafting {(recipe != null ? recipe.name : "?")}: {(refusal ?? "allowed")}");
+            CraftAnswerRpc(index, station, refusal ?? "", RpcTarget.Single(sender, RpcTargetUse.Temp));
+        }
+
+        private static bool NearStation(NetPlayer player, CraftingStationType type)
+        {
+            foreach (CraftingStation bench in CraftingStation.All)
+                if (bench != null && bench.Type == type && Vector3.Distance(bench.InteractionPoint, player.Position) <= 4.0f) return true;
+            return false;
+        }
+
+        [Rpc(SendTo.SpecifiedInParams)]
+        private void CraftAnswerRpc(ushort index, byte station, FixedString128Bytes refusal, RpcParams rpc)
+        {
+            CraftingCatalog catalog = CraftingCatalog.Instance;
+            if (catalog == null || index >= catalog.Recipes.Length) return;
+            string text = refusal.ToString();
+            if (text.Length > 0)
+            {
+                PlayerCombat player = FindAnyObjectByType<PlayerCombat>();
+                if (player != null) player.ShowNotice(text);
+                return;
+            }
+
+            Crafting.RemoteApproved = true;
+            Crafting.Craft(catalog.Recipes[index], station == 255 ? (CraftingStationType?)null : (CraftingStationType)station);
+            Crafting.RemoteApproved = false;
         }
 
         // ================================================================ places

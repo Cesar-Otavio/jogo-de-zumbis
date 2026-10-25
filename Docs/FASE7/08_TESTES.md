@@ -83,3 +83,11 @@ Tudo abaixo foi **executado**. O que não foi está nas seções finais.
 Ver `02_MULTIPLAYER.md` §6.4 (12 testes executados e o que ficou de fora).
 
 **Regressão single-player**: a sonda (onda de 30, Médio, 1080p, 30 s) rodou sem exceção, com 12,5 ms de média. Ela registrou dois picos de 26 e 44 ms em `Update`: um no `ZombieAI` (o residual já conhecido) e outro num script ainda sem marcador.
+
+## 9. Quarta execução (barricada, gerador, apagão, corrida, fabricação, balanceamento)
+
+Ver `02_MULTIPLAYER.md` §7.4: 12 testes, todos executados nesta sessão no mesmo PC.
+
+- **Bug achado pelo teste**: a corrida no mesmo item dava o item aos dois clientes. Corrigido e testado de novo (§7.1).
+- **Build release** refeita depois das mudanças (416 MB); sonda sem regressão (tabela do §7.4). Medições em `medicoes/` não foram atualizadas com estes dois números; estão só no documento.
+- **Modos novos do `NetAutoTest`**: `-net-world2` (barricada, gerador, fabricação legítima e trapaça) e `-net-race HH:mm:ss` (dois clientes pegam o mesmo item no mesmo instante).

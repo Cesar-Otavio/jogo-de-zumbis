@@ -61,6 +61,15 @@ namespace Combat
         [System.NonSerialized] public float SpawnIntervalScale = 1.0f;
         [System.NonSerialized] public float SpecialChanceScale = 1.0f;
 
+        // co-op (host): set for the team before each wave (CoopBalance); 1 / 0 in single-player
+        [System.NonSerialized] public float CountScale = 1.0f;
+        [System.NonSerialized] public float SpecialChanceBonus;
+        [System.NonSerialized] public float MaxAliveScale = 1.0f;
+        [System.NonSerialized] public float BossHealthScale = 1.0f;
+        [System.NonSerialized] public float IntermissionBonus;
+        // just before a wave's numbers are worked out, with the number of the wave about to start
+        public event System.Action<int> WaveStarting;
+
         [Header("Bosses")]
         public BossDefinition MidBoss;
         public BossDefinition FinalBoss;
@@ -215,6 +224,8 @@ namespace Combat
             if (definition == null || ZombiePrefabs == null || ZombiePrefabs.Length == 0) return null;
             if (!TryPickAround(near, 25.0f, 40.0f, out Vector3 position)) position = near + Vector3.forward * 25.0f;
             GameObject boss = BossAI.Create(definition, ZombiePrefabs[0], position, _difficulty);
+            Health bossHealth = boss.GetComponent<Health>();
+            if (bossHealth != null && BossHealthScale != 1.0f) bossHealth.SetMaxHealth(bossHealth.MaxHealth * BossHealthScale);
             _bosses.Add(boss);
             BossSpawned?.Invoke(boss);
             return boss;
@@ -363,14 +374,15 @@ namespace Combat
 
         private void StartWave()
         {
+            WaveStarting?.Invoke(Wave + 1);
             Wave++;
             InIntermission = false;
 
             // zombies from the start, soldiers join from wave 2 and keep growing
-            float count = _difficulty.EnemyCount;
+            float count = _difficulty.EnemyCount * CountScale;
             _zombiesToSpawn = Mathf.Max(1, Mathf.RoundToInt((3 + 2 * Wave) * count));
             _soldiersToSpawn = Mathf.RoundToInt(Mathf.Max(0, Wave - 1 + Wave / 3) * count);
-            _maxAlive = Mathf.Min(14, 5 + Wave);
+            _maxAlive = Mathf.RoundToInt(Mathf.Min(14, 5 + Wave) * MaxAliveScale);
             _waveHealth = _difficulty.EnemyHealth * (1.0f + 0.08f * (Wave - 1));
             _nextWaveSpawn = Time.time;
             _waveActive = true;
@@ -433,7 +445,7 @@ namespace Combat
             {
                 _waveActive = false;
                 WaveCleared?.Invoke(Wave);
-                if (!ManualWaves) StartIntermission(IntermissionTime);
+                if (!ManualWaves) StartIntermission(IntermissionTime + IntermissionBonus);
             }
         }
 
@@ -444,7 +456,7 @@ namespace Combat
             var zombie = enemy.GetComponent<ZombieAI>();
             if (zombie == null || zombie.AppliedVariant != null) return;
 
-            float chance = Mathf.Min(MaxSpecialChance, SpecialChance + SpecialChancePerWave * (Wave - 1)) * SpecialChanceScale * _difficulty.SpecialChance;
+            float chance = Mathf.Min(MaxSpecialChance + SpecialChanceBonus, SpecialChance + SpecialChancePerWave * (Wave - 1) + SpecialChanceBonus) * SpecialChanceScale * _difficulty.SpecialChance;
             if (Random.value >= chance) return;
 
             float total = 0.0f;

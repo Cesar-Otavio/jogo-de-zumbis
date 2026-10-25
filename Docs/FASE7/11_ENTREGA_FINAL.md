@@ -104,3 +104,17 @@ Ver `08_TESTES.md` e `10_PENDENCIAS.md`.
   - jogo: `BossAI`, `CampaignHUD`, `GameFlow`, `RunState`, `ShopManager`, `LootCrate`, `InteractiveDoor`, `BarricadePoint`, `PowerGenerator`, `PowerGridManager`, `ConsumablePickup`, `ItemPickup`, `WorldItem`, `WeaponPickup`, `WeaponSpawnPoint`, `PlayerCombat`, `ItemActions`;
   - editor: `Editor/CombatSetup.Phase6/Phase7` (menu 5: `NetWorld` no prefab).
 - **Prefab**: `Network/NetGame.prefab` ganhou o componente `NetWorld`.
+
+## Marco 2 — quarta execução (barricada, gerador, apagão, corrida, fabricação, balanceamento)
+
+| Item | Estado |
+|---|---|
+| Barricadas, gerador e apagão pelo cliente | **CONCLUÍDO E VALIDADO no mesmo PC** |
+| Dois jogadores no mesmo item | **CONCLUÍDO E VALIDADO no mesmo PC** (bug de entrega dupla achado e corrigido) |
+| Fabricação validada pelo host | **CONCLUÍDO E VALIDADO no mesmo PC** (legítima aprovada, trapaça recusada) |
+| Balanceamento cooperativo por onda | **IMPLEMENTADO, AGUARDANDO TESTE** de jogo em equipe (cálculo conferido no log com 3 jogadores) |
+| Build release atualizada | **CONCLUÍDO E VALIDADO** (sonda: Médio 1080p 10,24 ms, Baixo 720p 6,88 ms) |
+| Multiplayer entre dois PCs | **PARCIAL — DEPENDÊNCIA PENDENTE** (teste seu) |
+
+- **Novo**: `Network/CoopBalance.cs`.
+- **Alterados**: `NetWorld` (conjunto `_taken`, livro de materiais, `CraftRpc`), `NetGame` (balanceamento por onda), `NetMatch` (multiplicador antigo removido), `NetSessionPrefabs` (`Balance`), `NetAutoTest` (`-net-world2`, `-net-race`), `EnemySpawner` (escalas cooperativas e `WaveStarting`), `GameFlow`, `Crafting/Crafting`.

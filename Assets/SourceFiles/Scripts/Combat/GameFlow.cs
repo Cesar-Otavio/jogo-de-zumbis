@@ -339,10 +339,9 @@ namespace Combat
             }
             else if (_spawner != null && Net.HasAuthority)
             {
-                // co-op host: more survivors, more infected (the difficulty's own multipliers still apply)
-                DifficultySettings waves = Difficulty;
-                if (Net.Listening) waves.EnemyCount *= NetMatch.EnemyCountFor(NetPlayer.All.Count);
-                _spawner.BeginWaves(waves);
+                // co-op host: each wave is sized for the team that starts it (NetGame, CoopBalance)
+                if (!Net.Listening) CoopBalance.Reset(_spawner);
+                _spawner.BeginWaves(Difficulty);
             }
             else if (_spawner != null)
             {

@@ -120,6 +120,7 @@ namespace Combat
             if (IsServer)
             {
                 if (_spawner != null) _spawner.WaveCleared += OnWaveClearedOnHost;
+                if (_spawner != null) _spawner.WaveStarting += OnWaveStarting;
                 ScreamerBehaviour.ChargeStarted += OnScreamCharge;
                 ScreamerBehaviour.Screamed += OnScream;
                 BossAI.Warning += OnBossWarning;
@@ -134,6 +135,11 @@ namespace Combat
         {
             Waves.OnValueChanged -= MirrorWaves;
             if (_spawner != null) _spawner.WaveCleared -= OnWaveClearedOnHost;
+            if (_spawner != null)
+            {
+                _spawner.WaveStarting -= OnWaveStarting;
+                CoopBalance.Reset(_spawner);
+            }
             ScreamerBehaviour.ChargeStarted -= OnScreamCharge;
             ScreamerBehaviour.Screamed -= OnScream;
             BossAI.Warning -= OnBossWarning;
@@ -461,6 +467,16 @@ namespace Combat
         private void BossWarningRpc(FixedString128Bytes text)
         {
             BossAI.ShowRemoteWarning(text.ToString());
+        }
+
+        // the wave about to start is sized for everyone in the match (the dead come back for it)
+        private void OnWaveStarting(int wave)
+        {
+            if (!Started) return;
+            NetSessionPrefabs settings = NetworkManager.GetComponent<NetSessionPrefabs>();
+            CoopBalance balance = settings != null && settings.Balance != null ? settings.Balance : new CoopBalance();
+            balance.Apply(_spawner, NetPlayer.All.Count);
+            Debug.Log($"[Net] wave {wave} for {NetPlayer.All.Count} players: enemies x{_spawner.CountScale:F2}, at once x{_spawner.MaxAliveScale:F2}, specials +{_spawner.SpecialChanceBonus:P0}, boss health x{_spawner.BossHealthScale:F2}, break +{_spawner.IntermissionBonus:F0} s");
         }
 
         // the wave's pay for every client player, as GameFlow pays this machine's own

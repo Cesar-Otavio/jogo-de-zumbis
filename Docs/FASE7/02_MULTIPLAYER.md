@@ -170,7 +170,7 @@ O cliente de teste usa `-net-revive`: vai até o aliado caído e faz as mesmas c
 - **Compra**: o cliente pede; o host confere se o item existe, se o preço não é menor que o da loja e se o saldo cobre; desconta e responde; só então o cliente recebe o item.
 - **Ainda local**:
   - munição gasta;
-  - a fabricação: os materiais vêm de coletas validadas, mas o host não confere a receita;
+  - a fabricação: os materiais vêm de coletas validadas, mas o host não confere a receita (**resolvido no §7.2**);
   - os pontos do placar.
 
 ### 6.4 Testes (editor como host + build como cliente com `-net-world -net-hit`, mesmo PC)
@@ -204,3 +204,63 @@ O cliente de teste usa `-net-revive`: vai até o aliado caído e faz as mesmas c
 - os baús reabastecem a cada onda nas duas máquinas;
 - os soldados réplica não mostram recarga;
 - os golpes especiais do chefe (investida, onda de choque) aparecem pelo movimento e pelos avisos, sem animação extra.
+
+## 7. Marco 2 (quarta execução): barricada, gerador, apagão, corrida, fabricação e balanceamento
+
+### 7.1 Corrida no mesmo item: bug encontrado e corrigido
+
+- **O bug**: no primeiro teste de corrida (build anterior), os dois clientes pediram o mesmo tecido com 14 ms de diferença e **os dois ganharam**. O host conferia se o item ainda existia, mas o `Destroy` do Unity só acontece no fim do quadro; os dois pedidos chegaram no mesmo quadro.
+- **A correção** (`NetWorld.cs`): um conjunto `_taken` marca o item **na hora** em que o host o entrega. O segundo pedido recebe "already gone". O mesmo conjunto vale quando o próprio host pega (`MayTake`), e o item sai dele quando reaparece (`Shown`) ou é destruído (`Unregister`).
+
+### 7.2 Fabricação validada pelo host
+
+- Todo material de um cliente chega por uma coleta aprovada pelo host. Por isso o host mantém um **livro de materiais por cliente**: entra na coleta e sai na fabricação ou quando o material é largado.
+- A **fabricação do cliente** virou pedido (`CraftRpc`). O host confere:
+  - se a receita existe;
+  - se o jogador está de pé;
+  - se a bancada exigida está a até 4 m;
+  - se o livro tem os ingredientes.
+- Se aprovar, desconta do livro e responde; só então o cliente fabrica (`Crafting.RemoteApproved`). Se recusar, o cliente vê o motivo (por exemplo, "O host não registrou esses materiais").
+- **Largar material** também confere o livro: não dá para largar o que o host não registrou.
+- **Limitação**: um material inventado localmente continua na mochila do cliente, mas não serve para fabricar nem para largar.
+
+### 7.3 Balanceamento cooperativo (`Network/CoopBalance.cs`)
+
+- **Antes**: só um multiplicador fixo na quantidade de inimigos, aplicado uma vez no início.
+- **Agora**: cada onda é calculada **para a equipe que a começa** (evento `EnemySpawner.WaveStarting`). Valores por jogador extra, editáveis no `NetworkManager` (`NetSessionPrefabs.Balance`):
+
+| Ajuste | Por jogador extra | 2 jogadores | 3 jogadores | 4 jogadores |
+|---|---|---|---|---|
+| Infectados na onda | +55% | ×1,55 | ×2,10 | ×2,65 |
+| Vivos ao mesmo tempo | +35% | ×1,35 | ×1,70 | ×2,05 |
+| Chance de especial | +4 pontos | +4% | +8% | +12% |
+| Vida do chefe | +60% | ×1,60 | ×2,20 | ×2,80 |
+| Intervalo entre ondas | +5 s | +5 s | +10 s | +15 s |
+
+- Os multiplicadores da dificuldade continuam valendo por cima.
+- No single-player tudo volta a 1 (`CoopBalance.Reset`).
+- Os mortos contam, porque voltam na onda seguinte.
+- Os números são um **ponto de partida**: o equilíbrio real depende de jogar em equipe (teste em dois PCs).
+
+### 7.4 Testes (editor como host + builds de desenvolvimento como clientes, mesmo PC)
+
+| Teste | Resultado |
+|---|---|
+| Barricada montada pelo cliente | ✅ host: "action 2 on #2"; montada, vida 150, kit 1 → 0 |
+| Barricada desmontada pelo cliente | ✅ "action 4"; desmontada, kit devolvido (0 → 1) |
+| Apagão espelhado | ✅ o host derrubou o Setor Noroeste; o cliente viu "Emergency" |
+| Gerador pedido pelo cliente | ✅ "action 6 on #0"; setor "Normal" no cliente 7 s depois |
+| Tecido coletado pelo host para o cliente | ✅ 2 coletas aprovadas ("pickup 39", "pickup 42 goes to 1") |
+| Fabricação legítima | ✅ host: "crafting Recipe_bandage: allowed"; tecido 3 → 1, bandagem 0 → 1 |
+| Fabricação com tecido inventado | ✅ recusada ("O host não registrou esses materiais"); bandagens continuam 1 |
+| Corrida antes da correção | ❌ os dois clientes ganharam o mesmo tecido (pedidos a 14 ms) — bug do §7.1 |
+| Corrida depois da correção | ✅ pedidos a 31 ms; host: "pickup 48 goes to 1" e, 5 ms depois, "claimed by 2: already gone". Beto GANHEI, Amigo perdi |
+| 3 jogadores (host + 2 clientes) | ✅ os três entraram e jogaram a partida |
+| Balanceamento para 3 | ✅ log do host: "enemies x2.10, at once x1.70, specials +8%, boss health x2.20, break +10 s" |
+| Release (sonda, onda de 30) | ✅ Médio 1080p 10,24 ms (antes 11,06); Baixo 720p 6,88 ms (antes 6,73) |
+
+**Não testado**:
+- Tanque quebrando barricada com o cliente olhando;
+- baú disputado por dois clientes (usa o mesmo caminho de pedido das portas, sem o conjunto `_taken`; o host abre uma vez só, porque o baú aberto recusa a segunda abertura);
+- 4 jogadores;
+- **dois PCs** (depende de você).

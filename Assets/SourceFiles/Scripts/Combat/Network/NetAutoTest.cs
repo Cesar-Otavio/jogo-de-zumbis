@@ -15,6 +15,11 @@ namespace Combat
      *                              bullet uses (its Health, which hands the hit to the host)
      *   -net-revive                when a teammate is down, walk up to them and revive them through the same
      *                              calls the HUD makes while the interact key is held (the host checks it)
+     *   -net-world2                build and take down a barricade, crank the generator of a sector the host
+     *                              blacked out, craft a bandage from cloth taken through the host, then try a
+     *                              craft with cloth made up locally (the host must refuse that one)
+     *   -net-race HH:mm:ss         at that clock time, take the material nearest the base's centre (two clients
+     *                              doing it at once: only one may get it)
      *   -net-world                 once the match runs, walk to a closed chest and open it, take what falls
      *                              out, use the nearest door and buy ammo in the break, the way the interact
      *                              key and the shop would (all of it is the host's to allow)
@@ -27,6 +32,20 @@ namespace Combat
         private bool _hit;
         private bool _revive;
         private bool _world;
+        private bool _world2;
+        private int _world2Step;
+        private float _nextWorld2;
+        private BarricadePoint _barricade;
+        private int _sector;
+        private WorldItem _clothTarget;
+        private int _clothTries;
+        private DateTime _raceAt = DateTime.MaxValue;
+        private bool _raceDone;
+        private WorldItem _raceItem;
+        private string _raceId;
+        private int _raceBefore;
+        private float _raceCheckAt;
+        private bool _racePlaced;
         private int _worldStep;
         private float _nextWorldStep;
         private InteractiveDoor _doorTested;
@@ -56,6 +75,10 @@ namespace Combat
                     case "-net-hit": _hit = true; break;
                     case "-net-revive": _revive = true; break;
                     case "-net-world": _world = true; break;
+                    case "-net-world2": _world2 = true; break;
+                    case "-net-race":
+                        if (next != null && DateTime.TryParse(DateTime.Now.ToString("yyyy-MM-dd") + " " + next, out DateTime at)) _raceAt = at;
+                        break;
                 }
             }
 
@@ -91,6 +114,8 @@ namespace Combat
             if (_hit && Net.Active) HitNearest();
             if (_revive && Net.Active) ReviveDowned();
             if (_world && Net.Active) WorldStep();
+            if (_world2 && Net.Active) World2Step();
+            if (Net.Active) RaceStep();
         }
 
         private void Report()
@@ -367,6 +392,210 @@ namespace Combat
                     _worldStep++;
                     return;
             }
+        }
+
+        // ---------------------------------------------------------------- -net-world2: barricade, generator, crafting
+
+        private void World2Step()
+        {
+            if (Time.unscaledTime < _nextWorld2) return;
+            _nextWorld2 = Time.unscaledTime + 3.0f;
+            PlayerCombat me = FindAnyObjectByType<PlayerCombat>();
+            InventoryManager inventory = InventoryManager.Player;
+            if (me == null || me.Health.IsDead || inventory == null) return;
+
+            switch (_world2Step)
+            {
+                case 0:
+                    _barricade = null;
+                    float best = float.MaxValue;
+                    foreach (BarricadePoint point in FindObjectsByType<BarricadePoint>())
+                    {
+                        float d = Vector3.Distance(point.transform.position, me.transform.position);
+                        if (!point.Built && d < best)
+                        {
+                            best = d;
+                            _barricade = point;
+                        }
+                    }
+
+                    if (_barricade == null)
+                    {
+                        Write("barricada: nenhum ponto livre");
+                        _world2Step = 4;
+                        return;
+                    }
+
+                    if (inventory.Count(QuickItem.Barricade) == 0) inventory.Add(QuickItem.Barricade, 1, false);
+                    Teleport(me, _barricade.InteractionPoint - _barricade.transform.forward * 1.2f);
+                    _world2Step++;
+                    _nextWorld2 = Time.unscaledTime + 1.0f;
+                    return;
+                case 1:
+                    Write($"barricada: montando (kits {inventory.Count(QuickItem.Barricade)}, montada {_barricade.Built})");
+                    _barricade.Interact(me);
+                    _world2Step++;
+                    return;
+                case 2:
+                    Write($"barricada: agora montada {_barricade.Built}, vida {_barricade.Health:F0}, kits {inventory.Count(QuickItem.Barricade)}; desmontando");
+                    _barricade.Interact(me);
+                    _world2Step++;
+                    return;
+                case 3:
+                    Write($"barricada: depois de desmontar montada {_barricade.Built}, kits {inventory.Count(QuickItem.Barricade)}");
+                    _world2Step++;
+                    return;
+                case 4:
+                    // the host puts a sector in the dark for this test; go and crank its generator
+                    PowerGridManager grid = PowerGridManager.Instance;
+                    if (grid == null) return;
+                    for (int i = 0; i < grid.Sectors.Length; i++)
+                    {
+                        if (grid.Sectors[i].State == PowerState.Normal || grid.Sectors[i].Generator == null) continue;
+                        _sector = i;
+                        PowerGenerator generator = grid.Sectors[i].Generator;
+                        Write($"energia: setor {grid.Sectors[i].Name} em {grid.Sectors[i].State} aqui; indo ao gerador");
+                        Teleport(me, generator.InteractionPoint - generator.transform.forward * 1.2f);
+                        _world2Step++;
+                        _nextWorld2 = Time.unscaledTime + 1.0f;
+                        return;
+                    }
+
+                    return;
+                case 5:
+                    PowerGenerator crank = PowerGridManager.Instance.Sectors[_sector].Generator;
+                    Write("energia: ligando o gerador");
+                    crank.Interact(me);
+                    _world2Step++;
+                    _nextWorld2 = Time.unscaledTime + 7.0f;
+                    return;
+                case 6:
+                    Write($"energia: setor agora {PowerGridManager.Instance.Sectors[_sector].State}");
+                    _world2Step++;
+                    return;
+                case 7:
+                case 8:
+                case 9:
+                    // two pieces of cloth from the ground, through the host: walk up first (the host checks the
+                    // distance with the position it has), ask on the next step
+                    if (Backpack.Count("cloth") >= 2 || _clothTries >= 6)
+                    {
+                        _world2Step = 10;
+                        return;
+                    }
+
+                    if (_clothTarget != null)
+                    {
+                        Write("fabricação: pegando tecido");
+                        _clothTarget.Interact(me);
+                        _clothTarget = null;
+                        _clothTries++;
+                        _nextWorld2 = Time.unscaledTime + 1.5f;
+                        return;
+                    }
+
+                    WorldItem cloth = null;
+                    float nearest = float.MaxValue;
+                    foreach (WorldItem item in FindObjectsByType<WorldItem>())
+                    {
+                        float d = Vector3.Distance(item.transform.position, me.transform.position);
+                        if (item.ItemId == "cloth" && d < nearest)
+                        {
+                            nearest = d;
+                            cloth = item;
+                        }
+                    }
+
+                    if (cloth != null)
+                    {
+                        Teleport(me, cloth.transform.position + Vector3.right * 0.8f);
+                        Write($"fabricação: indo ao tecido ({nearest:F0} m)");
+                        _clothTarget = cloth;
+                        _nextWorld2 = Time.unscaledTime + 1.0f;
+                    }
+                    else _world2Step = 10;
+
+                    return;
+                case 10:
+                    CraftingRecipe bandage = Recipe("bandage");
+                    Write($"fabricação: tecido {Backpack.Count("cloth")}, bandagens {Count("bandage")}; fabricando");
+                    if (bandage != null) Crafting.Craft(bandage, null);
+                    _world2Step++;
+                    return;
+                case 11:
+                    Write($"fabricação: depois tecido {Backpack.Count("cloth")}, bandagens {Count("bandage")}");
+                    // now cheat: two pieces of cloth that never came from the host
+                    Backpack.Add("cloth", 2);
+                    CraftingRecipe again = Recipe("bandage");
+                    Write($"fabricação: tecido inventado aqui {Backpack.Count("cloth")}; fabricando de novo");
+                    if (again != null) Crafting.Craft(again, null);
+                    _world2Step++;
+                    return;
+                case 12:
+                    Write($"fabricação: depois da trapaça tecido {Backpack.Count("cloth")}, bandagens {Count("bandage")}");
+                    _world2Step++;
+                    return;
+            }
+        }
+
+        private static int Count(string id)
+        {
+            if (Backpack.TryQuickItem(id, out QuickItem quick) && InventoryManager.Player != null) return InventoryManager.Player.Count(quick);
+            return Backpack.Count(id);
+        }
+
+        private static CraftingRecipe Recipe(string product)
+        {
+            if (CraftingCatalog.Instance == null) return null;
+            foreach (CraftingRecipe recipe in CraftingCatalog.Instance.Recipes)
+                if (recipe != null && recipe.ProductId == product) return recipe;
+            return null;
+        }
+
+        // ---------------------------------------------------------------- -net-race: the same thing at the same moment
+
+        private void RaceStep()
+        {
+            // in place a few seconds early, so the host already has this player next to it
+            if (_raceDone || DateTime.Now < _raceAt.AddSeconds(-4)) return;
+            PlayerCombat me = FindAnyObjectByType<PlayerCombat>();
+            if (me == null) return;
+            if (!_racePlaced)
+            {
+                // everyone picks the same one: the material nearest the base's centre
+                float best = float.MaxValue;
+                foreach (WorldItem item in FindObjectsByType<WorldItem>())
+                {
+                    float d = item.transform.position.sqrMagnitude;
+                    if (d < best)
+                    {
+                        best = d;
+                        _raceItem = item;
+                    }
+                }
+
+                if (_raceItem == null) return;
+                _raceId = _raceItem.ItemId;
+                _raceBefore = Count(_raceId);
+                Teleport(me, _raceItem.transform.position + Vector3.right * 0.8f);
+                Write($"corrida: no lugar, ao lado de {_raceId} em {_raceItem.transform.position}");
+                _racePlaced = true;
+                return;
+            }
+
+            if (_raceCheckAt <= 0.0f)
+            {
+                if (DateTime.Now < _raceAt) return;
+                if (_raceItem != null) _raceItem.Interact(me);
+                _raceCheckAt = Time.unscaledTime + 2.5f;
+                Write($"corrida: pedindo às {DateTime.Now:HH:mm:ss.fff}");
+                return;
+            }
+
+            if (Time.unscaledTime < _raceCheckAt) return;
+            int after = Count(_raceId);
+            Write(after > _raceBefore ? $"corrida: GANHEI ({_raceId} {_raceBefore} -> {after})" : $"corrida: perdi ({_raceId} continua {after})");
+            _raceDone = true;
         }
 
         private static void Teleport(PlayerCombat body, Vector3 position)
