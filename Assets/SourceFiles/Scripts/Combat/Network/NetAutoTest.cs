@@ -97,7 +97,10 @@ namespace Combat
             int dead = 0;
             foreach (EnemyReplica r in replicas) if (r.GetComponent<Health>().IsDead) dead++;
             line.Append($" | réplicas {replicas.Length} (mortas {dead}) zumbis locais com IA {FindObjectsByType<ZombieAI>().Length} tiros {_shots}");
-            if (GameFlow.Instance != null) line.Append($" | abates {RunState.Kills} pontos {GameFlow.Instance.Score}");
+            if (GameFlow.Instance != null) line.Append($" | abates {RunState.Kills} pontos {GameFlow.Instance.Score} créditos {RunState.Credits}");
+            EnemySpawner spawner = FindAnyObjectByType<EnemySpawner>();
+            if (spawner != null && Net.Active)
+                line.Append($" | onda {spawner.Wave} ativa {spawner.WaveInProgress} intervalo {spawner.InIntermission} ({spawner.IntermissionLeft:F0} s) restantes {spawner.RemainingInWave}");
             Write(line.ToString());
 
             if (Net.Active && _screens < 3 && replicas.Length > 0)

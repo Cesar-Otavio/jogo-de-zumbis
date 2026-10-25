@@ -50,7 +50,9 @@ namespace Combat
         // 0 close, 1 medium, 2 far
         public static int MinimapZoom { get => Mathf.Clamp(Mathf.RoundToInt(Get("MinimapZoom", 1.0f)), 0, 2); set => Set("MinimapZoom", Mathf.Clamp(value, 0, 2)); }
         // ---- display and graphics (applied by DisplayOptions)
-        public static int Quality { get => Mathf.RoundToInt(Get("Quality", QualitySettings.GetQualityLevel())); set => Set("Quality", value); }
+        // "QualityLevel": the old "Quality" key held an index into a list that had only one level on PC,
+        // which would now point at the lowest one; old saves start from the platform default instead
+        public static int Quality { get => Mathf.RoundToInt(Get("QualityLevel", QualitySettings.GetQualityLevel())); set => Set("QualityLevel", value); }
         // index into DisplayOptions.Resolutions, -1 = the screen's own
         public static int Resolution { get => Mathf.RoundToInt(Get("Resolution", -1.0f)); set => Set("Resolution", value); }
         // 0 borderless full screen, 1 exclusive full screen, 2 window

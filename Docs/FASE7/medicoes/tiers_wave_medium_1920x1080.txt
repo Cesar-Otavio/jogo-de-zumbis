@@ -1,0 +1,65 @@
+run tiers_wave_medium_1920x1080 (development build, 4.0.1)
+cpu AMD Ryzen 7 5700U with Radeon Graphics  (16 threads), gpu AMD Radeon(TM) Graphics (Direct3D11, 5042 MB), ram 10085 MB
+screen 1920x1080 FullScreenWindow, display 1920x1080, quality Médio, pipeline Medium_RPAsset, profile medium
+frame timing stats True, gpu samples 1547/1547
+frames 1547: avg 12.92 ms, median 13.04, p95 14.19, p99 15.41, max 28.15
+cpu main 12.58 ms, render thread 2.51 ms, gpu 7.99 ms (p95 gpu 10.91)
+lights visible 65.59, with shadows 4.00, living characters 31.00
+
+counters (average / max per frame):
+  Draw Calls Count: 608.48 / 643.00
+  SetPass Calls Count: 122.13 / 127.00
+  Triangles Count: 300645.58 / 357072.00
+  Shadow Casters Count: 289.01 / 307.00
+  Visible Skinned Meshes Count: 17.08 / 25.00
+  SRP Batcher Draw Calls Count: 450.99 / 482.00
+  Render Textures Count: 25.01 / 26.00
+  GC Allocated In Frame: 3028.08 / 83036.00
+  GC Allocation In Frame Count: 51.00 / 143.00
+  Total Used Memory: 669420695.28 / 676336354.00
+  GC Used Memory: 10017476.26 / 11051008.00
+  Gfx Used Memory: 394349458.99 / 399483463.00
+
+main thread markers (average ms per frame):
+  PlayerLoop: 12.89
+  Update.ScriptRunBehaviourUpdate: 1.94
+  PreLateUpdate.ScriptRunBehaviourLateUpdate: 0.28
+  FixedUpdate.ScriptRunBehaviourFixedUpdate: 0.00
+  FixedUpdate.PhysicsFixedUpdate: 1.38
+  Physics.Simulate: 0.74
+  Animators.Update: 0.85
+  PreLateUpdate.DirectorUpdateAnimationBegin: 0.36
+  NavMeshManager: 0.84
+  PostLateUpdate.PlayerUpdateCanvases: 0.65
+  UGUI.Rendering.UpdateBatches: 0.61
+  Camera.Render: 0.00
+  CullScriptable: 0.84
+  Gfx.WaitForPresentOnGfxThread: 0.01
+  Gfx.PresentFrame: 0.30
+  Audio.FMODSystemUpdate: 0.14
+  ParticleSystem.Update: 0.07
+  NetworkEarlyUpdate: 0.00
+  NetworkPreUpdate: 0.01
+  NetworkPostLateUpdate: 0.01
+  GC.Collect: 0.01
+
+gpu passes (average ms per frame):
+  MainLightShadow: 0.45
+  AdditionalLightsShadow: 0.32
+  DrawOpaqueObjects: 0.00
+  Draw Opaque Objects: 0.00
+  DrawTransparentObjects: 0.00
+  Draw Transparent Objects: 0.00
+  UberPostProcess: 0.00
+  Uber Post Process: 0.00
+  Bloom: 0.00
+  DepthPrepass: 0.00
+  Depth Prepass: 0.00
+  CopyDepth: 0.00
+  Copy Depth: 0.00
+  CopyColor: 0.00
+  Copy Color: 0.00
+  DrawSkybox: 0.00
+  Draw Skybox: 0.00
+  UI Rendering: 0.00
+  Render 2D Lights: 0.00

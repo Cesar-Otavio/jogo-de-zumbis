@@ -131,8 +131,8 @@ namespace Combat
 
         // ---------------------------------------------------------------- setup
 
-        // low: the cheapest pipeline asset with short shadows and reduced effects; medium: the PC asset
-        // with the defaults; high: the PC asset with long shadows; current: whatever the player has chosen
+        // low: the Baixo quality level with short shadows and reduced effects; medium: Médio with the default
+        // shadows; high: Alto with long shadows; current: whatever the player has chosen
         private void ApplyProfile()
         {
             Save("Quality", GameSettings.Quality);
@@ -141,21 +141,21 @@ namespace Combat
             Save("FrameLimit", GameSettings.FrameLimit);
             Save("VSync", GameSettings.VSync ? 1 : 0);
 
-            int pc = Mathf.Max(0, Array.IndexOf(QualitySettings.names, "PC"));
+            int last = QualitySettings.names.Length - 1;
             switch (_profile)
             {
                 case "low":
-                    GameSettings.Quality = 0;
+                    GameSettings.Quality = Level("Baixo", 0);
                     GameSettings.ShadowDistance = 0;
                     GameSettings.EffectsQuality = 0;
                     break;
                 case "medium":
-                    GameSettings.Quality = pc;
+                    GameSettings.Quality = Level("Médio", last);
                     GameSettings.ShadowDistance = 1;
                     GameSettings.EffectsQuality = 1;
                     break;
                 case "high":
-                    GameSettings.Quality = pc;
+                    GameSettings.Quality = Level("Alto", last);
                     GameSettings.ShadowDistance = 3;
                     GameSettings.EffectsQuality = 2;
                     break;
@@ -168,6 +168,12 @@ namespace Combat
         }
 
         private void Save(string key, float value) => _savedSettings[key] = value;
+
+        private static int Level(string name, int fallback)
+        {
+            int index = Array.IndexOf(QualitySettings.names, name);
+            return index >= 0 ? index : fallback;
+        }
 
         private void RestoreSettings()
         {

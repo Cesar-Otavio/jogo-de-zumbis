@@ -383,7 +383,8 @@ namespace Combat
                 ? "A próxima onda começa quando você sair da loja"
                 : $"INTERVALO {Mathf.CeilToInt(left)}s   <size=80%><color=#FFFFFF>[L] loja   [N] próxima onda agora</color></size>";
 
-            if (endlessBreak && Keyboard.current != null && Keyboard.current.nKey.wasPressedThisFrame && !ShopManager.IsOpen) _spawner.SkipIntermission();
+            // co-op: only the host can cut the break short (it runs the waves)
+            if (endlessBreak && Net.HasAuthority && Keyboard.current != null && Keyboard.current.nKey.wasPressedThisFrame && !ShopManager.IsOpen) _spawner.SkipIntermission();
         }
 
         private void UpdateBoss()

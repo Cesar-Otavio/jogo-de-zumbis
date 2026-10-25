@@ -1,0 +1,4 @@
+run;dev;scene;enemies_alive;profile;quality;size;shadow_dist;frames;avg_ms;fps;median_ms;p95_ms;p99_ms;max_ms;cpu_main_ms;cpu_render_ms;gpu_ms;draw_calls;setpass;triangles;shadow_casters;lights_visible;shadow_lights_visible;gc_alloc_bytes_frame;total_mem_mb;gpu_device
+release_wave_medium_1920x1080;release;wave;31.00;medium;Médio;1920x1080;50.00;1693;11.80;84.74;11.55;13.50;14.03;26.56;10.16;2.23;6.57;611;122;307451;286;66.00;4.00;;524.67;AMD Radeon(TM) Graphics
+release_wave_low_1280x720;release;wave;31.00;low;Baixo;1280x720;30.00;2185;9.14;109.38;9.08;10.55;11.15;25.57;8.99;1.88;5.63;433;103;208050;83;66.44;2.00;;557.04;AMD Radeon(TM) Graphics
+release_yard_medium_1920x1080;release;yard;1.00;medium;Médio;1920x1080;50.00;2285;8.74;114.36;8.61;9.65;10.22;23.21;6.73;2.19;7.57;563;116;229155;264;62.50;4.00;;516.25;AMD Radeon(TM) Graphics

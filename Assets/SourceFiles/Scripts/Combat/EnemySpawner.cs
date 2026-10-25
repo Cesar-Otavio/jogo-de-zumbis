@@ -23,7 +23,7 @@ namespace Combat
         public int Wave { get; private set; }
         public bool InIntermission { get; private set; }
         public float IntermissionLeft => Mathf.Max(0.0f, _intermissionEnds - Time.time);
-        public int RemainingInWave => _soldiersToSpawn + _zombiesToSpawn + _soldiers.Count + _zombies.Count + _bosses.Count;
+        public int RemainingInWave => _mirrored ? _mirrorRemaining : _soldiersToSpawn + _zombiesToSpawn + _soldiers.Count + _zombies.Count + _bosses.Count;
         public bool WaveInProgress => _wavesRunning && !InIntermission && _waveActive;
         // the break is over but the wave waits for the shop to close
         public bool WaitingForShop { get; private set; }
@@ -309,6 +309,41 @@ namespace Combat
             _waveActive = false;
             _soldiersToSpawn = 0;
             _zombiesToSpawn = 0;
+        }
+
+        // ---- co-op client: the host's waves, for the HUD and the wave rewards; nothing spawns here
+
+        private bool _mirrored;
+        private int _mirrorRemaining;
+
+        public void Mirror(int wave, bool running, bool intermission, float intermissionLeft, int remaining, bool waitingForShop)
+        {
+            bool wasActive = _mirrored && _waveActive;
+            int previous = Wave;
+            bool active = running && !intermission && wave > 0;
+
+            _mirrored = true;
+            UseWaves = true;
+            _wavesRunning = running;
+            Wave = wave;
+            InIntermission = intermission;
+            _waveActive = active;
+            _intermissionEnds = Time.time + intermissionLeft;
+            WaitingForShop = waitingForShop;
+            _mirrorRemaining = remaining;
+
+            if (wasActive && !active) WaveCleared?.Invoke(previous);
+            if (active && (!wasActive || wave != previous)) WaveStarted?.Invoke(wave);
+        }
+
+        public void StopMirror()
+        {
+            if (!_mirrored) return;
+            _mirrored = false;
+            Wave = 0;
+            InIntermission = false;
+            WaitingForShop = false;
+            StopWaves();
         }
 
         private void StartIntermission(float duration)

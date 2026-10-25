@@ -21,6 +21,7 @@ namespace Combat
         public const ushort Protocol = 1;
         public const ushort DefaultPort = 7777;
         public const float ConnectTimeout = 10.0f;
+        public const int DisconnectTimeoutMs = 10000;
 
         public static NetSession Instance { get; private set; }
 
@@ -61,6 +62,10 @@ namespace Combat
             Instance = this;
             _manager = GetComponent<NetworkManager>();
             _transport = GetComponent<UnityTransport>();
+            // a player whose game stopped answering leaves after 10 s instead of the transport's 30;
+            // heartbeats every half second keep a quiet but healthy link (VPN included) from timing out
+            _transport.DisconnectTimeoutMS = DisconnectTimeoutMs;
+            _transport.HeartbeatTimeoutMS = 500;
             _manager.NetworkConfig.ProtocolVersion = Protocol;
             _manager.NetworkConfig.ConnectionApproval = true;
             _manager.ConnectionApprovalCallback = Approve;

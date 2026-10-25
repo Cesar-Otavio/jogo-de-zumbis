@@ -32,11 +32,33 @@ namespace Combat
         }
     }
 
+    // the host's wave progress, for the clients' HUD (they run no waves of their own)
+    public struct WaveState : INetworkSerializable, System.IEquatable<WaveState>
+    {
+        public ushort Wave;
+        // bit 0 waves running, bit 1 in intermission, bit 2 waiting for the shop
+        public byte Flags;
+        public ushort Remaining;
+        // whole seconds, so it only changes once a second
+        public ushort IntermissionLeft;
+
+        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+        {
+            serializer.SerializeValue(ref Wave);
+            serializer.SerializeValue(ref Flags);
+            serializer.SerializeValue(ref Remaining);
+            serializer.SerializeValue(ref IntermissionLeft);
+        }
+
+        public bool Equals(WaveState other) => Wave == other.Wave && Flags == other.Flags && Remaining == other.Remaining && IntermissionLeft == other.IntermissionLeft;
+    }
+
     /* The shared side of a co-op match, spawned once by the host:
      *   lobby    - room name, mode, difficulty and who is ready (on each NetPlayer)
      *   start    - the host starts the match for everyone at once; nobody starts their own waves
      *   enemies  - the host's infected streamed ten times a second; clients show replicas (EnemyReplica)
      *   damage   - a client's hit on a replica is a request the host checks (range, rate, size) before applying
+     *   waves    - the host's wave number, intermission and enemies left, mirrored on the clients' spawner
      */
     public class NetGame : NetworkBehaviour
     {
@@ -47,6 +69,7 @@ namespace Combat
         public readonly NetworkVariable<int> DifficultyLevel = new NetworkVariable<int>((int)Difficulty.Normal);
         public readonly NetworkVariable<int> MaxPlayers = new NetworkVariable<int>(4);
         public readonly NetworkVariable<bool> MatchStarted = new NetworkVariable<bool>();
+        public readonly NetworkVariable<WaveState> Waves = new NetworkVariable<WaveState>();
 
         public bool Started => IsSpawned && MatchStarted.Value;
 
@@ -77,6 +100,7 @@ namespace Combat
         {
             Instance = this;
             _spawner = FindAnyObjectByType<EnemySpawner>();
+            Waves.OnValueChanged += MirrorWaves;
             if (IsServer)
             {
                 Room.Value = NetSession.Instance != null ? NetSession.Instance.RoomName : "Sala";
@@ -87,6 +111,8 @@ namespace Combat
 
         public override void OnNetworkDespawn()
         {
+            Waves.OnValueChanged -= MirrorWaves;
+            if (_spawner != null && !IsServer) _spawner.StopMirror();
             if (Instance == this) Instance = null;
             foreach (EnemyReplica replica in _replicas.Values) if (replica != null) Destroy(replica.gameObject);
             _replicas.Clear();
@@ -153,8 +179,35 @@ namespace Combat
         private void Update()
         {
             if (!IsSpawned || !Started) return;
-            if (IsServer) StreamEnemies();
+            if (IsServer)
+            {
+                StreamEnemies();
+                PublishWaves();
+            }
             else ExpireReplicas();
+        }
+
+        // ---------------------------------------------------------------- waves
+
+        private void PublishWaves()
+        {
+            if (_spawner == null) return;
+            int flags = (_spawner.Running ? 1 : 0) | (_spawner.InIntermission ? 2 : 0) | (_spawner.WaitingForShop ? 4 : 0);
+            var state = new WaveState
+            {
+                Wave = (ushort)Mathf.Clamp(_spawner.Wave, 0, ushort.MaxValue),
+                Flags = (byte)flags,
+                Remaining = (ushort)Mathf.Clamp(_spawner.RemainingInWave, 0, ushort.MaxValue),
+                IntermissionLeft = (ushort)Mathf.CeilToInt(_spawner.IntermissionLeft)
+            };
+            // a network variable only goes out when it changes
+            if (!state.Equals(Waves.Value)) Waves.Value = state;
+        }
+
+        private void MirrorWaves(WaveState before, WaveState now)
+        {
+            if (IsServer || _spawner == null) return;
+            _spawner.Mirror(now.Wave, (now.Flags & 1) != 0, (now.Flags & 2) != 0, now.IntermissionLeft, now.Remaining, (now.Flags & 4) != 0);
         }
 
         private void StreamEnemies()
