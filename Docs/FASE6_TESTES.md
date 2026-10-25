@@ -73,18 +73,30 @@ Os dois processos são independentes: cada um tem sua própria cena, seu própri
 - Por código: todo desvio de rede depende de `Net.Listening` ou `Net.Active`. Sem sessão, spawner, IA, pausa e slow-motion seguem pelo caminho antigo.
 - **Não executado:** uma partida single-player completa depois das mudanças. Isso fica como regressão pendente.
 
+### T10 — Reteste com a build nova — **PASSOU**
+- Build Windows gerada de novo com todas as correções (`Assembly-CSharp.dll` às 05:13). Host no editor, sala "Reteste", sem senha.
+- Lobby do host:
+  - o log mostrou "Amigo entrou na sessão", agora com o nome e não "Jogador 2";
+  - a dificuldade "FÁCIL" aparece entre as setas;
+  - o Amigo aparecia Pronto, com traje 1-1-4 e 369 ms (editor a poucos quadros por segundo).
+- Partida:
+  - o cliente matou os 6 zumbis da onda 1 com 18 acertos (6 abates e 450 pontos no estado da partida);
+  - o HUD do cliente mostrou **ABATES 1** e +10 CR logo no primeiro abate (antes ficava em 0);
+  - o boneco do host aparecia com a M1911.
+- No `player.log` do cliente: **0** avisos "Can't remove … depends on it" e nenhuma exceção.
+
 ## Falhas encontradas e corrigidas
 
 | Falha | Causa | Correção | Situação |
 |---|---|---|---|
 | NRE ao hospedar depois de voltar ao menu | o singleton apontava para o NetworkManager destruído | `EnsureSingleton` + `DestroyImmediate` + `InstantiateAndSpawn` | Retestado, ok |
-| Avisos "Can't remove X because Y depends on it" no boneco | ordem de remoção dos componentes | remoção em passes, respeitando `RequireComponent` | Compila; **ainda não retestado na build** |
-| Contador ABATES do cliente ficava em 0 | o HUD lê `PlayerCombat.Kills`, que só conta abates locais | `PlayerCombat.CountNetworkKill()` | Compila; **ainda não retestado na build** |
-| Aviso de entrada dizia "Jogador 2" | o nome chega depois do objeto do jogador | o anúncio espera o `PlayerName` | Compila; **ainda não retestado** |
-| Nome da dificuldade longe das setas no lobby | layout | rótulo entre as setas | Compila; **ainda não retestado visualmente** |
+| Avisos "Can't remove X because Y depends on it" no boneco | ordem de remoção dos componentes | remoção em passes, respeitando `RequireComponent` | Retestado na build nova (T10): 0 avisos |
+| Contador ABATES do cliente ficava em 0 | o HUD lê `PlayerCombat.Kills`, que só conta abates locais | `PlayerCombat.CountNetworkKill()` | Retestado (T10): HUD marca ABATES 1 no 1º abate |
+| Aviso de entrada dizia "Jogador 2" | o nome chega depois do objeto do jogador | o anúncio espera o `PlayerName` | Retestado (T10): "Amigo entrou na sessão" |
+| Nome da dificuldade longe das setas no lobby | layout | rótulo entre as setas | Retestado (T10): "FÁCIL" entre `<` e `>` |
 | Prefabs de rede registrados em duplicidade | lista própria + `DefaultNetworkPrefabs` | uso só da lista padrão | Ok |
 
-> A build Windows usada como cliente é **anterior** às últimas cinco correções. Para retestá-las no cliente é preciso gerar uma nova build (cerca de 25 min).
+> As correções acima foram retestadas com uma build Windows nova, gerada depois delas (T10).
 
 ## Pendentes (não executados)
 - Teste em **dois PCs físicos** pela LAN.

@@ -100,11 +100,10 @@ Ambos são oficiais e gratuitos. Nenhum serviço pago (Relay, Lobby, Vivox) foi 
 - Portas, energia, loot, baús, mochila, munição, créditos e loja continuam locais e não são validados.
 - Não há game over cooperativo, queda nem revive. Cada jogador morre e reaparece pelo próprio fluxo.
 - O cliente não tem o HUD de ondas. O modo em rede é só o Infinito (a campanha não está sincronizada).
-- A build do cliente usada nos testes é anterior às últimas correções (remoção de componentes do boneco, contador de abates, aviso de entrada, rótulo de dificuldade).
 - A build inclui shaders não usados do AI Inference/Sentis (a build tem 421 MB). Isso ainda não foi otimizado.
 
 ## Próximos passos sugeridos
-1. Gerar uma nova build e testar em **dois PCs**, primeiro na LAN e depois pelo Radmin VPN, seguindo `FASE6_RADMIN_HAMACHI.md`.
+1. Testar a build atual em **dois PCs**, primeiro na LAN e depois pelo Radmin VPN, seguindo `FASE6_RADMIN_HAMACHI.md`.
 2. Testar 3 e 4 jogadores e as recusas "Sala cheia" e "A partida já começou".
 3. Reduzir o timeout de desconexão e mostrar um aviso de "reconectando".
 4. Replicar soldados, chefes e o Screamer.
