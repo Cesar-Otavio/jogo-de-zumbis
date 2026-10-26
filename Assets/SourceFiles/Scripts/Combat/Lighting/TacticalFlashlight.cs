@@ -144,7 +144,15 @@ namespace Combat
             return _cookie;
         }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker LateUpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.TacticalFlashlight.LateUpdate");
+
         private void LateUpdate()
+        {
+            using (LateUpdateMarker.Auto()) LateUpdateMarked();
+        }
+
+        private void LateUpdateMarked()
         {
             float dt = Time.deltaTime;
             if (_beam == null) return;

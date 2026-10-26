@@ -161,7 +161,15 @@ namespace Combat
             if (!IsOwner && NetGame.Instance != null) NetMatch.Notice($"{DisplayName} saiu da sessão");
         }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.NetPlayer.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             if (!IsSpawned) return;
             bool inMatch = NetGame.Instance != null && NetGame.Instance.Started;

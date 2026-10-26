@@ -253,7 +253,15 @@ namespace Combat
             foreach (Rigidbody r in _weaponModel.GetComponentsInChildren<Rigidbody>(true)) Destroy(r);
         }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker LateUpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.NetPuppet.LateUpdate");
+
         private void LateUpdate()
+        {
+            using (LateUpdateMarker.Auto()) LateUpdateMarked();
+        }
+
+        private void LateUpdateMarked()
         {
             if (_weaponModel == null) return;
             bool show = !_dead;
@@ -308,7 +316,15 @@ namespace Combat
             _nameTag.rectTransform.sizeDelta = new Vector2(3.0f, 0.5f);
         }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.NetPuppet.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             // the name always faces this machine's camera
             Camera cam = Camera.main;

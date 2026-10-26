@@ -69,7 +69,15 @@ namespace Combat
             Current = MaxHealth;
         }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.Health.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             // the downed don't heal on their own: that's what the teammates are for
             if (IsDead || Untargetable || RegenRate <= 0.0f || Current >= MaxHealth * RegenCap) return;

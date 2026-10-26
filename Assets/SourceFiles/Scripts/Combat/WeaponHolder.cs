@@ -303,27 +303,51 @@ namespace Combat
 
         // ---------------------------------------------------------------- update
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.WeaponHolder.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        // and its parts, to find what a hitch inside it was
+        private static readonly Unity.Profiling.ProfilerMarker BlendMarker = new Unity.Profiling.ProfilerMarker("Combat.WeaponHolder.Blend");
+        private static readonly Unity.Profiling.ProfilerMarker GearMarker = new Unity.Profiling.ProfilerMarker("Combat.WeaponHolder.Gear");
+        private static readonly Unity.Profiling.ProfilerMarker FiringMarker = new Unity.Profiling.ProfilerMarker("Combat.WeaponHolder.Firing");
+        private static readonly Unity.Profiling.ProfilerMarker ReloadMarker = new Unity.Profiling.ProfilerMarker("Combat.WeaponHolder.Reload");
+        private static readonly Unity.Profiling.ProfilerMarker PoseMarker = new Unity.Profiling.ProfilerMarker("Combat.WeaponHolder.Pose");
+        private static readonly Unity.Profiling.ProfilerMarker BackMarker = new Unity.Profiling.ProfilerMarker("Combat.WeaponHolder.Back");
+
+        private void UpdateMarked()
         {
             float dt = Time.deltaTime;
             if (dt <= 0.0f) return;
 
-            UpdateBlends(dt);
-            UpdateSprings(dt);
-            UpdateGear(dt);
+            using (BlendMarker.Auto())
+            {
+                UpdateBlends(dt);
+                UpdateSprings(dt);
+            }
+
+            using (GearMarker.Auto()) UpdateGear(dt);
 
             if (Current == null)
             {
                 _ikWeight = Mathf.MoveTowards(_ikWeight, 0.0f, dt * 6.0f);
-                PoseBackWeapon();
+                using (BackMarker.Auto()) PoseBackWeapon();
                 return;
             }
 
-            UpdateFiring(dt);
-            if (IsReloading) UpdateReload(dt);
-            UpdateManualCycle();
-            PoseWeapon(dt);
-            PoseBackWeapon();
+            using (FiringMarker.Auto()) UpdateFiring(dt);
+            using (ReloadMarker.Auto())
+            {
+                if (IsReloading) UpdateReload(dt);
+                UpdateManualCycle();
+            }
+
+            using (PoseMarker.Auto()) PoseWeapon(dt);
+            using (BackMarker.Auto()) PoseBackWeapon();
         }
 
         private void UpdateBlends(float dt)
@@ -617,6 +641,16 @@ namespace Combat
             }
         }
 
+        // a shot's parts, for the performance probe
+        private static readonly Unity.Profiling.ProfilerMarker RayMarker = new Unity.Profiling.ProfilerMarker("Combat.WeaponHolder.Shot.Ray");
+        private static readonly Unity.Profiling.ProfilerMarker CastMarker = new Unity.Profiling.ProfilerMarker("Combat.WeaponHolder.Shot.Cast");
+        private static readonly Unity.Profiling.ProfilerMarker ImpactMarker = new Unity.Profiling.ProfilerMarker("Combat.WeaponHolder.Shot.Impact");
+        private static readonly Unity.Profiling.ProfilerMarker DamageMarker = new Unity.Profiling.ProfilerMarker("Combat.WeaponHolder.Shot.Damage");
+        private static readonly Unity.Profiling.ProfilerMarker HitMarker = new Unity.Profiling.ProfilerMarker("Combat.WeaponHolder.Shot.HitEvent");
+        private static readonly Unity.Profiling.ProfilerMarker ShotFxMarker = new Unity.Profiling.ProfilerMarker("Combat.WeaponHolder.Shot.Effects");
+        private static readonly Unity.Profiling.ProfilerMarker FiredMarker = new Unity.Profiling.ProfilerMarker("Combat.WeaponHolder.Shot.FiredEvent");
+        private static readonly Unity.Profiling.ProfilerMarker GunshotMarker = new Unity.Profiling.ProfilerMarker("Combat.WeaponHolder.Shot.Gunshot");
+
         private void Shoot()
         {
             WeaponData data = Current.Data;
@@ -636,9 +670,12 @@ namespace Combat
 
             Vector3 toTarget = AimPoint - origin;
             Vector3 direction = toTarget.sqrMagnitude > 1.0f ? toTarget.normalized : barrel;
-            for (int i = 0; i < Mathf.Max(1, data.Pellets); i++)
+            using (RayMarker.Auto())
             {
-                FireRay(origin, muzzle, RandomInCone(direction, CurrentSpread));
+                for (int i = 0; i < Mathf.Max(1, data.Pellets); i++)
+                {
+                    FireRay(origin, muzzle, RandomInCone(direction, CurrentSpread));
+                }
             }
 
             _bloom = Mathf.Min(data.MaxBloom, _bloom + data.SpreadPerShot);
@@ -650,6 +687,7 @@ namespace Combat
                 UnityEngine.Random.Range(-1.0f, 1.0f) * data.KickYaw * 25.0f,
                 UnityEngine.Random.Range(-1.0f, 1.0f) * data.KickYaw * 15.0f) * kick;
 
+            ShotFxMarker.Begin();
             CombatEffects fx = CombatEffects.Instance;
             if (fx != null)
             {
@@ -661,6 +699,8 @@ namespace Combat
                         IsPlayer ? 0.9f : 1.0f, 0.04f, IsPlayer ? 0.6f : 1.0f, 4.0f, 140.0f);
                 }
             }
+
+            ShotFxMarker.End();
 
             if (data.ManualCycle)
             {
@@ -675,8 +715,8 @@ namespace Combat
 
             LastShotFrom = muzzle;
             LastShotTo = origin + direction * Mathf.Min(data.Range, toTarget.magnitude > 1.0f ? toTarget.magnitude : data.Range);
-            Fired?.Invoke(Current);
-            CombatEvents.ReportGunshot(muzzle, _health != null ? _health.Team : 0, data.Suppressed, gameObject);
+            using (FiredMarker.Auto()) Fired?.Invoke(Current);
+            using (GunshotMarker.Auto()) CombatEvents.ReportGunshot(muzzle, _health != null ? _health.Team : 0, data.Suppressed, gameObject);
         }
 
         private void StartManualCycle(float delay, bool ejectShell)
@@ -731,7 +771,8 @@ namespace Combat
         private void FireRay(Vector3 origin, Vector3 muzzle, Vector3 direction)
         {
             WeaponData data = Current.Data;
-            int count = Physics.RaycastNonAlloc(origin, direction, HitBuffer, data.Range, ShotMask(), QueryTriggerInteraction.Ignore);
+            int count;
+            using (CastMarker.Auto()) count = Physics.RaycastNonAlloc(origin, direction, HitBuffer, data.Range, ShotMask(), QueryTriggerInteraction.Ignore);
 
             // nearest hit that isn't part of the shooter
             int best = -1;
@@ -752,6 +793,7 @@ namespace Combat
 
                 if (hitbox != null && hitbox.Owner != null)
                 {
+                    DamageMarker.Begin();
                     bool wasDead = hitbox.Owner.IsDead;
                     float multiplier = IsPlayer || hitbox.Owner.Team == Factions.Player ? DamageMultiplier : DamageMultiplierVsAI;
                     float damage = data.Damage * hitbox.Multiplier * multiplier;
@@ -766,9 +808,10 @@ namespace Combat
                         Headshot = hitbox.IsHead
                     });
 
+                    DamageMarker.End();
                     if (!wasDead)
                     {
-                        Hit?.Invoke(new HitReport { Target = hitbox.Owner, Damage = damage, Headshot = hitbox.IsHead, Killed = hitbox.Owner.IsDead });
+                        using (HitMarker.Auto()) Hit?.Invoke(new HitReport { Target = hitbox.Owner, Damage = damage, Headshot = hitbox.IsHead, Killed = hitbox.Owner.IsDead });
                     }
 
                     if (hitbox.Body != null && !hitbox.Body.isKinematic)
@@ -778,8 +821,11 @@ namespace Combat
 
                     if (fx != null)
                     {
-                        if (hitbox.Flesh) fx.FleshImpact(hit.point, hit.normal, direction);
-                        else fx.Impact(hit.point, hit.normal, true, hit.collider.transform);
+                        using (ImpactMarker.Auto())
+                        {
+                            if (hitbox.Flesh) fx.FleshImpact(hit.point, hit.normal, direction);
+                            else fx.Impact(hit.point, hit.normal, true, hit.collider.transform);
+                        }
                     }
                 }
                 else
@@ -789,7 +835,10 @@ namespace Combat
                         hit.rigidbody.AddForceAtPosition(direction * data.HitForce, hit.point, ForceMode.Impulse);
                     }
 
-                    if (fx != null) fx.Impact(hit.point, hit.normal, hit.collider);
+                    if (fx != null)
+                    {
+                        using (ImpactMarker.Auto()) fx.Impact(hit.point, hit.normal, hit.collider);
+                    }
                 }
             }
 

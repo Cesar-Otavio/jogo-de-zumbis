@@ -37,7 +37,15 @@ namespace Combat
         private readonly HashSet<LightFlicker> _shadowed = new HashSet<LightFlicker>();
         private float _next;
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.LampShadowBudget.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             if (Time.unscaledTime < _next) return;
             _next = Time.unscaledTime + Interval;

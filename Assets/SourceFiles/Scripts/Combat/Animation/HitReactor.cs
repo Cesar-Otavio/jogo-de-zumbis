@@ -64,7 +64,15 @@ namespace Combat
             _velocity += new Vector2(local.z, -local.x) * strength * 14.0f;
         }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.HitReactor.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             float dt = Time.deltaTime;
             if (dt <= 0.0f) return;

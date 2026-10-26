@@ -79,7 +79,15 @@ namespace Combat
             _barFill = UiKit.Panel("Fill", _barBack.rectTransform, Vector2.zero, Vector2.one, UiKit.Accent);
         }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.TeamHUD.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             bool on = Net.Active && GameFlow.Instance != null && GameFlow.Instance.Current != GameFlow.State.Menu && GameFlow.Instance.Current != GameFlow.State.GameOver;
             if (_root.gameObject.activeSelf != on) _root.gameObject.SetActive(on);

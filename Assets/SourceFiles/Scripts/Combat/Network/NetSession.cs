@@ -141,7 +141,15 @@ namespace Combat
             SetStatus(Status.Offline, reason);
         }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.NetSession.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             // a host that never answers: give up instead of hanging on "connecting"
             if (Current == Status.Connecting && Time.unscaledTime - _connectStarted > ConnectTimeout)

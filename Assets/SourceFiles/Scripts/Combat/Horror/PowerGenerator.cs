@@ -170,7 +170,15 @@ namespace Combat
             SetStatus(running ? new Color(0.2f, 1.0f, 0.3f) : new Color(1.0f, 0.15f, 0.1f));
         }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.PowerGenerator.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             if (IsStarting)
             {

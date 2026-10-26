@@ -108,7 +108,15 @@ namespace Combat
             body.angularVelocity = Random.insideUnitSphere * 3.0f;
         }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.WeaponPickup.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             _highlight = Mathf.MoveTowards(_highlight, Highlighted ? 1.0f : 0.0f, Time.deltaTime * 5.0f);
 

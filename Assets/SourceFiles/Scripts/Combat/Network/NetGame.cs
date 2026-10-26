@@ -208,7 +208,15 @@ namespace Combat
 
         // ---------------------------------------------------------------- enemies: host
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.NetGame.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             if (!IsSpawned || !Started) return;
             if (IsServer)

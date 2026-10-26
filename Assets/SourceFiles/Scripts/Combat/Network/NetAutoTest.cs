@@ -86,7 +86,15 @@ namespace Combat
             else Write($"teste iniciado, versão {Application.version}, protocolo {NetSession.Protocol}");
         }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.NetAutoTest.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             if (!_joined && GameFlow.Instance != null && NetSession.Instance != null && Time.unscaledTime > 2.0f)
             {

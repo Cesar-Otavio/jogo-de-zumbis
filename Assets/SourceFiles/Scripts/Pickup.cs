@@ -19,7 +19,15 @@ public class Pickup : MonoBehaviour
         startPosition = transform.position;
     }
 
-    void Update()
+    // time spent here, for the performance probe (Diagnostics/PerfProbe)
+    private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.Pickup.Update");
+
+    private void Update()
+    {
+        using (UpdateMarker.Auto()) UpdateMarked();
+    }
+
+    private void UpdateMarked()
     {
         // Rotate the object around its up axis
         transform.Rotate(Vector3.up, rotationSpeed * Time.deltaTime, Space.World);

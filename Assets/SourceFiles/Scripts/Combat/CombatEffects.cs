@@ -77,6 +77,9 @@ namespace Combat
         private void Awake()
         {
             Instance = this;
+            // load the impact looks (and the sounds they point to) with the scene, not on the first bullet:
+            // that Resources.Load cost 10-12 ms in the middle of the first shot (Docs/FASE7/01_PERFORMANCE.md §9)
+            SurfaceImpactLibrary.Get(SurfaceType.Concrete);
 
             for (int i = 0; i < AudioVoices; i++)
             {
@@ -163,6 +166,10 @@ namespace Combat
             PlayOn(clip, position, volume * GameSettings.SfxVolume, pitchVariation, spatial, minDistance, maxDistance, pitch, AudioRouting.Channel.Sfx);
         }
 
+        // starting a sound, for the performance probe (a hitch inside whoever plays one)
+        private static readonly Unity.Profiling.ProfilerMarker PlayMarker = new Unity.Profiling.ProfilerMarker("Combat.Audio.Play");
+        private static readonly Unity.Profiling.ProfilerMarker RouteMarker = new Unity.Profiling.ProfilerMarker("Combat.Audio.Route");
+
         private void PlayOn(AudioClip clip, Vector3 position, float volume, float pitchVariation, float spatial, float minDistance, float maxDistance, float pitch,
             AudioRouting.Channel channel)
         {
@@ -178,14 +185,14 @@ namespace Combat
             filter.cutoffFrequency = occluded ? OccludedCutoff : 22000.0f;
 
             voice.transform.position = position;
-            voice.outputAudioMixerGroup = AudioRouting.Group(channel);
+            using (RouteMarker.Auto()) voice.outputAudioMixerGroup = AudioRouting.Group(channel);
             voice.clip = clip;
             voice.volume = volume * (occluded ? OccludedVolume : 1.0f);
             voice.pitch = pitch * (1.0f + Random.Range(-pitchVariation, pitchVariation));
             voice.spatialBlend = spatial;
             voice.minDistance = minDistance;
             voice.maxDistance = maxDistance;
-            voice.Play();
+            using (PlayMarker.Auto()) voice.Play();
         }
 
         private static bool IsOccluded(Vector3 position)

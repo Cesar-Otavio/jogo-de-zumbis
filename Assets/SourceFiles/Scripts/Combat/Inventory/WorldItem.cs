@@ -91,7 +91,15 @@ namespace Combat
             glow.shadows = LightShadows.None;
         }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.WorldItem.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             float t = Time.time - _born;
             if (_visual != null) _visual.localPosition = Vector3.up * (0.12f + Mathf.Sin(t * 2.0f) * 0.02f);

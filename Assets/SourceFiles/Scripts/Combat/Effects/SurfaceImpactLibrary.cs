@@ -40,6 +40,9 @@ namespace Combat
 
         public Impact[] Impacts = new Impact[0];
 
+        // loading it (and the impact sounds it points to), for the performance probe
+        private static readonly Unity.Profiling.ProfilerMarker LoadMarker = new Unity.Profiling.ProfilerMarker("Combat.SurfaceImpactLibrary.Load");
+
         private static SurfaceImpactLibrary _instance;
         private static bool _loaded;
         private static Impact[] _defaults;
@@ -49,7 +52,7 @@ namespace Combat
             if (!_loaded)
             {
                 _loaded = true;
-                _instance = Resources.Load<SurfaceImpactLibrary>(ResourcePath);
+                using (LoadMarker.Auto()) _instance = Resources.Load<SurfaceImpactLibrary>(ResourcePath);
             }
 
             if (_instance != null)

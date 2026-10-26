@@ -270,7 +270,15 @@ namespace Combat
             if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(first);
         }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.InventoryView.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             if (_input == null && InventoryManager.Player != null) _input = InventoryManager.Player.GetComponent<StarterAssetsInputs>();
             if (_input != null && _input.inventory)

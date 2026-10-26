@@ -75,7 +75,15 @@ namespace Combat
             NoiseSystem.Emit(transform.position, 14.0f, NoiseCategory.Explosion, Factions.Environment, gameObject);
         }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.FireZone.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             float age = Time.time - _started;
             float fade = Mathf.Clamp01((Duration - age) / 1.5f);

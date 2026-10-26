@@ -120,7 +120,15 @@ namespace Combat
             return image;
         }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker LateUpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.MinimapView.LateUpdate");
+
         private void LateUpdate()
+        {
+            using (LateUpdateMarker.Auto()) LateUpdateMarked();
+        }
+
+        private void LateUpdateMarked()
         {
             MapDefinition map = MapDefinition.Instance;
             if (_playerTransform == null && InventoryManager.Player != null) _playerTransform = InventoryManager.Player.transform;

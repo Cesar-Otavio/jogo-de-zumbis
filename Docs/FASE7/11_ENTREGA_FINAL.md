@@ -134,3 +134,20 @@ Ver `08_TESTES.md` e `10_PENDENCIAS.md`.
 - **Alterados**:
   - `ZombieAI`, `Diagnostics/PerfProbe` (marcadores);
   - `CombatEffects`, `GameFlow`, `Narrative/DialogueDirector`, `WeatherController`, `PowerGridManager`, `PowerGenerator`, `PlayerInjuryFeedback`, `FireZone`, `MissionDevice`, `ThrownItem` (roteamento).
+
+## Marco 1 — pico raro (sexta execução)
+
+| Item | Estado |
+|---|---|
+| Marcadores em todos os `Update`/`LateUpdate`/`FixedUpdate` (53 novos) | **CONCLUÍDO** |
+| Picos falsos criados pela própria sonda | **CONCLUÍDO E VALIDADO** (corrigido; somem na série seguinte) |
+| Causa do pico raro | **ENCONTRADA**: o primeiro tiro (10/10 execuções com `-perf-fire`) e o primeiro golpe de infectado; o "raro" vinha de cliques do mouse e do primeiro contato |
+| Carga da biblioteca de impactos no primeiro tiro (10,5–11,7 ms) | **CONCLUÍDO E VALIDADO** (pré-carregada; primeiro tiro 42–64 → 30–36 ms em dev) |
+| Resto do primeiro tiro (dev 20–28 ms de script; release 55 + 65 ms) | **PARCIAL** (próximo passo: aquecer os efeitos) |
+| Primeiro golpe de infectado (14 ms no Animator) | **NÃO INICIADO** (só medido) |
+
+- **Alterados**:
+  - 51 scripts com marcadores;
+  - `Diagnostics/PerfProbe` (texto adiado, hora, *jobs*, `-perf-fire`);
+  - `CombatEffects` (pré-carga, marcadores de áudio);
+  - `Effects/SurfaceImpactLibrary`, `WeaponHolder`, `ThirdPersonController`, `ZombieAI` (marcadores das partes).

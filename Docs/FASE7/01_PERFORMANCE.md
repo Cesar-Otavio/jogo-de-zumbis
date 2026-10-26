@@ -240,3 +240,63 @@ Na release, nenhum quadro passou de 17 ms nas três execuções de 30 s. Antes, 
 - Marcar os `Update` dos scripts que ainda não têm marcador, começando pelos que rodam em todo quadro com inimigos na tela: `Health`, `HitReactor`, `RagdollController`, `PerceptionTarget`, `WeaponHolder`, `MinimapView`, `LightFlicker`, `LampShadowBudget`.
 - Repetir a série de 20 execuções.
 - O pico é raro (~1 quadro a cada 7 execuções de 40 s) e fica no limite de 25 ms. **Não** é P1.
+
+## 9. Pico raro: achado (primeiro tiro e primeiro golpe)
+
+### 9.1 O que foi feito
+
+- **53 marcadores novos**: todos os `Update`, `LateUpdate` e `FixedUpdate` do jogo que ainda não tinham, incluindo os do controlador do jogador (`ThirdPersonController`, escalada, respawn).
+- **Partes marcadas** do `WeaponHolder`, do tiro, do `ThirdPersonController`, do golpe do infectado e do `Play()` de áudio.
+- **A sonda ganhou**:
+  - registro de espera por *jobs* (`WaitForJobGroupID`);
+  - hora do relógio em cada pico;
+  - o modo `-perf-fire 1.5`, em que o jogador atira a cada 1,5 s;
+  - um roteiro que registra a CPU do editor durante as séries (`typeperf`).
+
+### 9.2 A própria sonda causava parte dos picos (corrigido)
+
+- Ao anotar um pico, a sonda montava o texto no mesmo quadro: ~5 ms, e 30 ms quando passou a ler a hora (o fuso horário carrega na primeira vez).
+- Isso fazia o **quadro seguinte** a um pico também passar de 25 ms.
+- Agora ela guarda só os números e escreve o texto no fim. Esses quadros sumiram na série seguinte.
+
+### 9.3 Séries de 20 execuções (desenvolvimento, onda de 30, Médio, 1080p)
+
+| Série | Execuções com pico | Onde |
+|---|---|---|
+| 1 (logo depois da build) | 4 | `WeaponHolder.Update` 18–36 ms (5 quadros), `ThirdPersonController` 13,5 |
+| 2 | 1 | `Animators.Update` 15,9 |
+| 3 (com CPU do editor) | 5 | `ZombieAI.Swing` 15,5–16 (2×), `ThirdPersonController` 14,4, um `LateUpdate` de fora do jogo 14,7; editor a 0% de CPU |
+| 4 (marcadores de áudio) | 6 | `ThirdPersonController` 13,7–16,4 (3×), `ZombieAI.Swing` 15,4; `Audio.Play` 0,01 ms (**áudio descartado**) |
+| 5 | 3 | `WeaponHolder.Firing` 12,7–27,7 (4×), ou seja, o jogador **atirou** |
+
+- A sonda não aperta o gatilho. Os tiros da série 5 vieram de cliques do mouse na janela do jogo, que ocupa a tela.
+- O `WeaponHolder` da série 1 também deve ter sido isso.
+
+### 9.4 Causa 1, comprovada e corrigida: carregamento no primeiro tiro
+
+- **Medição**: com `-perf-fire`, o **primeiro tiro** de cada partida custou **42–64 ms em 10 de 10 execuções**. Os 12 tiros seguintes custaram ~0,02 ms cada.
+- **Detalhe do primeiro tiro** (4 execuções):
+  - `SurfaceImpactLibrary.Load` **10,5–11,7 ms**: o `Resources.Load` síncrono da biblioteca de impactos e dos sons que ela referencia, no primeiro impacto;
+  - impacto completo 16–19 ms;
+  - disparo completo 39–54 ms.
+- **Correção**: `CombatEffects.Awake` carrega a biblioteca junto com a cena.
+- **Depois** (4 execuções): a carga sumiu do tiro, o impacto caiu para 5–6 ms, o disparo para 20–28 ms e o quadro do primeiro tiro para 30–36 ms.
+
+### 9.5 Ainda não resolvido
+
+- **Resto do primeiro tiro**: 20–28 ms de script (desenvolvimento), espalhados entre:
+  - o raio fora do impacto (~5–8 ms);
+  - os efeitos do disparo (2,2 ms);
+  - os eventos de disparo e de tiro (~1,5 ms cada);
+  - ~8 ms sem marcador (cápsula ou `Linecast`).
+  - Tudo indica criação de primeira vez de objetos dos *pools* (traçante, clarão, cápsula, marca de bala, partículas). **Hipótese, não medida peça por peça.**
+- **Na release o primeiro tiro custa 55 ms** e o quadro seguinte 65 ms (1 execução depois da correção; não houve medição "antes" na release com tiro).
+  - O quadro seguinte parece ser do lado da renderização: provavelmente o primeiro desenho dos materiais de efeito. **Hipótese.**
+- **Primeiro golpe de um infectado**: `ZombieAI.SwingAnim` **14,3 ms** (`Animator.speed` + `SetTrigger` na primeira vez). Comprovado; causa interna do Animator não investigada.
+- **`ThirdPersonController.Update` 13–16 ms**: 5 vezes em 100 execuções. As partes (forma, pulo, chão, movimento) ainda não apareceram num pico.
+- **Próximo passo proposto**: aquecer os *pools* de efeitos na carga (um traçante, um clarão, uma cápsula, uma marca e uma partícula de cada, desenhados uma vez fora da vista), depois medir com `-perf-fire` em desenvolvimento e release.
+
+### 9.6 Desempenho médio depois das mudanças (release)
+
+- Médio 1080p, onda de 30: **10,68 ms** parado; **10,47 ms** com um tiro a cada 1,5 s.
+- Sem exceções. Os marcadores não custam nada na release (só medem em desenvolvimento).

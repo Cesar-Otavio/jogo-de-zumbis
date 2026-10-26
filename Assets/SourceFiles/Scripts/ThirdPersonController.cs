@@ -309,7 +309,15 @@ public bool IsRespawning { get; set; } = false;
     }
 }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.ThirdPersonController.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             _hasAnimator = TryGetComponent(out _animator);
 
@@ -358,11 +366,17 @@ public bool IsRespawning { get; set; } = false;
                 SetCrouch(false, false);
             }
 
-            UpdateCrouchShape();
-            JumpAndGravity();
-            GroundedCheck();
-            Move();
+            using (ShapeMarker.Auto()) UpdateCrouchShape();
+            using (JumpMarker.Auto()) JumpAndGravity();
+            using (GroundMarker.Auto()) GroundedCheck();
+            using (MoveMarker.Auto()) Move();
         }
+
+        // and its parts, to find what a hitch inside it was
+        private static readonly Unity.Profiling.ProfilerMarker ShapeMarker = new Unity.Profiling.ProfilerMarker("Combat.ThirdPersonController.Shape");
+        private static readonly Unity.Profiling.ProfilerMarker JumpMarker = new Unity.Profiling.ProfilerMarker("Combat.ThirdPersonController.Jump");
+        private static readonly Unity.Profiling.ProfilerMarker GroundMarker = new Unity.Profiling.ProfilerMarker("Combat.ThirdPersonController.Ground");
+        private static readonly Unity.Profiling.ProfilerMarker MoveMarker = new Unity.Profiling.ProfilerMarker("Combat.ThirdPersonController.Move");
 
         // ---------------------------------------------------------------- crouch
 
@@ -587,7 +601,15 @@ public bool IsRespawning { get; set; } = false;
             }
         }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker LateUpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.ThirdPersonController.LateUpdate");
+
         private void LateUpdate()
+        {
+            using (LateUpdateMarker.Auto()) LateUpdateMarked();
+        }
+
+        private void LateUpdateMarked()
         {
             CameraRotation();
         }

@@ -25,6 +25,7 @@ namespace Combat
      *   -perf-warmup 8          how long to wait before recording
      *   -perf-out C:\dir        where to write
      *   -perf-discover          also list every sampler that reported GPU time (slow, for exploring)
+     *   -perf-fire 1.5          the player fires a shot every so many seconds while recording
      *
      * Frame timings come from FrameTimingManager (needs "Frame Timing Stats" in the player settings);
      * the counters and markers only report in a development build.
@@ -39,6 +40,13 @@ namespace Combat
         };
 
         // main-thread time spent in each part of the frame
+        private class Spike
+        {
+            public float At, Ms;
+            public long GcBytes;
+            public List<KeyValuePair<string, double>> Parts, Heavy;
+        }
+
         private static readonly string[] Markers =
         {
             "PlayerLoop", "Update.ScriptRunBehaviourUpdate", "PreLateUpdate.ScriptRunBehaviourLateUpdate",
@@ -47,6 +55,8 @@ namespace Combat
             "PostLateUpdate.PlayerUpdateCanvases", "UGUI.Rendering.UpdateBatches", "Camera.Render", "CullScriptable",
             "Gfx.WaitForPresentOnGfxThread", "Gfx.PresentFrame", "Audio.FMODSystemUpdate", "ParticleSystem.Update",
             "NetworkEarlyUpdate", "NetworkPreUpdate", "NetworkPostLateUpdate", "GC.Collect",
+            // a thread waiting for jobs (animation, physics) to finish
+            "WaitForJobGroupID",
             // usual suspects of a hitch
             "Shader.CreateGPUProgram", "Instantiate", "Loading.AwakeFromLoad", "Destroy", "Physics.Processing",
             "PostLateUpdate.FinishFrameRendering", "Update.ScriptRunDelayedDynamicFrameRate", "Gfx.WaitForGfxCommandsFromMainThread",
@@ -57,7 +67,34 @@ namespace Combat
             "Combat.MissionManager.Update", "Combat.DialogueDirector.Update", "Combat.PlayerInjuryFeedback.Update",
             // ZombieAI's parts (Blow includes the damage handlers of whoever it hits)
             "Combat.ZombieAI.Groan", "Combat.ZombieAI.Move", "Combat.ZombieAI.Door", "Combat.ZombieAI.Swing", "Combat.ZombieAI.Blow",
-            "Combat.ZombieAI.Animator"
+            "Combat.ZombieAI.Animator",
+            // the player controller's and the infected's swing parts
+            "Combat.ThirdPersonController.Shape", "Combat.ThirdPersonController.Jump", "Combat.ThirdPersonController.Ground",
+            "Combat.ThirdPersonController.Move", "Combat.ZombieAI.SwingAnim",
+            // a shot's parts (WeaponHolder.Shoot)
+            "Combat.WeaponHolder.Shot.Ray", "Combat.WeaponHolder.Shot.Cast", "Combat.WeaponHolder.Shot.Impact", "Combat.SurfaceImpactLibrary.Load",
+            "Combat.WeaponHolder.Shot.Damage", "Combat.WeaponHolder.Shot.HitEvent",
+            "Combat.WeaponHolder.Shot.Effects", "Combat.WeaponHolder.Shot.FiredEvent", "Combat.WeaponHolder.Shot.Gunshot",
+            // starting a sound (CombatEffects)
+            "Combat.Audio.Play", "Combat.Audio.Route",
+            // WeaponHolder's parts
+            "Combat.WeaponHolder.Blend", "Combat.WeaponHolder.Gear", "Combat.WeaponHolder.Firing", "Combat.WeaponHolder.Reload",
+            "Combat.WeaponHolder.Pose", "Combat.WeaponHolder.Back",
+            // every other script's Update / LateUpdate / FixedUpdate
+            "Combat.BossAI.Update", "Combat.CampaignManager.Update", "Combat.CinematicPlayer.Update", "Combat.ClimbingSystem.Update",
+            "Combat.ConsumablePickup.Update", "Combat.DialogueSubtitleView.LateUpdate", "Combat.EnemyReplica.Update", "Combat.EnemyShooterAI.Update",
+            "Combat.FireZone.Update", "Combat.GameFlow.Update", "Combat.Health.Update", "Combat.HitReactor.Update",
+            "Combat.InteractiveDoor.Update", "Combat.InventoryManager.Update", "Combat.InventoryView.Update", "Combat.ItemPickup.Update",
+            "Combat.LampShadowBudget.Update", "Combat.LeanController.Update", "Combat.LightFlicker.Update", "Combat.LootCrate.Update",
+            "Combat.MinimapView.LateUpdate", "Combat.MissionDevice.Update", "Combat.MissionPickup.Update", "Combat.MotionAudioController.Update",
+            "Combat.NetAutoTest.Update", "Combat.NetGame.Update", "Combat.NetMenuView.Update", "Combat.NetPlayer.Update",
+            "Combat.NetPuppet.LateUpdate", "Combat.NetPuppet.Update", "Combat.NetSession.Update", "Combat.NetWorld.Update",
+            "Combat.PerceptionTarget.Update", "Combat.Pickup.Update", "Combat.PickupFeedView.Update", "Combat.PlayerCloseCombat.Update",
+            "Combat.PowerGenerator.Update", "Combat.RagdollController.Update", "Combat.RespawnPlayer.Update", "Combat.ScreamerBehaviour.Update",
+            "Combat.ShopManager.Update", "Combat.TacticalFlashlight.LateUpdate", "Combat.TacticalMapView.Update", "Combat.TeamHUD.Update",
+            "Combat.ThirdPersonController.LateUpdate", "Combat.ThirdPersonController.Update", "Combat.ThrownItem.Update", "Combat.TimedLight.Update",
+            "Combat.UpdateCollectibleCount.Update", "Combat.WeaponHolder.Update", "Combat.WeaponPickup.Update", "Combat.WeaponSpawnPoint.Update",
+            "Combat.WorldItem.Update"
         };
 
         // render passes whose GPU time is worth knowing on its own
@@ -71,6 +108,8 @@ namespace Combat
         private string _label = "run";
         private string _scene = "yard";
         private int _enemies = 30;
+        private float _fireEvery;
+        private int _shotsFired;
         private string _profile = "current";
         private Vector2Int _size = new Vector2Int(1280, 720);
         private float _seconds = 20.0f;
@@ -108,6 +147,7 @@ namespace Combat
                     case "-perf-warmup": float.TryParse(next, NumberStyles.Float, CultureInfo.InvariantCulture, out _warmup); break;
                     case "-perf-out": _out = next; break;
                     case "-perf-discover": _discover = true; break;
+                    case "-perf-fire": float.TryParse(next, NumberStyles.Float, CultureInfo.InvariantCulture, out _fireEvery); break;
                 }
             }
 
@@ -254,14 +294,31 @@ namespace Combat
             var gpuSums = new Dictionary<string, double>();
             var timings = new FrameTiming[1];
             var spikes = new List<string>();
+            var spikeData = new List<Spike>();
+            DateTime clockAtStart = DateTime.Now;
+            float timeAtStart = Time.unscaledTime;
             int lightsSum = 0, shadowLightsSum = 0, enemiesSum = 0;
             float end = Time.unscaledTime + _seconds;
             yield return null;
 
+            var input = FindAnyObjectByType<StarterAssets.StarterAssetsInputs>();
+            float nextShot = Time.unscaledTime + 1.0f;
+            int shots = 0;
             while (Time.unscaledTime < end)
             {
                 yield return null;
                 float ms = Time.unscaledDeltaTime * 1000.0f;
+
+                // one frame of trigger every so often (read by PlayerCombat in the next Update)
+                if (_fireEvery > 0.0f && input != null)
+                {
+                    input.fire = Time.unscaledTime >= nextShot;
+                    if (input.fire)
+                    {
+                        nextShot = Time.unscaledTime + _fireEvery;
+                        shots++;
+                    }
+                }
                 frame.Add(ms);
 
                 FrameTimingManager.CaptureFrameTimings();
@@ -284,30 +341,30 @@ namespace Combat
                     if (pair.Value.Valid) markerSums[pair.Key] = (markerSums.TryGetValue(pair.Key, out double s) ? s : 0.0) + pair.Value.LastValue / 1e6;
 
                 // a hitch: note what took the time in that frame (the markers report the previous frame,
-                // which is the one this delta belongs to)
-                if (ms > 25.0f && spikes.Count < 40)
+                // which is the one this delta belongs to). Only the numbers are kept here; the text is made
+                // after the recording, so writing it down doesn't make the next frame a hitch too
+                if (ms > 25.0f && spikeData.Count < 40)
                 {
-                    var line = new StringBuilder($"  {Time.unscaledTime - (end - _seconds):F1} s: {ms:F1} ms ->");
+                    var spike = new Spike { At = Time.unscaledTime - (end - _seconds), Ms = ms, Parts = new List<KeyValuePair<string, double>>() };
                     foreach (var pair in markers)
                     {
                         if (!pair.Value.Valid) continue;
                         double m = pair.Value.LastValue / 1e6;
-                        if ((m >= 2.0 || (pair.Key.StartsWith("Combat.") && m >= 0.5)) && pair.Key != "PlayerLoop") line.Append($" {pair.Key} {m:F1}");
+                        if ((m >= 2.0 || (m >= 0.5 && pair.Key.StartsWith("Combat.", StringComparison.Ordinal))) && pair.Key != "PlayerLoop")
+                            spike.Parts.Add(new KeyValuePair<string, double>(pair.Key, m));
                     }
 
-                    if (counters.TryGetValue("GC Allocated In Frame", out ProfilerRecorder gc) && gc.Valid) line.Append($" | gc {gc.LastValue / 1024} KB");
-                    // with -perf-discover every sampler is recorded: name the heaviest ones of that frame
+                    spike.GcBytes = counters.TryGetValue("GC Allocated In Frame", out ProfilerRecorder gc) && gc.Valid ? gc.LastValue : -1;
+                    // with -perf-discover every sampler is recorded: keep the heaviest script methods of that frame
                     if (discoverRecorders.Count > 0)
                     {
-                        var heavy = new List<KeyValuePair<string, long>>();
+                        spike.Heavy = new List<KeyValuePair<string, double>>();
                         foreach (var pair in discoverRecorders)
                             // script methods only ("ZombieAI.Update() [Invoke]"); counters aren't times
-                            if (pair.Key.Contains("()") && pair.Value.elapsedNanoseconds > 1000000) heavy.Add(new KeyValuePair<string, long>(pair.Key, pair.Value.elapsedNanoseconds));
-                        heavy.Sort((a, b) => b.Value.CompareTo(a.Value));
-                        line.Append(" | samplers:");
-                        for (int h = 0; h < heavy.Count && h < 14; h++) line.Append($" {heavy[h].Key} {heavy[h].Value / 1e6:F1}");
+                            if (pair.Key.Contains("()") && pair.Value.elapsedNanoseconds > 1000000) spike.Heavy.Add(new KeyValuePair<string, double>(pair.Key, pair.Value.elapsedNanoseconds / 1e6));
                     }
-                    spikes.Add(line.ToString());
+
+                    spikeData.Add(spike);
                 }
 
                 foreach (var pair in gpu)
@@ -332,6 +389,25 @@ namespace Combat
 
             int samples = Mathf.Max(1, frame.Count / 30);
             foreach (var pair in counters) pair.Value.Dispose();
+            if (input != null && _fireEvery > 0.0f) input.fire = false;
+            _shotsFired = shots;
+            foreach (Spike spike in spikeData)
+            {
+                // the clock time too, to line it up with what else the machine was doing
+                DateTime clock = clockAtStart.AddSeconds(spike.At + (end - _seconds) - timeAtStart);
+                var line = new StringBuilder($"  {spike.At:F1} s ({clock:HH:mm:ss.f}): {spike.Ms:F1} ms ->");
+                foreach (var part in spike.Parts) line.Append($" {part.Key} {part.Value:F1}");
+                if (spike.GcBytes >= 0) line.Append($" | gc {spike.GcBytes / 1024} KB");
+                if (spike.Heavy != null)
+                {
+                    spike.Heavy.Sort((a, b) => b.Value.CompareTo(a.Value));
+                    line.Append(" | samplers:");
+                    for (int h = 0; h < spike.Heavy.Count && h < 14; h++) line.Append($" {spike.Heavy[h].Key} {spike.Heavy[h].Value:F1}");
+                }
+
+                spikes.Add(line.ToString());
+            }
+
             foreach (var pair in markers) pair.Value.Dispose();
             foreach (var pair in gpu) pair.Value.enabled = false;
             foreach (var pair in discoverRecorders) pair.Value.enabled = false;
@@ -427,6 +503,7 @@ namespace Combat
                 for (int i = 0; i < list.Count && i < 120; i++) detail.AppendLine($"  {list[i].Key}: {F(list[i].Value / n)}");
             }
 
+            if (_shotsFired > 0) detail.AppendLine($"\nthe probe fired {_shotsFired} shots, one every {_fireEvery:F1} s");
             detail.AppendLine($"\nframes over 25 ms: {spikes.Count}{(spikes.Count >= 40 ? " (first 40)" : "")} (main-thread markers of 2 ms or more in that frame)");
             foreach (string spike in spikes) detail.AppendLine(spike);
 

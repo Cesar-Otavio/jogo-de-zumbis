@@ -16,7 +16,15 @@ namespace Combat
             Spawn();
         }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.WeaponSpawnPoint.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             // co-op client: guns on the ground are the host's to place
             if (_pickup != null || Net.IsClientOnly) return;

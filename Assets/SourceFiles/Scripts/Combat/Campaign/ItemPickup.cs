@@ -63,7 +63,15 @@ namespace Combat
             if (material != null) part.GetComponent<MeshRenderer>().sharedMaterial = material;
         }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.ItemPickup.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             float t = Time.time - _born;
             _visual.localPosition = Vector3.up * (0.3f + Mathf.Sin(t * 2.4f) * 0.05f);

@@ -44,7 +44,15 @@ namespace Combat
             _text.textWrappingMode = TextWrappingModes.Normal;
         }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker LateUpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.DialogueSubtitleView.LateUpdate");
+
         private void LateUpdate()
+        {
+            using (LateUpdateMarker.Auto()) LateUpdateMarked();
+        }
+
+        private void LateUpdateMarked()
         {
             DialogueDirector director = DialogueDirector.Instance;
             DialogueLine line = director != null ? director.Current : null;

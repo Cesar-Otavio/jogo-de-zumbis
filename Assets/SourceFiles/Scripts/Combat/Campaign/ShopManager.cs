@@ -79,7 +79,15 @@ namespace Combat
             }
         }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.ShopManager.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             Keyboard keyboard = Keyboard.current;
             if (keyboard != null && keyboard.lKey.wasPressedThisFrame)

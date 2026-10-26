@@ -6,7 +6,9 @@
 |---|---|---|
 | P2 | Tanque quebrando barricada vista pelo cliente | implementado, sem teste |
 | P2 | Valores do balanceamento cooperativo | ponto de partida; ajustar depois de jogar em equipe |
-| P2 | Pico raro de 25–27 ms num `Update` sem marcador (3 em 20 execuções dev de 40 s; o `ZombieAI` foi descartado com marcadores finos; JIT testado e descartado) | marcar os 45 scripts restantes com `Update` (`01_PERFORMANCE.md` §8) |
+| P1 | **Primeiro tiro da partida trava**: 30–36 ms em dev depois da correção (era 42–64), **55 ms na release** + 65 ms no quadro seguinte | aquecer os *pools* de efeitos na carga (`01_PERFORMANCE.md` §9.5) |
+| P2 | Primeiro golpe de cada infectado: 14 ms no `Animator` (`SetTrigger`/`speed`) | investigar |
+| P2 | `ThirdPersonController.Update` 13–16 ms raro (5 em 100 execuções) | partes já marcadas, falta um pico cair nelas |
 | P2 | Uma morte de host caído ~1 s depois da queda, vista uma vez na build anterior | não se repetiu; motivos agora no log |
 | P2 | Tela de opções com os nomes novos de qualidade não conferida | conferir |
 | P3 | Aviso "Light.shadowResolution is compatible only with Built-In" da lanterna | cosmético |
@@ -37,7 +39,7 @@ Nenhum P0 conhecido.
 
 1. **Marco 2**: feito no mesmo PC (barricada, gerador, apagão, corrida, fabricação pelo host, balanceamento). Falta o **teste em dois PCs (seu)** para considerar o multiplayer completo.
 2. **Marco 1 (resto)**:
-   - marcadores nos `Update` restantes, para o pico raro (o `ZombieAI` já foi descartado);
+   - aquecer os efeitos do primeiro tiro e medir na release (§9.5 do desempenho);
    - CPU com muitos inimigos (física dos ragdolls, percepção).
 3. **Marco 4**: AudioMixer feito. Falta só ouvir o resultado em jogo (seu). O resto do Marco 4 (vozes) depende da sua escolha de TTS, gravação ou só legendas.
 4. **Marco 9**: Unity Test Framework e os primeiros testes (mochila, fabricação, dano, aprovação de conexão, reanimação).

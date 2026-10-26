@@ -48,7 +48,15 @@ namespace Combat
             Simulated.Remove(this);
         }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.RagdollController.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             if (!IsRagdoll || _frozen) return;
             if (Time.time - _ragdollSince < SettleTime) return;

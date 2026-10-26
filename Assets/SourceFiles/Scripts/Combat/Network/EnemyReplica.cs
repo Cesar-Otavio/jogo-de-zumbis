@@ -263,7 +263,15 @@ namespace Combat
                 fx.PlaySound(gun.ShotSounds[Random.Range(0, gun.ShotSounds.Length)], from, 1.0f, 0.04f, 1.0f, 4.0f, 140.0f);
         }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.EnemyReplica.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             if (_dead && _ragdoll != null && _ragdoll.IsRagdoll) return;
             float t = Mathf.Clamp01((Time.unscaledTime - _stateTime) * 10.0f);

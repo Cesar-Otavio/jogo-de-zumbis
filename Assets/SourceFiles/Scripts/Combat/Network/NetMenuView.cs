@@ -365,7 +365,15 @@ namespace Combat
             if (_lobbyLog != null) _lobbyLog.text = string.Join("\n", _log);
         }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.NetMenuView.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             if (!_root.activeSelf || _page != Page.Lobby) return;
             NetworkManager manager = NetworkManager.Singleton;

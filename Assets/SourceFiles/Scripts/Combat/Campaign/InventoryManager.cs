@@ -162,7 +162,15 @@ namespace Combat
 
         private bool Busy => _player.Health.IsDead || !_player.enabled || _controller.IsRolling || (_climbing != null && _climbing.IsClimbing) || ShopManager.IsOpen;
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.InventoryManager.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             if (_input.nextItem)
             {

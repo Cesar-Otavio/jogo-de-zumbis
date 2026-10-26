@@ -201,6 +201,7 @@ namespace Combat
         private static readonly Unity.Profiling.ProfilerMarker MoveMarker = new Unity.Profiling.ProfilerMarker("Combat.ZombieAI.Move");
         private static readonly Unity.Profiling.ProfilerMarker DoorMarker = new Unity.Profiling.ProfilerMarker("Combat.ZombieAI.Door");
         private static readonly Unity.Profiling.ProfilerMarker SwingMarker = new Unity.Profiling.ProfilerMarker("Combat.ZombieAI.Swing");
+        private static readonly Unity.Profiling.ProfilerMarker SwingAnimMarker = new Unity.Profiling.ProfilerMarker("Combat.ZombieAI.SwingAnim");
         private static readonly Unity.Profiling.ProfilerMarker BlowMarker = new Unity.Profiling.ProfilerMarker("Combat.ZombieAI.Blow");
         private static readonly Unity.Profiling.ProfilerMarker AnimatorMarker = new Unity.Profiling.ProfilerMarker("Combat.ZombieAI.Animator");
 
@@ -494,9 +495,12 @@ namespace Combat
             // slow, heavy blows play the swing slower: the long wind-up is the warning
             if (_animator != null)
             {
-                _animator.speed = Mathf.Clamp(0.6f / Mathf.Max(AttackHitTime, 0.1f), 0.45f, 1.2f);
-                _slowSwing = true;
-                _animator.SetTrigger(_animIDAttack);
+                using (SwingAnimMarker.Auto())
+                {
+                    _animator.speed = Mathf.Clamp(0.6f / Mathf.Max(AttackHitTime, 0.1f), 0.45f, 1.2f);
+                    _slowSwing = true;
+                    _animator.SetTrigger(_animIDAttack);
+                }
             }
 
             CombatEffects fx = CombatEffects.Instance;
