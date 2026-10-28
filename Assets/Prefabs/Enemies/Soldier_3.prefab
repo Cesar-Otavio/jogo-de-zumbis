@@ -987,6 +987,7 @@ GameObject:
   - component: {fileID: 3663619562428103295}
   - component: {fileID: 2532767688516243495}
   - component: {fileID: 4914904446738446387}
+  - component: {fileID: 3420904693553788012}
   m_Layer: 9
   m_Name: Soldier_3
   m_TagString: Untagged
@@ -1095,6 +1096,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3cfea7fc5420e134a964981dc2a72c88, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Combat.WeaponHolder
+  StowTime: 0.32
+  DrawTime: 0.4
+  GrabTime: 0.6
+  HolsterOffset: {x: 0.2, y: -0.06, z: 0.02}
+  BackOffset: {x: 0, y: 0.02, z: -0.2}
+  SubmachineGunOnChest: 1
+  ChestOffset: {x: 0, y: -0.12, z: 0.2}
   ShoulderHeight: 1.47
   ShoulderSide: 0.16
   RifleHipGrip: {x: 0.05, y: -0.16, z: 0.3}
@@ -1162,6 +1170,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d9d2b46d370c6e8449ec16bb9d7ca1e2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Combat.RagdollController
+  SettleTime: 3.5
 --- !u!114 &2532767688516243495
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1216,6 +1225,24 @@ MonoBehaviour:
   WalkNoise: 7
   RunNoise: 16
   LandNoise: 11
+--- !u!114 &3420904693553788012
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3442281333640932907}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8af37368d8f249445aa19fa7b77eb55b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Combat.HitReactor
+  DegreesPerDamage: 0.9
+  MaxBend: 22
+  StaggerDamage: 45
+  StaggerBend: 32
+  Stiffness: 120
+  Damping: 11
 --- !u!1 &3481139675406353994
 GameObject:
   m_ObjectHideFlags: 0

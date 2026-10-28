@@ -81,6 +81,8 @@ namespace Combat
 
         public static string ItemName(string id)
         {
+            ItemDefinition item = ItemCatalog.Find(id);
+            if (item != null) return item.DisplayName.ToLowerInvariant();
             switch (id)
             {
                 case "fuse": return "fusível";
@@ -112,6 +114,7 @@ namespace Combat
         {
             _block = new MaterialPropertyBlock();
             _loop = gameObject.AddComponent<AudioSource>();
+            AudioRouting.Route(_loop, AudioRouting.Channel.Sfx);
             _loop.loop = true;
             _loop.spatialBlend = 1.0f;
             _loop.minDistance = 2.0f;
@@ -155,7 +158,15 @@ namespace Combat
             Complete();
         }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.MissionDevice.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             if (!IsWorking) return;
 

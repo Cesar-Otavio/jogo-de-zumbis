@@ -1,0 +1,15 @@
+# Fase 7 — Release (Marco 10)
+
+**Estado: NÃO INICIADO como entrega.** Há builds de teste:
+
+| Build | Menu | Pasta | Tamanho |
+|---|---|---|---|
+| Release | *Phase 7 ▸ 2* | `Builds/Win64` | 416 MB (era 451 antes da limpeza) |
+| Desenvolvimento | *Phase 7 ▸ 1* | `Builds/Win64Dev` | 493 MB |
+
+- **Versão**: `Application.version` = 4.0.1. Ainda não aparece na tela nem tem esquema beta.
+- **Nome do produto e empresa**: ainda os do template ("Tutorial no Editor do Guia de Configuração", "DefaultCompany"). Trocar muda a pasta do save e do `Player.log`, então precisa de migração.
+- **Limpeza já feita** (`01_PERFORMANCE.md` §7.1):
+  - `GetStarted_Scene` desligada da lista de cenas;
+  - shaders do AI Inference (Sentis) descartados da build. O pacote continua instalado, e os avisos dele ainda aparecem no log da build.
+- **Licenças de terceiros**: ainda não conferidas para redistribuição.

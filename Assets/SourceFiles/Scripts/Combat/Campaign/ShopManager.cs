@@ -79,7 +79,15 @@ namespace Combat
             }
         }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.ShopManager.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             Keyboard keyboard = Keyboard.current;
             if (keyboard != null && keyboard.lKey.wasPressedThisFrame)
@@ -157,7 +165,7 @@ namespace Combat
                     if (_player.Health.Armor >= 59.0f) return "COLETE CHEIO";
                     break;
                 case ShopItemKind.Consumable:
-                    if (_inventory == null || _inventory.IsFull(entry.Item)) return "SEM ESPAÇO";
+                    if (_inventory == null || !_inventory.CanTake(entry.Item)) return "SEM ESPAÇO";
                     break;
                 case ShopItemKind.WeaponUpgrade:
                     if (_player.Current == null) return "SEM ARMA";
@@ -177,6 +185,21 @@ namespace Combat
             if (_lastPurchaseFrame == Time.frameCount || !IsOpen) return false;
             _lastPurchaseFrame = Time.frameCount;
 
+            // co-op client: the host keeps this player's credits and says if the purchase goes through
+            if (Net.IsClientOnly && NetPlayer.Local != null)
+            {
+                int index = System.Array.IndexOf(Catalog.Entries, entry);
+                if (Unavailable(entry) != null || index < 0 || _purchasePending)
+                {
+                    CampaignAssets.PlayUI(a => a.ShopDeny, 0.6f);
+                    return false;
+                }
+
+                _purchasePending = true;
+                NetPlayer.Local.RequestPurchase(index, PriceOf(entry));
+                return true;
+            }
+
             if (Unavailable(entry) != null || !RunState.TrySpend(PriceOf(entry)))
             {
                 CampaignAssets.PlayUI(a => a.ShopDeny, 0.6f);
@@ -188,6 +211,25 @@ namespace Combat
             CampaignAssets.PlayUI(a => a.ShopBuy, 0.7f);
             Refresh();
             return true;
+        }
+
+        private bool _purchasePending;
+
+        // co-op client: the host's answer to a purchase (credits already taken from the account if ok)
+        public void CompleteRemotePurchase(int index, bool ok)
+        {
+            _purchasePending = false;
+            if (!ok || Catalog == null || index < 0 || index >= Catalog.Entries.Length)
+            {
+                CampaignAssets.PlayUI(a => a.ShopDeny, 0.6f);
+                return;
+            }
+
+            ShopCatalog.Entry entry = Catalog.Entries[index];
+            Apply(entry);
+            _bought[entry.Id] = (_bought.TryGetValue(entry.Id, out int count) ? count : 0) + 1;
+            CampaignAssets.PlayUI(a => a.ShopBuy, 0.7f);
+            Refresh();
         }
 
         private void Apply(ShopCatalog.Entry entry)
@@ -232,12 +274,83 @@ namespace Combat
             }
         }
 
+        // ---------------------------------------------------------------- presentation
+
+        // the icon comes from what's being sold: the gun, the quick item, the catalog's shared icons
+        private Sprite IconOf(ShopCatalog.Entry entry)
+        {
+            if (entry.Icon != null) return entry.Icon;
+            ItemCatalog catalog = ItemCatalog.Instance;
+            switch (entry.Kind)
+            {
+                case ShopItemKind.Weapon: return ItemCatalog.IconOf(entry.Weapon);
+                case ShopItemKind.Ammo:
+                case ShopItemKind.AmmoFull: return _player != null && _player.Current != null ? ItemCatalog.AmmoIconOf(_player.Current.Data) : ItemCatalog.IconOf("ammo_box");
+                case ShopItemKind.Armor: return catalog != null ? catalog.ArmorIcon : null;
+                case ShopItemKind.Heal: return catalog != null ? catalog.HealthIcon : null;
+                case ShopItemKind.Consumable: return ItemCatalog.IconOf(entry.Item);
+                case ShopItemKind.WeaponUpgrade: return catalog != null ? catalog.UpgradeIcon : null;
+                case ShopItemKind.Stamina: return catalog != null ? catalog.StaminaIcon : null;
+                case ShopItemKind.Capacity: return catalog != null ? catalog.CapacityIcon : null;
+                default: return catalog != null ? catalog.FallbackIcon : null;
+            }
+        }
+
+        private static Color TintOf(ShopCatalog.Entry entry)
+        {
+            switch (entry.Kind)
+            {
+                case ShopItemKind.Weapon:
+                case ShopItemKind.Armor: return PickupFeed.TintOf(ItemCategory.Weapon);
+                case ShopItemKind.Ammo:
+                case ShopItemKind.AmmoFull: return PickupFeed.TintOf(ItemCategory.Ammo);
+                case ShopItemKind.Heal:
+                case ShopItemKind.Stamina: return PickupFeed.TintOf(ItemCategory.Medical);
+                case ShopItemKind.Consumable:
+                    ItemDefinition item = ItemCatalog.Find(ItemCatalog.IdOf(entry.Item));
+                    return PickupFeed.TintOf(item != null ? item.Category : ItemCategory.Tactical);
+                case ShopItemKind.Capacity: return PickupFeed.TintOf(ItemCategory.Tactical);
+                default: return PickupFeed.TintOf(ItemCategory.Currency);
+            }
+        }
+
+        // the entry's own text, or what the item catalog says about it, plus what a gun fires
+        private static string DescriptionOf(ShopCatalog.Entry entry)
+        {
+            string text = entry.Description;
+            if (string.IsNullOrEmpty(text) && entry.Kind == ShopItemKind.Consumable)
+            {
+                ItemDefinition item = ItemCatalog.Find(ItemCatalog.IdOf(entry.Item));
+                if (item != null) text = item.Description;
+            }
+
+            if (entry.Kind == ShopItemKind.Weapon && entry.Weapon != null)
+            {
+                string kind = ClassName(entry.Weapon.Class) + " · " + entry.Weapon.AmmoName;
+                text = string.IsNullOrEmpty(text) ? kind : kind + " — " + text;
+            }
+
+            return text;
+        }
+
+        private static string ClassName(WeaponClass type)
+        {
+            switch (type)
+            {
+                case WeaponClass.Pistol: return "Pistola";
+                case WeaponClass.SubmachineGun: return "Submetralhadora";
+                case WeaponClass.Shotgun: return "Escopeta";
+                case WeaponClass.Sniper: return "Fuzil de precisão";
+                default: return "Fuzil";
+            }
+        }
+
         // ---------------------------------------------------------------- interface
 
         private void Build()
         {
             RectTransform root = UiKit.Canvas("Shop", transform, 120);
-            Image panel = UiKit.Panel("ShopPanel", root, new Vector2(0.18f, 0.1f), new Vector2(0.82f, 0.9f), new Color(UiKit.PanelColor.r, UiKit.PanelColor.g, UiKit.PanelColor.b, 0.96f));
+            Image panel = UiKit.Panel("ShopPanel", root, new Vector2(0.18f, 0.1f), new Vector2(0.82f, 0.9f), new Color(UiKit.PanelColor.r, UiKit.PanelColor.g, UiKit.PanelColor.b, 1.0f));
             panel.raycastTarget = true;
             _panel = root.gameObject;
             RectTransform rect = panel.rectTransform;
@@ -289,8 +402,19 @@ namespace Combat
                 Image row = UiKit.Panel("Row", _list, new Vector2(0.0f, top - rowHeight + 0.008f), new Vector2(1.0f, top - 0.008f), new Color(1, 1, 1, i % 2 == 0 ? 0.04f : 0.07f));
                 _rows.Add(row.gameObject);
                 RectTransform r = row.rectTransform;
-                UiKit.Text(r, entry.DisplayName, 24, new Vector2(0.02f, 0.45f), new Vector2(0.55f, 1.0f), TextAlignmentOptions.Left, Color.white, true);
-                UiKit.Text(r, entry.Description, 17, new Vector2(0.02f, 0.0f), new Vector2(0.62f, 0.5f), TextAlignmentOptions.TopLeft, UiKit.Muted);
+                // icon in the category colour, like the quick bar and the pickup feed
+                var icon = new GameObject("Icon", typeof(RectTransform), typeof(Image)).GetComponent<Image>();
+                icon.rectTransform.SetParent(r, false);
+                icon.rectTransform.anchorMin = new Vector2(0.01f, 0.12f);
+                icon.rectTransform.anchorMax = new Vector2(0.11f, 0.88f);
+                icon.rectTransform.offsetMin = icon.rectTransform.offsetMax = Vector2.zero;
+                icon.preserveAspect = true;
+                icon.raycastTarget = false;
+                icon.sprite = IconOf(entry);
+                icon.enabled = icon.sprite != null;
+                icon.color = Unavailable(entry) == null ? TintOf(entry) : new Color(1.0f, 1.0f, 1.0f, 0.3f);
+                UiKit.Text(r, entry.DisplayName, 24, new Vector2(0.13f, 0.45f), new Vector2(0.6f, 1.0f), TextAlignmentOptions.Left, Color.white, true);
+                UiKit.Text(r, DescriptionOf(entry), 17, new Vector2(0.13f, 0.0f), new Vector2(0.62f, 0.5f), TextAlignmentOptions.TopLeft, UiKit.Muted);
                 UiKit.Text(r, PriceOf(entry) + " CR", 24, new Vector2(0.6f, 0.0f), new Vector2(0.76f, 1.0f), TextAlignmentOptions.Right, UiKit.Accent, true);
 
                 string reason = Unavailable(entry);

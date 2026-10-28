@@ -69,16 +69,37 @@ namespace Combat
             Current = MaxHealth;
         }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.Health.Update");
+
         private void Update()
         {
-            if (IsDead || RegenRate <= 0.0f || Current >= MaxHealth * RegenCap) return;
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
+        {
+            // the downed don't heal on their own: that's what the teammates are for
+            if (IsDead || Untargetable || RegenRate <= 0.0f || Current >= MaxHealth * RegenCap) return;
             if (Time.time - _lastDamageTime < RegenDelay) return;
 
             Current = Mathf.Min(MaxHealth * RegenCap, Current + RegenRate * Time.deltaTime);
         }
 
+        // co-op: a copy of someone else's character (an infected shown on a client, a teammate's puppet)
+        // hands the hit to whoever owns the real one instead of taking it here; true = handled
+        [NonSerialized] public Func<DamageInfo, bool> Intercept;
+
+        // co-op: a blow that would kill can be turned into "down" instead (teammates may still save
+        // them); returning true keeps the character at the edge of death without dying
+        [NonSerialized] public Func<DamageInfo, bool> PreventDeath;
+
+        // a character the enemies leave alone, e.g. a downed teammate
+        [NonSerialized] public bool Untargetable;
+
         public void TakeDamage(DamageInfo info)
         {
+            if (Intercept != null && Intercept(info)) return;
             if (IsDead || Time.time < InvulnerableUntil) return;
 
             if (info.Instigator != null && info.Instigator.TryGetComponent(out Health attacker) &&
@@ -90,6 +111,15 @@ namespace Combat
                 float soaked = Mathf.Min(Armor, info.Amount * ArmorAbsorb);
                 Armor -= soaked;
                 info.Amount -= soaked;
+            }
+
+            if (Current - info.Amount <= 0.0f && PreventDeath != null && PreventDeath(info))
+            {
+                DamageTaken += Mathf.Max(0.0f, Current - 1.0f);
+                Current = Mathf.Min(Current, 1.0f);
+                _lastDamageTime = Time.time;
+                Damaged?.Invoke(info);
+                return;
             }
 
             Current = Mathf.Max(0.0f, Current - info.Amount);
@@ -109,10 +139,24 @@ namespace Combat
             Current = MaxHealth;
         }
 
+        // back on their feet with a fraction of their health (a teammate's revive)
+        public void Revive(float fraction)
+        {
+            Current = Mathf.Clamp(MaxHealth * fraction, 1.0f, MaxHealth);
+            _lastDamageTime = Time.time;
+        }
+
         public void Heal(float amount)
         {
             if (IsDead) return;
             Current = Mathf.Min(MaxHealth, Current + amount);
+        }
+
+        // co-op copies show the health of the real character elsewhere, without any damage events
+        public void Mirror(float current, float max)
+        {
+            MaxHealth = Mathf.Max(1.0f, max);
+            Current = Mathf.Clamp(current, 0.0f, MaxHealth);
         }
 
         // e.g. tougher enemies on later waves

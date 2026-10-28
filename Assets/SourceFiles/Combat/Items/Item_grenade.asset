@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5c98944901dca55439654e5eabec1b58, type: 3}
+  m_Name: Item_grenade
+  m_EditorClassIdentifier: Assembly-CSharp::Combat.ItemDefinition
+  Id: grenade
+  DisplayName: Granada
+  Description: "Explode 2,5 s ap\xF3s o arremesso. Tamb\xE9m fere quem a lan\xE7ou."
+  Category: 3
+  Rarity: 1
+  Icon: {fileID: 21300000, guid: 8d078efe61a03f0478c50a158187750f, type: 3}
+  UnavailableIcon: {fileID: 0}
+  MaxStack: 3
+  Use: 0
+  UseAmount: 0
+  Droppable: 1
+  StoryIds: []

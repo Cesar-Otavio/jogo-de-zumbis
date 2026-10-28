@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 222a37aa30bb012459056d7e16d229e8, type: 3}
+  m_Name: Recipe_vest_patch
+  m_EditorClassIdentifier: Assembly-CSharp::Combat.CraftingRecipe
+  Id: vest_patch
+  DisplayName: "Refor\xE7o de colete"
+  Description: Uma placa de sucata presa ao colete.
+  ProductId: vest_patch
+  ProductAmount: 1
+  Ingredients:
+  - ItemId: scrap
+    Count: 2
+  - ItemId: tactical_parts
+    Count: 1
+  - ItemId: cloth
+    Count: 1
+  Station: 1
+  CraftTime: 0
+  RequiredLevel: 1
+  UnlockFlag: 

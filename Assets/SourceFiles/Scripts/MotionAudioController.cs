@@ -42,7 +42,15 @@ public class MotionAudioController : MonoBehaviour
         }
     }
 
-    void Update()
+    // time spent here, for the performance probe (Diagnostics/PerfProbe)
+    private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.MotionAudioController.Update");
+
+    private void Update()
+    {
+        using (UpdateMarker.Auto()) UpdateMarked();
+    }
+
+    private void UpdateMarked()
     {
         if (targetTransform == null)
         {

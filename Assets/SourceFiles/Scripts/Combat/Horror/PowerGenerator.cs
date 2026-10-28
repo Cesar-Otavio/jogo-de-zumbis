@@ -56,6 +56,7 @@ namespace Combat
         private void Awake()
         {
             _engine = gameObject.AddComponent<AudioSource>();
+            AudioRouting.Route(_engine, AudioRouting.Channel.Sfx);
             _engine.clip = RunningLoop;
             _engine.loop = true;
             _engine.spatialBlend = 1.0f;
@@ -132,6 +133,11 @@ namespace Combat
         public void Interact(PlayerCombat player)
         {
             if (IsStarting || IsRunning || Blocked) return;
+            if (NetWorld.Redirect(this, NetWorld.ActGenerator))
+            {
+                if (player != null) player.ShowNotice("Ligando o gerador...");
+                return;
+            }
 
             IsStarting = true;
             _startedAt = Time.time;
@@ -164,7 +170,15 @@ namespace Combat
             SetStatus(running ? new Color(0.2f, 1.0f, 0.3f) : new Color(1.0f, 0.15f, 0.1f));
         }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.PowerGenerator.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             if (IsStarting)
             {

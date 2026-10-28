@@ -1,0 +1,84 @@
+# Fase 3 — UI / UX
+
+O projeto usa **uGUI + TextMesh Pro**, com todo o HUD construído por código (`CombatHUD`, `CampaignHUD`, `UiKit`). Não houve migração para UI Toolkit. O redesenho trabalha sobre os mesmos componentes, então mouse, gamepad, pausa e escala por resolução continuam iguais (`CanvasScaler` em 1920×1080, *match* 0,5).
+
+## 1. Layout
+
+| Região | Conteúdo | Comportamento |
+|---|---|---|
+| Superior esquerdo | missão ativa + objetivo + progresso (cartão que cresce com o texto); estado de energia | sempre durante a partida |
+| Superior central | onda e inimigos restantes, banner de onda, avisos de chefe | só quando há onda ou evento |
+| Superior direito | abates, pontos, créditos (cartão) | sempre |
+| Centro | mira, marcador de acerto, aviso de interação "[E] …", barra de percepção | contextual |
+| Centro-baixo | **legendas de diálogo** (nome + fala); legendas de sons acima | só quando alguém fala |
+| Inferior esquerdo | barra rápida com **ícones**; cartão de vida (ícone, valor, barra, estamina, vidas, estado de ferimento) | estamina some quando cheia |
+| Inferior direito | cartão da arma (**ícone**, nome, munição, reserva, recarga), arma reserva com ícone e "[Q]"; **feed de coleta** acima | cartão some sem arma; o ícone esmaece enquanto a arma é trocada |
+
+## 2. Paleta e tipografia
+
+| Uso | Cor |
+|---|---|
+| Fundo dos cartões | grafite `#0E0F12` a 58% |
+| Borda dos cartões | branco a 22% (3 px) |
+| Texto principal | branco |
+| Destaque / aviso | âmbar `#FFC74D` |
+| Perigo | vermelho `#FF4033` |
+| Confirmação / vida | verde `#59F28C` |
+| Itens por categoria | arma cinza-claro · munição âmbar · médico verde · tático laranja · missão azul-claro · documento bege · construção madeira · moeda dourado |
+
+Fonte: Liberation Sans (TMP padrão), com contorno escuro de 15% para legibilidade sobre a cena.
+
+## 3. Ícones
+
+- Os sprites ficam em `UI/Icons/Items` e `UI/Icons/Weapons`. Detalhes em `FASE3_ASSETS.md`.
+- Tamanho padronizado: 256×256 para itens e 512×256 para armas. Fundo transparente, silhueta clara e contorno escuro: legíveis a 34 px.
+- Resolução de ícones:
+  - `ItemCatalog.IconOf(id)` para itens;
+  - `ItemCatalog.IconOf(QuickItem)` para a barra rápida;
+  - `WeaponData.Icon` / `AmmoIcon` para armas e munição;
+  - **fallback** "?" quando faltar o sprite, para que um sprite ausente fique evidente mas sem quebrar nada.
+- Onde aparecem:
+  - barra rápida (ícone, tecla e quantidade; acinzentado sem estoque);
+  - feed de coleta;
+  - cartão da arma e da arma reserva.
+- **Loja**: cada linha tem ícone com a cor da categoria.
+  - Armas mostram "classe · calibre — descrição".
+  - Munição usa o ícone da munição da arma atual.
+  - Consumíveis usam o nome e a descrição do catálogo.
+  - Proteção, vida e melhorias (upgrade, fôlego, capacidade) têm ícones próprios.
+  - `ShopCatalog.Entry.Icon` permite trocar o ícone de uma linha.
+  - O painel é opaco, para o banner de intervalo e as legendas não vazarem.
+- **Leitor de documentos**: carimbo com o ícone do item ligado ao documento (`ItemDefinition.StoryIds`, busca por `ItemCatalog.FindByStory`), o nome do item e "Documentos encontrados: X/9". Sem item ligado, usa o ícone de documento de laboratório. O papel também é opaco.
+
+## 4. Feed de coleta (`PickupFeed` + `PickupFeedView`)
+
+- Cada linha mostra ícone, nome e quantidade, por exemplo "Munição .45 ACP +16". Uma faixa colorida à esquerda indica a categoria.
+- A linha entra deslizando da direita, cresce um pouco quando a quantidade aumenta e some após 3,4 s.
+- Coletar o mesmo item em até 2,5 s **soma na mesma linha** em vez de empilhar avisos. No máximo 5 linhas.
+- A falta de espaço aparece em vermelho ("Granada — sem espaço").
+- Origens:
+  - pegar arma (com animação de pegar);
+  - munição de caixa ou de arma repetida;
+  - kit médico e vida;
+  - itens rápidos;
+  - itens de missão;
+  - créditos de baú.
+
+## 5. Opções novas (Opções e Acessibilidade, 2ª coluna)
+
+- Legendas de diálogo (liga/desliga)
+- Tamanho das legendas (80% a 150%)
+- Volumes: geral, música, efeitos, diálogos e rádio, ambiente, interface
+
+## 6. Não feito nesta fase
+
+- **Hub e menu principal**: o fluxo e os botões continuam iguais. Mudou só a câmera de fundo, que antes girava alto sobre a base:
+  - agora faz planos baixos e lentos pelos locais da história (`GameFlow.MenuShotAnchors`: heliponto, Portão 1, torre, laboratório, arsenal, gerador, rádio, depósito);
+  - cada plano dura 9 s, com um fade ao preto entre eles;
+  - a ordem é embaralhada a cada volta ao menu;
+  - cada ângulo é escolhido entre 8 candidatos, com a vista e a posição da câmera livres de colisão;
+  - sem âncoras, volta ao giro antigo;
+  - o guarda-roupa continua com a própria câmera.
+- **Painel de controles**: inclui Esc (pausa) e Q/E mirando (inclinar).
+- **Tela de inventário dedicada**: o jogo não tem uma; o inventário é a barra rápida.
+- **Animações de UI**: foram feitas com código simples (lerp/fade), sem bibliotecas novas.

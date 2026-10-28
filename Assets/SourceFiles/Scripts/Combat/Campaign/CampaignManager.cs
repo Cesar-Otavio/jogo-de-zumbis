@@ -85,6 +85,9 @@ namespace Combat
             InIntermission = false;
         }
 
+        /* The prologue (~45 s, skippable): the base from above, the hangars, the perimeter, then the player.
+         * The narrator and Lt. Duarte's first transmission play over it from the DialogueLibrary
+         * (group "prologue"); skipping cuts them and the chapter's own radio line takes over. */
         private void PlayIntro(Action then)
         {
             CinematicPlayer cinematic = CinematicPlayer.Instance;
@@ -96,17 +99,42 @@ namespace Combat
 
             Vector3 p = _player.transform.position;
             Vector3 center = _spawner != null ? _spawner.transform.position : p;
+            Vector3 helipad = EndingPoint != null ? EndingPoint.position : center + new Vector3(30.0f, 0.0f, 40.0f);
             var shots = new List<CinematicPlayer.Shot>
             {
-                CinematicPlayer.Orbit(center, 70.0f, 30.0f, 20.0f, 70.0f, 5.0f, Campaign.Title.ToUpperInvariant(), "Base militar, 03h12. As luzes piscam. O rádio só chia."),
+                CinematicPlayer.Orbit(center, 85.0f, 42.0f, 10.0f, 55.0f, 10.0f, Campaign.Title.ToUpperInvariant(), ""),
+                CinematicPlayer.Orbit(center, 40.0f, 14.0f, 140.0f, 185.0f, 10.0f, "", ""),
                 new CinematicPlayer.Shot
                 {
-                    From = p + new Vector3(6.0f, 3.0f, 6.0f), To = p + new Vector3(2.0f, 1.8f, 3.0f),
-                    LookFrom = p + Vector3.up, LookTo = p + Vector3.up * 1.4f, Duration = 4.5f,
-                    Title = "", Caption = Campaign.Intro
+                    From = helipad + new Vector3(-25.0f, 9.0f, -20.0f), To = helipad + new Vector3(-8.0f, 5.0f, -30.0f),
+                    LookFrom = helipad, LookTo = center, Duration = 9.0f, Title = "", Caption = ""
+                },
+                new CinematicPlayer.Shot
+                {
+                    From = p + new Vector3(7.0f, 4.0f, 7.0f), To = p + new Vector3(2.0f, 1.8f, 3.0f),
+                    LookFrom = p + Vector3.up, LookTo = p + Vector3.up * 1.4f, Duration = 15.0f,
+                    Title = "", Caption = ""
                 }
             };
-            cinematic.Play(shots, then);
+
+            DialogueDirector director = DialogueDirector.Instance;
+            if (director != null)
+            {
+                director.PlaySequence("prologue_1", "prologue_2", "prologue_3", "prologue_4", "prologue_5", "prologue_6");
+            }
+            else
+            {
+                // no dialogue system: the old one-line caption
+                CinematicPlayer.Shot last = shots[shots.Count - 1];
+                last.Caption = Campaign.Intro;
+                shots[shots.Count - 1] = last;
+            }
+
+            cinematic.Play(shots, () =>
+            {
+                if (DialogueDirector.Instance != null) DialogueDirector.Instance.CancelGroup("prologue");
+                then();
+            });
         }
 
         private void StartChapter(int index)
@@ -220,7 +248,15 @@ namespace Combat
             if (chapter.ChoiceA != null && chapter.ChoiceB != null) _missions.OfferChoice(chapter.ChoiceA, chapter.ChoiceB);
         }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.CampaignManager.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             if (!IsRunning) return;
 

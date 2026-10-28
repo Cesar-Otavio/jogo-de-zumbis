@@ -81,6 +81,11 @@ namespace Combat
         public void Interact(PlayerCombat player)
         {
             InventoryManager inventory = player != null ? player.GetComponent<InventoryManager>() : null;
+            // co-op client: ask the host; the kit is used (or given back) when it answers
+            int kits = inventory != null ? inventory.Count(QuickItem.Barricade) : 0;
+            byte action = !Built ? NetWorld.ActBarricadeBuild : Health < MaxHealth - 1.0f && kits > 0 ? NetWorld.ActBarricadeReinforce : NetWorld.ActBarricadeRemove;
+            if ((action != NetWorld.ActBarricadeRemove && kits <= 0) && !Built) return;
+            if (NetWorld.Redirect(this, action)) return;
             if (!Built)
             {
                 if (inventory == null || !inventory.Take(QuickItem.Barricade)) return;
@@ -102,6 +107,51 @@ namespace Combat
             Remove();
             if (refund && inventory != null) inventory.Add(QuickItem.Barricade, 1, false);
             if (player != null) player.ShowNotice(refund ? "Barricada desmontada (kit recuperado)" : "Barricada desmontada");
+        }
+
+        // the host doing what a client's player asked: what that player gets back (NetWorld.Give*/Take*)
+        public byte RemoteInteract(byte action, out string notice)
+        {
+            notice = null;
+            switch (action)
+            {
+                case NetWorld.ActBarricadeBuild:
+                    if (Built) return 0;
+                    Build(MaxHealth);
+                    Play(CampaignAssets.Clip(a => a.BarricadeBuild), 1.0f);
+                    NoiseSystem.Emit(transform.position, 12.0f, NoiseCategory.Door, Factions.Player, gameObject);
+                    return NetWorld.TakeBarricadeKit;
+                case NetWorld.ActBarricadeReinforce:
+                    if (!Built || Health >= MaxHealth - 1.0f) return 0;
+                    Health = Mathf.Min(MaxHealth, Health + ReinforceAmount);
+                    Play(CampaignAssets.Clip(a => a.BarricadeBuild), 0.8f);
+                    return NetWorld.TakeBarricadeKit;
+                case NetWorld.ActBarricadeRemove:
+                    if (!Built) return 0;
+                    bool refund = Health >= MaxHealth * 0.5f;
+                    Remove();
+                    notice = refund ? "Barricada desmontada (kit recuperado)" : "Barricada desmontada";
+                    return refund ? NetWorld.GiveBarricadeKit : (byte)0;
+            }
+
+            return 0;
+        }
+
+        // bit 0 built, bits 1-7 health (0-127)
+        public byte PackState()
+        {
+            int health = Built && MaxHealth > 0.0f ? Mathf.CeilToInt(Mathf.Clamp01(Health / MaxHealth) * 127.0f) : 0;
+            return (byte)((Built ? 1 : 0) | (health << 1));
+        }
+
+        // co-op client: the host's barricade
+        public void MirrorState(byte state)
+        {
+            bool built = (state & 1) != 0;
+            float health = (state >> 1) / 127.0f * MaxHealth;
+            if (built && !Built) Build(health);
+            else if (!built && Built) Remove();
+            else if (built) Health = health;
         }
 
         public void Build(float health)

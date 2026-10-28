@@ -125,7 +125,15 @@ namespace Combat
             }
         }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.ThrownItem.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             if (_spent) return;
             float age = Time.time - _thrownAt;
@@ -201,6 +209,7 @@ namespace Combat
             _light.shadows = LightShadows.None;
 
             _loop = gameObject.AddComponent<AudioSource>();
+            AudioRouting.Route(_loop, AudioRouting.Channel.Sfx);
             _loop.clip = CampaignAssets.Clip(a => a.FlareLoop);
             _loop.loop = true;
             _loop.spatialBlend = 1.0f;

@@ -27,7 +27,15 @@ namespace Combat
             timed._born = Time.time;
         }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.TimedLight.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             float t = (Time.time - _born) / Mathf.Max(_life, 0.01f);
             if (t >= 1.0f)

@@ -42,7 +42,15 @@ namespace StarterAssets
     }
 }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.RespawnPlayer.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             // Check if the player's Y position has fallen below the threshold
             if (transform.position.y < yThreshold)

@@ -27,6 +27,7 @@ namespace Combat
             ("roof", SurfaceType.Metal), ("barrel", SurfaceType.Metal), ("ladder", SurfaceType.Metal),
             ("tower", SurfaceType.Metal), ("fence", SurfaceType.Metal), ("metal", SurfaceType.Metal),
             ("generator", SurfaceType.Metal), ("door", SurfaceType.Metal),
+            ("lamp", SurfaceType.Metal), ("pole", SurfaceType.Metal), ("antenna", SurfaceType.Metal),
             ("wood", SurfaceType.Wood), ("crate", SurfaceType.Wood), ("chest", SurfaceType.Wood),
             ("pallet", SurfaceType.Wood), ("plank", SurfaceType.Wood), ("toilet", SurfaceType.Wood),
             ("grass", SurfaceType.Grass), ("bush", SurfaceType.Grass),

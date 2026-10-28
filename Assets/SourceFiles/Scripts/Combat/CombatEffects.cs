@@ -62,6 +62,7 @@ namespace Combat
 
         private ParticleSystem _sparks;
         private ParticleSystem _smoke;
+        private ParticleSystem _debris;
 
         private readonly Queue<Transform> _decals = new Queue<Transform>();
         private readonly Queue<Rigidbody> _shells = new Queue<Rigidbody>();
@@ -76,6 +77,9 @@ namespace Combat
         private void Awake()
         {
             Instance = this;
+            // load the impact looks (and the sounds they point to) with the scene, not on the first bullet:
+            // that Resources.Load cost 10-12 ms in the middle of the first shot (Docs/FASE7/01_PERFORMANCE.md §9)
+            SurfaceImpactLibrary.Get(SurfaceType.Concrete);
 
             for (int i = 0; i < AudioVoices; i++)
             {
@@ -94,6 +98,7 @@ namespace Combat
             _shellMesh = BuildShellMesh();
             _sparks = BuildParticles("Sparks", SparkMaterial, ParticleSystemRenderMode.Stretch, 1.5f);
             _smoke = BuildParticles("Smoke", SmokeMaterial, ParticleSystemRenderMode.Billboard, -0.05f);
+            _debris = BuildParticles("Debris", SmokeMaterial, ParticleSystemRenderMode.Stretch, 1.6f);
         }
 
         private void OnDestroy()
@@ -101,7 +106,15 @@ namespace Combat
             if (Instance == this) Instance = null;
         }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.CombatEffects.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             float now = Time.time;
 
@@ -150,6 +163,16 @@ namespace Combat
         public void PlaySound(AudioClip clip, Vector3 position, float volume = 1.0f, float pitchVariation = 0.05f,
             float spatial = 1.0f, float minDistance = 2.0f, float maxDistance = 80.0f, float pitch = 1.0f)
         {
+            PlayOn(clip, position, volume * GameSettings.SfxVolume, pitchVariation, spatial, minDistance, maxDistance, pitch, AudioRouting.Channel.Sfx);
+        }
+
+        // starting a sound, for the performance probe (a hitch inside whoever plays one)
+        private static readonly Unity.Profiling.ProfilerMarker PlayMarker = new Unity.Profiling.ProfilerMarker("Combat.Audio.Play");
+        private static readonly Unity.Profiling.ProfilerMarker RouteMarker = new Unity.Profiling.ProfilerMarker("Combat.Audio.Route");
+
+        private void PlayOn(AudioClip clip, Vector3 position, float volume, float pitchVariation, float spatial, float minDistance, float maxDistance, float pitch,
+            AudioRouting.Channel channel)
+        {
             if (clip == null) return;
 
             // reuse the voice that started longest ago
@@ -162,13 +185,14 @@ namespace Combat
             filter.cutoffFrequency = occluded ? OccludedCutoff : 22000.0f;
 
             voice.transform.position = position;
+            using (RouteMarker.Auto()) voice.outputAudioMixerGroup = AudioRouting.Group(channel);
             voice.clip = clip;
             voice.volume = volume * (occluded ? OccludedVolume : 1.0f);
             voice.pitch = pitch * (1.0f + Random.Range(-pitchVariation, pitchVariation));
             voice.spatialBlend = spatial;
             voice.minDistance = minDistance;
             voice.maxDistance = maxDistance;
-            voice.Play();
+            using (PlayMarker.Auto()) voice.Play();
         }
 
         private static bool IsOccluded(Vector3 position)
@@ -189,9 +213,16 @@ namespace Combat
             PlaySound(clips[Random.Range(0, clips.Length)], position, volume, 0.08f, spatial);
         }
 
+        // interface sounds follow the UI volume, not the effects volume
         public void PlayUI(AudioClip clip, float volume = 0.6f)
         {
-            PlaySound(clip, transform.position, volume, 0.0f, 0.0f);
+            PlayOn(clip, transform.position, volume * GameSettings.UiVolume, 0.0f, 0.0f, 2.0f, 80.0f, 1.0f, AudioRouting.Channel.Ui);
+        }
+
+        // ambience (wind, rain, thunder, distant events)
+        public void PlayAmbient(AudioClip clip, Vector3 position, float volume = 1.0f, float spatial = 0.0f)
+        {
+            PlayOn(clip, position, volume * GameSettings.AmbientVolume, 0.08f, spatial, 2.0f, 400.0f, 1.0f, AudioRouting.Channel.Ambient);
         }
 
         // ---------------------------------------------------------------- visuals
@@ -239,44 +270,69 @@ namespace Combat
 
         public void Impact(Vector3 point, Vector3 normal, bool metal, Transform surface)
         {
+            Impact(point, normal, metal ? SurfaceType.Metal : SurfaceType.Concrete, surface);
+        }
+
+        // a bullet hitting the world: what comes off depends on what it is made of
+        public void Impact(Vector3 point, Vector3 normal, Collider collider)
+        {
+            Impact(point, normal, Surfaces.Of(collider), collider != null ? collider.transform : null);
+        }
+
+        public void Impact(Vector3 point, Vector3 normal, SurfaceType surfaceType, Transform surface)
+        {
+            SurfaceImpactLibrary.Impact look = SurfaceImpactLibrary.Get(surfaceType);
             var emit = new ParticleSystem.EmitParams();
-            int sparks = metal ? Random.Range(10, 16) : Random.Range(4, 8);
+            // the effects quality option thins the particles out
+            float scale = GameSettings.EffectsScale;
+
+            int sparks = Mathf.RoundToInt(Random.Range(look.Sparks.x, look.Sparks.y + 1) * scale);
             for (int i = 0; i < sparks; i++)
             {
                 emit.position = point + normal * 0.02f;
-                emit.velocity = (normal + Random.insideUnitSphere * 0.8f).normalized * Random.Range(2.0f, metal ? 7.0f : 4.0f);
+                emit.velocity = (normal + Random.insideUnitSphere * 0.8f).normalized * Random.Range(2.0f, look.SparkSpeed);
                 emit.startLifetime = Random.Range(0.12f, 0.35f);
                 emit.startSize = Random.Range(0.015f, 0.035f);
-                emit.startColor = metal ? new Color(1.0f, 0.75f, 0.35f) : new Color(1.0f, 0.9f, 0.7f);
+                emit.startColor = look.SparkColor;
                 _sparks.Emit(emit, 1);
             }
 
-            int puffs = metal ? 2 : 5;
+            int puffs = Mathf.RoundToInt(Random.Range(look.Dust.x, look.Dust.y + 1) * scale);
             for (int i = 0; i < puffs; i++)
             {
                 emit.position = point + normal * 0.05f;
                 emit.velocity = (normal + Random.insideUnitSphere * 0.5f) * Random.Range(0.3f, 1.2f);
                 emit.startLifetime = Random.Range(0.5f, 1.1f);
-                emit.startSize = Random.Range(0.15f, 0.35f);
-                emit.startColor = metal ? new Color(0.3f, 0.3f, 0.32f, 0.5f) : new Color(0.75f, 0.72f, 0.68f, 0.55f);
+                emit.startSize = look.DustSize * Random.Range(0.6f, 1.4f);
+                emit.startColor = look.DustColor;
                 _smoke.Emit(emit, 1);
             }
 
-            if (metal)
+            // splinters, clods, chips: thrown out and falling back; on water, droplets going up
+            int chunks = Mathf.RoundToInt(Random.Range(look.Debris.x, look.Debris.y + 1) * scale);
+            Vector3 throwAxis = look.Splash ? Vector3.up : normal;
+            for (int i = 0; i < chunks; i++)
             {
-                PlayRandom(MetalImpactSounds, point, 0.8f);
+                emit.position = point + normal * 0.03f;
+                emit.velocity = (throwAxis + Random.insideUnitSphere * (look.Splash ? 0.35f : 0.7f)).normalized * look.DebrisSpeed * Random.Range(0.5f, 1.2f);
+                emit.startLifetime = Random.Range(0.35f, 0.7f);
+                emit.startSize = look.DebrisSize * Random.Range(0.6f, 1.4f);
+                emit.startColor = look.DebrisColor;
+                _debris.Emit(emit, 1);
             }
-            else
-            {
-                PlayRandom(GroundImpactSounds, point, 0.7f);
-                Decal(point, normal, surface);
-            }
+
+            AudioClip[] sounds = look.Sounds != null && look.Sounds.Length > 0
+                ? look.Sounds
+                : surfaceType == SurfaceType.Metal ? MetalImpactSounds : GroundImpactSounds;
+            PlayRandom(sounds, point, look.Volume);
+
+            if (look.Decal) Decal(point, normal, surface, look.DecalScale);
         }
 
-        private void Decal(Vector3 point, Vector3 normal, Transform surface)
+        private void Decal(Vector3 point, Vector3 normal, Transform surface, float scale)
         {
             // decals stuck to objects that got destroyed are gone too
-            Transform decal = _decals.Count >= MaxDecals ? _decals.Dequeue() : null;
+            Transform decal = _decals.Count >= Mathf.RoundToInt(MaxDecals * GameSettings.EffectsScale) ? _decals.Dequeue() : null;
             if (decal == null)
             {
                 var go = new GameObject("BulletHole", typeof(MeshFilter), typeof(MeshRenderer));
@@ -290,7 +346,7 @@ namespace Combat
             decal.SetParent(null);
             decal.SetPositionAndRotation(point + normal * 0.005f,
                 Quaternion.LookRotation(-normal) * Quaternion.Euler(0.0f, 0.0f, Random.Range(0.0f, 360.0f)));
-            decal.localScale = Vector3.one * Random.Range(0.07f, 0.11f);
+            decal.localScale = Vector3.one * (Random.Range(0.07f, 0.11f) * scale);
             // follow moving platforms without inheriting their scale
             if (surface != null && !surface.gameObject.isStatic) decal.SetParent(surface, true);
             _decals.Enqueue(decal);

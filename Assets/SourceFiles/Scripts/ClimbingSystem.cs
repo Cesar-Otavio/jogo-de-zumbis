@@ -95,7 +95,15 @@ namespace StarterAssets
             _animIDClimbUp = Animator.StringToHash("ClimbUp");
         }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.ClimbingSystem.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             if (_regrabTimeoutDelta > 0.0f)
             {

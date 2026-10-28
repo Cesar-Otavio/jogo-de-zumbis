@@ -32,6 +32,7 @@ namespace Combat
             _born = Time.time;
             _inventory = InventoryManager.Player;
             if (_inventory != null) _player = _inventory.transform;
+            NetWorld.Register(this);
 
             CombatEffects fx = CombatEffects.Instance;
             _visual = new GameObject("Visual").transform;
@@ -62,7 +63,15 @@ namespace Combat
             if (material != null) part.GetComponent<MeshRenderer>().sharedMaterial = material;
         }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.ItemPickup.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             float t = Time.time - _born;
             _visual.localPosition = Vector3.up * (0.3f + Mathf.Sin(t * 2.4f) * 0.05f);
@@ -74,7 +83,17 @@ namespace Combat
             }
 
             if (_player == null || (_player.position - transform.position).sqrMagnitude > PickupRadius * PickupRadius) return;
-            if (_inventory.IsFull(Item)) return;
+            if (!_inventory.CanTake(Item)) return;
+            // co-op: whoever the host gives it to (first come)
+            if (!NetWorld.MayTake(this, () => { if (this != null) TakeNow(); })) return;
+            TakeNow();
+        }
+
+        private void OnDestroy() => NetWorld.Unregister(this);
+
+        private void TakeNow()
+        {
+            if (_inventory == null || !_inventory.CanTake(Item)) return;
             Amount -= _inventory.Add(Item, Amount, true);
             if (CombatEffects.Instance != null) CombatEffects.Instance.PlayUI(CombatEffects.Instance.AmmoPickupSound, 0.6f);
             if (Amount <= 0) Destroy(gameObject);

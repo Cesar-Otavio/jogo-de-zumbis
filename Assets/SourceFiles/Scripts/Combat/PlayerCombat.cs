@@ -54,10 +54,8 @@ namespace Combat
         public AudioClip DeathSound;
 
         [Header("Flashlight")]
+        [Tooltip("The light itself is the TacticalFlashlight component; this is its on/off state, read by perception and the HUD")]
         public bool FlashlightOn = true;
-        public float FlashlightIntensity = 30.0f;
-        public float FlashlightRange = 35.0f;
-        public float FlashlightAngle = 58.0f;
         public AudioClip FlashlightSound;
 
         // the game flow turns this off when the last life is lost
@@ -116,10 +114,11 @@ namespace Combat
         private float _cameraSide = 1.0f;
 
         private Transform _head;
+        private LeanController _lean;
+        private float _queuedSwitchUntil = -1.0f;
         private float _baseNearClip;
         private SkinnedMeshRenderer[] _bodyRenderers;
         private bool _bodyHidden;
-        private Light _flashlight;
 
         private void Awake()
         {
@@ -136,37 +135,9 @@ namespace Combat
             var animator = GetComponent<Animator>();
             if (animator != null && animator.isHuman) _head = animator.GetBoneTransform(HumanBodyBones.Head);
             _bodyRenderers = GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            _lean = GetComponent<LeanController>();
         }
 
-        // a torch that follows the view, toggled with F
-        private void UpdateFlashlight()
-        {
-            if (_flashlight == null && _camera != null)
-            {
-                var torch = new GameObject("Flashlight");
-                torch.transform.SetParent(_camera.transform, false);
-                torch.transform.localPosition = new Vector3(0.25f, -0.2f, 0.1f);
-                _flashlight = torch.AddComponent<Light>();
-                _flashlight.type = LightType.Spot;
-                _flashlight.color = new Color(1.0f, 0.95f, 0.82f);
-                _flashlight.shadows = LightShadows.Soft;
-                _flashlight.shadowStrength = 0.85f;
-            }
-
-            if (_flashlight == null) return;
-
-            if (UnityEngine.InputSystem.Keyboard.current != null && UnityEngine.InputSystem.Keyboard.current.fKey.wasPressedThisFrame)
-            {
-                FlashlightOn = !FlashlightOn;
-                if (CombatEffects.Instance != null) CombatEffects.Instance.PlaySound(FlashlightSound, transform.position + Vector3.up * 1.5f, 0.5f, 0.05f, 0.0f);
-            }
-
-            _flashlight.enabled = FlashlightOn && !_health.IsDead;
-            _flashlight.intensity = FlashlightIntensity;
-            _flashlight.range = FlashlightRange;
-            _flashlight.spotAngle = FlashlightAngle;
-            _flashlight.innerSpotAngle = FlashlightAngle * 0.45f;
-        }
 
         // looking down the sights, the body (big hands right in front of the eye) only casts its shadow
         private void SetBodyHidden(bool hidden)
@@ -226,7 +197,9 @@ namespace Combat
             if (t <= 0.0f) return;
 
             // follow the sights' direction but never roll the view
-            Quaternion sightRotation = Quaternion.LookRotation(_holder.SightForward, Vector3.up);
+            // (leaning rolls it on purpose, together with the gun)
+            Vector3 viewUp = Quaternion.LookRotation(_holder.SightForward, Vector3.up) * (_lean != null ? _lean.ViewRollRotation : Quaternion.identity) * Vector3.up;
+            Quaternion sightRotation = Quaternion.LookRotation(_holder.SightForward, viewUp);
             Vector3 eye = _holder.SightPosition - _holder.SightForward * EyeRelief;
             Transform camTransform = cam.transform;
             if (float.IsNaN(eye.x) || float.IsNaN(camTransform.position.x)) return;
@@ -269,8 +242,23 @@ namespace Combat
             }
         }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.PlayerCombat.Update");
+
         private void Update()
         {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
+        {
+            // co-op: down on the ground waiting for a teammate; no moving, shooting or using things
+            if (IsDowned)
+            {
+                UpdateCamera(Time.deltaTime);
+                return;
+            }
+
             if (_health.IsDead)
             {
                 if (AllowRespawn && Time.time >= RespawnTime) Respawn();
@@ -318,11 +306,10 @@ namespace Combat
             // anchored on the camera pivot rather than the head bone, which bobs with the walk and swings with the hips
             _holder.SightAim = FirstPersonAim;
             Transform pivot = _controller.CinemachineCameraTarget.transform;
-            _holder.ViewRotation = pivot.rotation;
+            _holder.ViewRotation = _lean != null ? pivot.rotation * _lean.ViewRollRotation : pivot.rotation;
             _holder.SightAnchor = pivot.position + Vector3.up * SightOffsetFromHead.y +
                                   _holder.ViewRotation * new Vector3(SightOffsetFromHead.x, 0.0f, SightOffsetFromHead.z);
 
-            UpdateFlashlight();
 
             if (_input.reload)
             {
@@ -330,10 +317,22 @@ namespace Combat
                 _holder.StartReload();
             }
 
+            // Q / E while aiming lean instead (LeanController): the same press must not also switch or interact
+            if (_lean != null && _lean.Holding)
+            {
+                _input.switchWeapon = false;
+                _input.interact = false;
+            }
+
             if (_input.switchWeapon)
             {
                 _input.switchWeapon = false;
                 SwitchSlot();
+            }
+            else if (_queuedSwitchUntil > 0.0f && !_holder.Busy)
+            {
+                if (Time.time <= _queuedSwitchUntil) SwitchSlot();
+                _queuedSwitchUntil = -1.0f;
             }
 
             if (_input.drop)
@@ -437,8 +436,10 @@ namespace Combat
             float unarmedSide = ShoulderRight ? _baseCameraSide : 1.0f - _baseCameraSide;
             _follow.CameraSide = Mathf.Lerp(unarmedSide, _cameraSide, _armedBlend);
 
-            float aimFov = Current != null ? Current.Data.AimFov : _baseFov;
-            float fov = Mathf.Lerp(_baseFov, aimFov, aimBlend);
+            // the player's field of view option widens hip fire; aiming keeps each gun's zoom
+            float hipFov = _baseFov + GameSettings.FieldOfViewOffset;
+            float aimFov = Current != null ? Current.Data.AimFov : hipFov;
+            float fov = Mathf.Lerp(hipFov, aimFov, aimBlend);
             LensSettings lens = _virtualCamera.Lens;
             lens.FieldOfView = fov;
             _virtualCamera.Lens = lens;
@@ -452,6 +453,12 @@ namespace Combat
 
         public void Give(WeaponInstance weapon)
         {
+            Give(weapon, null);
+        }
+
+        // from: where the weapon lies in the world; the hands go and take it from there (no instant swap)
+        public void Give(WeaponInstance weapon, Pose? from)
+        {
             // guns of a kind that has upgrades this run get them
             weapon.Data = WeaponUpgrades.Resolve(weapon.Data);
             int slot = Slots[ActiveSlot] == null ? ActiveSlot : Slots[1 - ActiveSlot] == null ? 1 - ActiveSlot : ActiveSlot;
@@ -459,11 +466,20 @@ namespace Combat
 
             Slots[slot] = weapon;
             ActiveSlot = slot;
+            if (from.HasValue && !_health.IsDead)
+            {
+                // the gun in the hands (if any) goes on the body first, then the new one is picked up
+                _holder.Grab(weapon, from.Value);
+                return;
+            }
+
             EquipActive();
         }
 
         private void PickUp(WeaponPickup pickup)
         {
+            // co-op: whoever the host gives it to (first come)
+            if (!NetWorld.MayTake(pickup, () => { if (pickup != null) PickUp(pickup); })) return;
             // the same gun only gives its ammo
             foreach (WeaponInstance owned in Slots)
             {
@@ -473,13 +489,16 @@ namespace Combat
                     owned.Reserve += ammo;
                     Destroy(pickup.gameObject);
                     PlayPickupSound();
-                    Notify?.Invoke($"+{ammo} munição {pickup.Data.DisplayName}");
+                    PickupFeed.Ammo(owned.Data, ammo);
                     return;
                 }
             }
 
-            Give(pickup.Take());
+            Pose where = pickup.VisualPose;
+            WeaponInstance taken = pickup.Take();
+            Give(taken, where);
             PlayPickupSound();
+            PickupFeed.Weapon(taken.Data);
         }
 
         private void PlayPickupSound()
@@ -498,11 +517,16 @@ namespace Combat
 
         private void SwitchSlot()
         {
-            if (Other == null || _holder.IsReloading && Current == null) return;
+            if (Other == null) return;
+            // mid-way through putting a gun away or drawing one: remember the press for a moment
+            if (_holder.Busy)
+            {
+                _queuedSwitchUntil = Time.time + 0.35f;
+                return;
+            }
 
-            _holder.Unequip();
             ActiveSlot = 1 - ActiveSlot;
-            EquipActive();
+            _holder.SwitchTo(Current);
         }
 
         private void DropCurrent()
@@ -513,7 +537,8 @@ namespace Combat
             if (Other != null)
             {
                 ActiveSlot = 1 - ActiveSlot;
-                EquipActive();
+                // the carried gun is drawn from the body
+                _holder.SwitchTo(Current);
             }
         }
 
@@ -528,7 +553,8 @@ namespace Combat
 
             Vector3 position = transform.position + Vector3.up * 1.2f + transform.forward * 0.5f;
             Vector3 velocity = transform.forward * 3.0f + Vector3.up * 1.5f;
-            WeaponPickup.Drop(weapon, position, transform.rotation * Quaternion.Euler(0.0f, 90.0f, 0.0f), velocity);
+            // co-op client: the host puts it on the ground for everyone
+            NetWorld.PlayerDropped(WeaponPickup.Drop(weapon, position, transform.rotation * Quaternion.Euler(0.0f, 90.0f, 0.0f), velocity));
         }
 
         private void UpdateNearbyPickup()
@@ -601,6 +627,7 @@ namespace Combat
         {
             Kills = 0;
             AllowRespawn = true;
+            if (IsDowned) ExitDowned(1.0f);
             // the dead drop their guns, and respawning hands out the starting weapon
             if (_health.IsDead)
             {
@@ -618,6 +645,74 @@ namespace Combat
             _health.Armor = 0.0f;
             _controller.RefillStamina();
             if (StartingWeapon != null && !StartUnarmed) Give(new WeaponInstance(StartingWeapon, StartingWeapon.MagazineSize, StartingWeapon.StartReserve));
+        }
+
+        // ---------------------------------------------------------------- co-op: down, revived, out
+
+        public bool IsDowned { get; private set; }
+
+        // a blow that would have killed: on the ground, alive, ignored by the infected while teammates come
+        public void EnterDowned()
+        {
+            if (IsDowned || _health.IsDead) return;
+            IsDowned = true;
+            _holder.TriggerHeld = false;
+            _input.fire = false;
+            _input.aim = false;
+            _controller.StrafeMode = false;
+            _controller.enabled = false;
+            if (_climbing != null) _climbing.enabled = false;
+            _characterController.enabled = false;
+            _health.Untargetable = true;
+            _health.InvulnerableUntil = float.MaxValue;
+            if (_ragdoll != null) _ragdoll.SetRagdoll(true);
+        }
+
+        // a teammate got them up: standing where the body lay, with part of their health
+        public void ExitDowned(float healthFraction)
+        {
+            if (!IsDowned) return;
+            IsDowned = false;
+            if (_ragdoll != null)
+            {
+                Vector3 body = _ragdoll.BodyPosition;
+                transform.position = new Vector3(body.x, transform.position.y, body.z);
+                _ragdoll.SetRagdoll(false);
+            }
+
+            _characterController.enabled = true;
+            _controller.enabled = true;
+            if (_climbing != null) _climbing.enabled = true;
+            _controller.ResetMotion(0.0f);
+            _health.Untargetable = false;
+            _health.Revive(healthFraction);
+            _health.InvulnerableUntil = Time.time + SpawnProtection;
+        }
+
+        // bled out or a final blow: dies for real; coming back is up to the host (next wave)
+        public void KillNow()
+        {
+            AllowRespawn = false;
+            bool wasDown = IsDowned;
+            IsDowned = false;
+            _health.Untargetable = false;
+            _health.InvulnerableUntil = 0.0f;
+            if (wasDown) _health.TakeDamage(new DamageInfo { Amount = _health.MaxHealth * 10.0f, Point = transform.position, Direction = Vector3.down });
+        }
+
+        // the host brings this player back (a new wave)
+        public void RespawnNow()
+        {
+            AllowRespawn = true;
+            RespawnTime = Time.time;
+        }
+
+        // co-op client: the host confirmed a kill this player's shot made (the infected died on the host)
+        public void CountNetworkKill()
+        {
+            Kills++;
+            CombatEffects fx = CombatEffects.Instance;
+            if (fx != null) fx.PlayUI(fx.KillSound, 0.7f);
         }
 
         private void OnHit(HitReport report)
@@ -658,6 +753,7 @@ namespace Combat
 
         private void OnDied(DamageInfo info)
         {
+            if (Net.Active) Debug.Log($"[Net] morte local: {info.Amount:F0} de dano de {(info.Instigator != null ? info.Instigator.name : "?")}, caído {IsDowned}\n{System.Environment.StackTrace}");
             RespawnTime = Time.time + RespawnDelay;
 
             DropSlot(1 - ActiveSlot);
@@ -682,6 +778,8 @@ namespace Combat
 
         private void Respawn()
         {
+            IsDowned = false;
+            _health.Untargetable = false;
             if (_ragdoll != null) _ragdoll.SetRagdoll(false);
             _characterController.enabled = true;
             _controller.enabled = true;

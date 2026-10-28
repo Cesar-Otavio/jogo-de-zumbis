@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 222a37aa30bb012459056d7e16d229e8, type: 3}
+  m_Name: Recipe_medkit
+  m_EditorClassIdentifier: Assembly-CSharp::Combat.CraftingRecipe
+  Id: medkit
+  DisplayName: "Kit m\xE9dico improvisado"
+  Description: "Material m\xE9dico embalado em tecido. Cura como um kit da enfermaria."
+  ProductId: medkit
+  ProductAmount: 1
+  Ingredients:
+  - ItemId: med_supplies
+    Count: 2
+  - ItemId: cloth
+    Count: 1
+  Station: 1
+  CraftTime: 0
+  RequiredLevel: 1
+  UnlockFlag: 

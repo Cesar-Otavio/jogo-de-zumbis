@@ -35,6 +35,8 @@ namespace Combat
         {
             if (!Active) return;
             Progression.RecordEndlessWave(wave);
+            // co-op: side missions belong to the host's game; a client only records its progress
+            if (!Net.HasAuthority) return;
             MissionManager missions = MissionManager.Instance;
             if (missions == null) return;
 

@@ -129,6 +129,7 @@ namespace Combat
         private AudioSource Loop(string name, AudioClip clip)
         {
             var source = new GameObject(name).AddComponent<AudioSource>();
+            AudioRouting.Route(source, AudioRouting.Channel.Ambient);
             source.transform.SetParent(transform, false);
             source.clip = clip;
             source.loop = true;
@@ -239,7 +240,15 @@ namespace Combat
             }
         }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.WeatherController.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             Camera cam = Camera.main;
             if (cam != null) _follower.position = cam.transform.position;
@@ -285,7 +294,7 @@ namespace Combat
             float gust = Time.time < _gustUntil ? _gustStrength * Mathf.Sin(Mathf.InverseLerp(_gustUntil - 6.0f, _gustUntil, Time.time) * Mathf.PI) : 0.0f;
             float baseWind = 0.15f + RainAmount * 0.35f + Mathf.PerlinNoise(_seed, Time.time * 0.05f) * 0.15f;
             Wind = Mathf.Lerp(Wind, Mathf.Clamp01(baseWind + Mathf.Max(0.0f, gust)), dt * 2.0f);
-            _windAudio.volume = 0.12f + Wind * 0.45f;
+            _windAudio.volume = (0.12f + Wind * 0.45f) * GameSettings.AmbientVolume;
             _windAudio.pitch = 0.85f + Wind * 0.3f;
 
             // dust and the rain lean with the wind
@@ -308,7 +317,7 @@ namespace Combat
                 : Mathf.Lerp(ModerateRate, HeavyRate, (amount - 0.75f) / 0.25f);
             ParticleSystem.EmissionModule emission = _rain.emission;
             emission.rateOverTime = rate;
-            _rainAudio.volume = amount * 0.7f;
+            _rainAudio.volume = amount * 0.7f * GameSettings.AmbientVolume;
         }
 
         private void UpdateFog()
@@ -348,7 +357,7 @@ namespace Combat
                 if (ThunderSounds != null && ThunderSounds.Length > 0 && CombatEffects.Instance != null)
                 {
                     float volume = Mathf.Lerp(1.0f, 0.35f, Mathf.InverseLerp(300.0f, 3000.0f, _thunderDistance));
-                    CombatEffects.Instance.PlaySound(ThunderSounds[UnityEngine.Random.Range(0, ThunderSounds.Length)], transform.position, volume, 0.08f, 0.0f);
+                    CombatEffects.Instance.PlayAmbient(ThunderSounds[UnityEngine.Random.Range(0, ThunderSounds.Length)], transform.position, volume);
                     Subtitles.Show(_thunderDistance < 900.0f ? "[trovão próximo]" : "[trovão distante]", 3.0f);
                 }
             }

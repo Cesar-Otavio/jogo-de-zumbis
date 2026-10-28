@@ -1,0 +1,8 @@
+run;dev;scene;enemies_alive;profile;quality;size;shadow_dist;frames;avg_ms;fps;median_ms;p95_ms;p99_ms;max_ms;cpu_main_ms;cpu_render_ms;gpu_ms;draw_calls;setpass;triangles;shadow_casters;lights_visible;shadow_lights_visible;gc_alloc_bytes_frame;total_mem_mb;gpu_device
+lamps_yard_low_1280x720;dev;yard;1.00;low;PC;1280x720;30.00;2170;9.21;108.61;9.05;10.89;12.44;25.41;8.58;2.74;5.12;756;157;362683;164;62.50;3.00;2196;603.41;AMD Radeon(TM) Graphics
+lamps_wave_low_1280x720;dev;wave;31.00;low;PC;1280x720;30.00;1625;12.29;81.36;12.54;13.62;15.04;38.58;12.25;2.80;8.35;835;162;458048;207;65.72;3.00;2494;607.53;AMD Radeon(TM) Graphics
+lamps_yard_medium_1920x1080;dev;yard;1.00;medium;PC;1920x1080;50.00;1599;12.50;80.01;12.44;13.14;13.51;16.06;8.57;2.70;12.28;916;166;381839;359;62.49;4.00;2085;648.50;AMD Radeon(TM) Graphics
+lamps_wave_medium_1920x1080;dev;wave;31.00;medium;PC;1920x1080;50.00;1362;14.67;68.17;14.74;16.33;18.97;34.91;12.53;2.89;11.51;971;169;479053;406;62.40;4.00;2407;659.51;AMD Radeon(TM) Graphics
+lamps_yard_high_1920x1080;dev;yard;1.00;high;PC;1920x1080;90.00;1455;13.73;72.85;13.39;16.45;17.38;34.14;9.08;2.89;13.23;1271;189;471476;811;60.94;6.00;2190;657.16;AMD Radeon(TM) Graphics
+lamps_wave_high_1920x1080;dev;wave;31.00;high;PC;1920x1080;90.00;1283;15.57;64.21;15.41;17.93;19.48;33.72;13.30;3.24;12.38;1385;203;631256;939;64.76;6.00;2549;663.47;AMD Radeon(TM) Graphics
+lamps_wave_current_1280x720;dev;wave;31.00;current;PC;1280x720;50.00;1629;12.27;81.53;12.61;13.56;14.76;33.22;12.23;2.82;8.52;995;174;505778;394;65.52;4.00;2566;612.23;AMD Radeon(TM) Graphics

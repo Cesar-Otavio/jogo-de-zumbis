@@ -29,6 +29,9 @@ namespace Combat
         public float FlyoverRadius = 48.0f;
         public float FlyoverHeight = 20.0f;
         public float FlyoverSpeed = 4.0f;
+        [Tooltip("Mission anchors the menu camera visits, one slow low shot each (shuffled); when none can be framed it circles the flyover centre")]
+        public string[] MenuShotAnchors = { "helipad", "gate_1", "watchtower", "lab", "armory", "gen_room", "radio_station", "depot" };
+        public float MenuShotDuration = 9.0f;
 
         [Header("Audio")]
         public AudioClip MenuMusic;
@@ -94,7 +97,12 @@ namespace Combat
         private Camera _gameCamera;
         private int _gameCameraMask;
         private Camera _menuCamera;
+        private Image _menuFade;
+        private readonly System.Collections.Generic.List<CinematicPlayer.Shot> _menuShots = new System.Collections.Generic.List<CinematicPlayer.Shot>();
+        private int _menuShot;
+        private float _menuShotStarted;
         private AudioSource _music;
+        private float _musicLevel;
         private float _baseRegen;
 
         private GameObject _menuPanel;
@@ -110,6 +118,7 @@ namespace Combat
         private readonly System.Collections.Generic.List<Action> _optionRefreshers = new System.Collections.Generic.List<Action>();
         private UnityEngine.Rendering.Universal.ColorAdjustments _gradeColor;
         private UnityEngine.Rendering.Universal.FilmGrain _gradeGrain;
+        private UnityEngine.Rendering.Volume _gradeVolume;
         private float _basePostExposure;
         private float _baseGrain;
 
@@ -144,6 +153,7 @@ namespace Combat
                 UnityEngine.Rendering.VolumeProfile profile = volume.profile;
                 if (profile.TryGet(out _gradeColor)) _basePostExposure = _gradeColor.postExposure.value;
                 if (profile.TryGet(out _gradeGrain)) _baseGrain = _gradeGrain.intensity.value;
+                _gradeVolume = volume;
                 if (_gradeColor != null) break;
             }
         }
@@ -152,10 +162,13 @@ namespace Combat
         {
             if (_gradeColor != null) _gradeColor.postExposure.Override(_basePostExposure + GameSettings.Brightness * 0.9f);
             if (_gradeGrain != null) _gradeGrain.intensity.Override(_baseGrain * GameSettings.Grain);
+            if (_gradeVolume != null) _gradeVolume.weight = GameSettings.PostIntensity;
+            DisplayOptions.Apply();
         }
 
         private void Start()
         {
+            AudioListener.volume = GameSettings.MasterVolume;
             _player = FindAnyObjectByType<PlayerCombat>();
             _input = _player != null ? _player.GetComponent<StarterAssetsInputs>() : null;
             _spawner = FindAnyObjectByType<EnemySpawner>();
@@ -190,9 +203,11 @@ namespace Combat
             }
 
             _music = gameObject.AddComponent<AudioSource>();
+            AudioRouting.Route(_music, AudioRouting.Channel.Music);
             _music.loop = true;
             _music.spatialBlend = 0.0f;
-            _music.volume = MusicVolume;
+            _music.volume = MusicVolume * GameSettings.MusicVolume;
+            _musicLevel = MusicVolume;
 
             EnsureEventSystem();
             FindGrade();
@@ -211,11 +226,23 @@ namespace Combat
             }
         }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.GameFlow.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             if (Current == State.Menu)
             {
-                if (_wardrobePanel != null && _wardrobePanel.activeSelf) UpdateWardrobeCamera();
+                if (_wardrobePanel != null && _wardrobePanel.activeSelf)
+                {
+                    if (_menuFade != null) _menuFade.color = Color.clear;
+                    UpdateWardrobeCamera();
+                }
                 else UpdateFlyover();
                 return;
             }
@@ -224,23 +251,26 @@ namespace Combat
             {
                 UpdateAmbience();
                 // the music swells in a fight and drops back in quiet moments
-                if (_music != null && _music.clip == GameMusic)
-                {
-                    _music.volume = Mathf.MoveTowards(_music.volume, MusicVolume * TensionDirector.MusicScale, Time.deltaTime * 0.15f);
-                }
-
                 // a boss fight has its own music
                 AudioClip bossMusic = CampaignAssets.Clip(a => a.BossMusic);
                 bool boss = BossAI.AnyAlive && bossMusic != null;
                 PlayMusic(boss ? bossMusic : _gameMusic);
-                if (boss) _music.volume = MusicVolume;
+                if (_music != null)
+                {
+                    float level = boss ? MusicVolume : MusicVolume * TensionDirector.MusicScale;
+                    _musicLevel = Mathf.MoveTowards(_musicLevel, level, Time.deltaTime * (boss ? 1.0f : 0.15f));
+                    // dialogue ducks it; the player's music volume scales it
+                    _music.volume = _musicLevel * DialogueDirector.MusicDuck * GameSettings.MusicVolume;
+                }
             }
 
             if (_input != null && _input.pause)
             {
                 _input.pause = false;
-                // Esc first closes whatever is in front: the shop, a document, a cinematic
-                if (ShopManager.IsOpen) ShopManager.Instance.Close();
+                // Esc first closes whatever is in front: the backpack, the map, the shop, a document, a cinematic
+                if (InventoryView.IsOpen) InventoryView.Instance.Close();
+                else if (TacticalMapView.IsOpen) TacticalMapView.Instance.Close();
+                else if (ShopManager.IsOpen) ShopManager.Instance.Close();
                 else if (CampaignHUD.ReaderOpen || CinematicPlayer.Playing) { }
                 else if (Current == State.Playing) Pause();
                 else if (Current == State.Paused) Resume();
@@ -251,6 +281,7 @@ namespace Combat
 
         private void EnterMenu()
         {
+            GameplayOverlay.Reset();
             Current = State.Menu;
             Time.timeScale = 1.0f;
             SetGameplayActive(false);
@@ -273,6 +304,7 @@ namespace Combat
 
             _menuCamera.gameObject.SetActive(true);
             if (_gameCamera != null) _gameCamera.cullingMask = 0;
+            BuildMenuShots();
         }
 
         public void StartGame()
@@ -284,9 +316,12 @@ namespace Combat
         {
             if (_wardrobePanel != null && _wardrobePanel.activeSelf) CloseWardrobe();
             _restartMode = mode;
+            GameplayOverlay.Reset();
             RunState.Reset(mode);
             if (MissionManager.Instance != null) MissionManager.Instance.Clear();
             if (ShopManager.Instance != null) ShopManager.Instance.ResetForRun();
+            if (DialogueDirector.Instance != null) DialogueDirector.Instance.ResetAll();
+            PickupFeed.Clear();
             _player.Controller.MaxStamina = _baseStamina;
             _player.Health.Armor = 0.0f;
             _player.GetComponent<InventoryManager>()?.ResetForRun();
@@ -311,9 +346,17 @@ namespace Combat
             {
                 CampaignManager.Instance.Begin(Progression.CampaignChapter);
             }
+            else if (_spawner != null && Net.HasAuthority)
+            {
+                // co-op host: each wave is sized for the team that starts it (NetGame, CoopBalance)
+                if (!Net.Listening) CoopBalance.Reset(_spawner);
+                _spawner.BeginWaves(Difficulty);
+            }
             else if (_spawner != null)
             {
-                _spawner.BeginWaves(Difficulty);
+                // co-op client: the host's infected are shown here; this machine spawns none of its own
+                _spawner.StopWaves();
+                _spawner.enabled = false;
             }
 
             PlayMusic(GameMusic);
@@ -322,9 +365,11 @@ namespace Combat
         private void Pause()
         {
             Current = State.Paused;
-            Time.timeScale = 0.0f;
             ShowOnly(_pausePanel);
             SetCursor(false);
+            // co-op: the menu opens but the world keeps going for everyone
+            if (Net.Active) return;
+            Time.timeScale = 0.0f;
             AudioListener.pause = true;
         }
 
@@ -337,8 +382,17 @@ namespace Combat
             AudioListener.pause = false;
         }
 
+        // co-op: the whole team is down or dead (decided by the host, NetGame)
+        public void CoopGameOver()
+        {
+            // the pause menu doesn't stop the world in co-op, so a paused player gets the screen too
+            if (Current != State.Playing && Current != State.Paused) return;
+            Invoke(nameof(GameOver), 2.0f);
+        }
+
         private void GameOver()
         {
+            GameplayOverlay.Reset();
             Current = State.GameOver;
             int wave = _spawner != null ? _spawner.Wave : 0;
             int bestWave = PlayerPrefs.GetInt(BestWaveKey, 0);
@@ -377,6 +431,17 @@ namespace Combat
 
         private void Reload()
         {
+            // co-op: reloading the scene leaves the session (a restart can't be done for the others)
+            if (Net.Listening)
+            {
+                _startImmediately = false;
+                if (NetSession.Instance != null) NetSession.Instance.Leave();
+            }
+
+            // the network manager outlives scene loads by design; the reloaded scene brings a fresh one, so the
+            // old one goes now (not at the end of the frame, when it would clear the new one's registration)
+            if (Unity.Netcode.NetworkManager.Singleton != null) DestroyImmediate(Unity.Netcode.NetworkManager.Singleton.gameObject);
+
             Time.timeScale = 1.0f;
             AudioListener.pause = false;
             SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex >= 0
@@ -411,13 +476,95 @@ namespace Combat
 
         private void UpdateFlyover()
         {
-            if (_menuCamera == null || FlyoverCenter == null) return;
+            if (_menuCamera == null) return;
 
+            if (_menuShots.Count > 0)
+            {
+                UpdateMenuShot();
+                return;
+            }
+
+            if (_menuFade != null) _menuFade.color = Color.clear;
+            if (FlyoverCenter == null) return;
             float angle = Time.unscaledTime * FlyoverSpeed * Mathf.Deg2Rad;
             Vector3 center = FlyoverCenter.position;
             Vector3 offset = new Vector3(Mathf.Cos(angle), 0.0f, Mathf.Sin(angle)) * FlyoverRadius + Vector3.up * FlyoverHeight;
             _menuCamera.transform.position = center + offset;
             _menuCamera.transform.LookAt(center + Vector3.up * 2.0f);
+        }
+
+        // ---------------------------------------------------------------- menu shots
+
+        // the places of the story, each seen from a spot with a clear view, in a new order every time
+        private void BuildMenuShots()
+        {
+            _menuShots.Clear();
+            foreach (string id in MenuShotAnchors)
+            {
+                MissionAnchor anchor = MissionAnchor.Find(id);
+                if (anchor != null && TryMenuShot(anchor.transform.position, out CinematicPlayer.Shot shot)) _menuShots.Add(shot);
+            }
+
+            for (int i = _menuShots.Count - 1; i > 0; i--)
+            {
+                int j = UnityEngine.Random.Range(0, i + 1);
+                (_menuShots[i], _menuShots[j]) = (_menuShots[j], _menuShots[i]);
+            }
+
+            _menuShot = 0;
+            _menuShotStarted = Time.unscaledTime;
+        }
+
+        // a low, slow sideways dolly towards the place, from the first angle that sees it unobstructed
+        private bool TryMenuShot(Vector3 place, out CinematicPlayer.Shot shot)
+        {
+            Vector3 target = place + Vector3.up * 1.5f;
+            float start = UnityEngine.Random.Range(0.0f, 360.0f);
+            for (int i = 0; i < 8; i++)
+            {
+                Quaternion around = Quaternion.Euler(0.0f, start + i * 45.0f, 0.0f);
+                Vector3 back = around * Vector3.forward;
+                Vector3 side = around * Vector3.right;
+                Vector3 from = place + back * 15.0f + side * 4.5f + Vector3.up * 3.8f;
+                Vector3 to = place + back * 12.0f - side * 4.5f + Vector3.up * 3.0f;
+                if (!ClearView(from, target) || !ClearView(to, target) || !ClearView(from, to)) continue;
+
+                shot = new CinematicPlayer.Shot
+                {
+                    From = from, To = to, LookFrom = target + side * 1.2f, LookTo = target - side * 1.2f, Duration = MenuShotDuration
+                };
+                return true;
+            }
+
+            shot = default;
+            return false;
+        }
+
+        private static bool ClearView(Vector3 from, Vector3 to)
+        {
+            const int mask = Physics.DefaultRaycastLayers;
+            if (Physics.CheckSphere(from, 0.6f, mask, QueryTriggerInteraction.Ignore)) return false;
+            return !Physics.Linecast(from, to, mask, QueryTriggerInteraction.Ignore);
+        }
+
+        private void UpdateMenuShot()
+        {
+            CinematicPlayer.Shot shot = _menuShots[_menuShot];
+            float elapsed = Time.unscaledTime - _menuShotStarted;
+            if (elapsed >= shot.Duration)
+            {
+                _menuShot = (_menuShot + 1) % _menuShots.Count;
+                _menuShotStarted = Time.unscaledTime;
+                elapsed = 0.0f;
+                shot = _menuShots[_menuShot];
+            }
+
+            // a steady glide with soft ends, and a dip to black between places
+            float t = Mathf.SmoothStep(0.0f, 1.0f, elapsed / shot.Duration * 0.8f + 0.1f);
+            _menuCamera.transform.position = Vector3.Lerp(shot.From, shot.To, t);
+            _menuCamera.transform.LookAt(Vector3.Lerp(shot.LookFrom, shot.LookTo, t));
+            float edge = Mathf.Min(elapsed, shot.Duration - elapsed);
+            if (_menuFade != null) _menuFade.color = new Color(0.0f, 0.0f, 0.0f, 1.0f - Mathf.Clamp01(edge / 0.9f));
         }
 
         private void PlayMusic(AudioClip clip)
@@ -432,6 +579,13 @@ namespace Combat
         private void OnPlayerDied(DamageInfo info)
         {
             if (Current != State.Playing) return;
+
+            // co-op: no lives of their own; the host brings the dead back next wave (NetPlayer)
+            if (Net.Active)
+            {
+                _player.AllowRespawn = false;
+                return;
+            }
 
             LivesLeft--;
             if (LivesLeft <= 0)
@@ -497,6 +651,45 @@ namespace Combat
             {
                 ConsumablePickup.Spawn(ConsumablePickup.Kind.Ammo, victim.transform.position + Vector3.up * 0.2f, 30.0f);
             }
+        }
+
+        // co-op client: a kill the host confirmed for this player (the infected died on the host, not here)
+        // co-op client: the host confirmed a kill of this player's and set what it's worth (the credits
+        // arrive in this player's account on the host, mirrored by NetPlayer)
+        public void CreditNetworkKill(int points, bool special)
+        {
+            if (Current != State.Playing) return;
+            if (_player != null) _player.CountNetworkKill();
+            AddScore(Mathf.RoundToInt(points * Difficulty.ScoreMultiplier), "");
+            RunState.Kills++;
+            if (special) RunState.SpecialKills++;
+            Progression.RecordKill(true);
+            Progression.AddExperience(special ? 15 : 5, "abate", false);
+        }
+
+        // what a kill is worth, the same rule as this machine's own kills (OnLandedHit, OnAnyDied)
+        public int KillPoints(Health victim, bool headshot)
+        {
+            var zombie = victim.GetComponent<ZombieAI>();
+            var boss = victim.GetComponent<BossAI>();
+            int points = boss != null ? boss.Definition.Score : zombie != null ? ZombiePoints : SoldierPoints;
+            if (zombie != null && zombie.AppliedVariant != null) points += zombie.AppliedVariant.BonusPoints;
+            return points + (headshot ? HeadshotBonus : 0);
+        }
+
+        public int KillCredits(Health victim)
+        {
+            if (victim.GetComponent<BossAI>() != null) return 0;
+            var zombie = victim.GetComponent<ZombieAI>();
+            int credits = zombie != null ? ZombieCredits : SoldierCredits;
+            if (zombie != null && zombie.Kind != ZombieKind.Common) credits += SpecialCredits;
+            return credits;
+        }
+
+        // co-op: the session ended (left, host gone): back to the main menu with a clean scene
+        public void ReturnToMenu()
+        {
+            BackToMenu();
         }
 
         private void AddScore(int points, string reason)
@@ -585,6 +778,9 @@ namespace Combat
 
             // main menu: title on the left over a dark band, the level flying by behind
             _menuPanel = Panel("MainMenu", root, Vector2.zero, Vector2.one, new Color(0, 0, 0, 0)).gameObject;
+            // behind the band: the dip to black between the menu camera's shots
+            _menuFade = Panel("ShotFade", (RectTransform)_menuPanel.transform, Vector2.zero, Vector2.one, Color.clear);
+            _menuFade.raycastTarget = false;
             Image band = Panel("Band", (RectTransform)_menuPanel.transform, new Vector2(0.0f, 0.0f), new Vector2(0.42f, 1.0f), new Color(0.01f, 0.01f, 0.02f, 0.82f));
             _menuBand = band.gameObject;
             RectTransform menu = band.rectTransform;
@@ -600,11 +796,12 @@ namespace Combat
             _difficultyLabel = Label(menu, "NORMAL", 40, new Vector2(0.17f, 0.38f), new Vector2(0.6f, 0.45f), TextAlignmentOptions.Center, FontStyles.Bold, Color.white);
             SmallButton(menu, ">", new Vector2(0.63f, 0.385f), () => ChangeDifficulty(1));
             _difficultyDescription = Label(menu, "", 22, new Vector2(0.1f, 0.33f), new Vector2(0.9f, 0.378f), TextAlignmentOptions.TopLeft, FontStyles.Normal, new Color(1, 1, 1, 0.75f));
-            CompactButton(menu, "PERSONAGEM", new Vector2(0.1f, 0.265f), OpenWardrobe);
-            CompactButton(menu, "PROGRESSO", new Vector2(0.1f, 0.205f), () => ToggleSidePanel(_progressPanel));
-            CompactButton(menu, "CONTROLES", new Vector2(0.1f, 0.145f), () => ToggleSidePanel(_controlsPanel));
-            CompactButton(menu, "OPÇÕES", new Vector2(0.1f, 0.085f), () => ToggleSidePanel(_optionsPanel));
-            CompactButton(menu, "SAIR", new Vector2(0.1f, 0.025f), Quit);
+            CompactButton(menu, "MULTIJOGADOR", new Vector2(0.1f, 0.29f), () => { if (NetMenuView.Instance != null) NetMenuView.Instance.Show(); });
+            CompactButton(menu, "PERSONAGEM", new Vector2(0.1f, 0.235f), OpenWardrobe);
+            CompactButton(menu, "PROGRESSO", new Vector2(0.1f, 0.18f), () => ToggleSidePanel(_progressPanel));
+            CompactButton(menu, "CONTROLES", new Vector2(0.1f, 0.125f), () => ToggleSidePanel(_controlsPanel));
+            CompactButton(menu, "OPÇÕES", new Vector2(0.1f, 0.07f), () => ToggleSidePanel(_optionsPanel));
+            CompactButton(menu, "SAIR", new Vector2(0.1f, 0.015f), Quit);
 
             BuildWardrobe((RectTransform)_menuPanel.transform);
 
@@ -613,12 +810,13 @@ namespace Combat
             Label(controls.rectTransform,
                 "<b>WASD</b>  andar        <b>Shift</b>  correr (gasta estamina)\n" +
                 "<b>Espaço</b>  pular, pulo duplo no ar      <b>C</b>  agachar (silencioso)\n" +
-                "<b>Ctrl</b>  rolar (invulnerável no começo)\n" +
-                "<b>Botão esquerdo</b>  atirar      <b>Botão direito</b>  mirar\n" +
+                "<b>Ctrl</b>  rolar (invulnerável no começo)      <b>Esc</b>  pausa\n" +
+                "<b>Botão esquerdo</b>  atirar      <b>Botão direito</b>  mirar      <b>Q/E</b> mirando  inclinar\n" +
                 "<b>V</b>  coronhada / faca      <b>B</b>  empurrar      <b>T</b>  trocar ombro\n" +
                 "<b>R</b>  recarregar      <b>E</b>  usar: armas, baús, portas, geradores, painéis\n" +
                 "<b>Q</b>  trocar de arma      <b>G</b>  largar arma      <b>F</b>  lanterna\n" +
                 "<b>1-6</b> / <b>Z</b>  escolher item      <b>X</b>  usar item (segure para mirar o arremesso)\n" +
+                "<b>Tab</b>  mochila e fabricação      <b>M</b>  mapa tático (clique marca)\n" +
                 "<b>L</b>  loja (no intervalo)      <b>N</b>  próxima onda      <b>K</b>  abandonar missão opcional\n" +
                 "Barulho atrai os infectados: correr no metal e atirar são ouvidos de longe",
                 24, new Vector2(0.06f, 0.06f), new Vector2(0.94f, 0.82f), TextAlignmentOptions.TopLeft, FontStyles.Normal, Color.white);
@@ -635,6 +833,9 @@ namespace Combat
             Button(pause.rectTransform, "CONTINUAR", new Vector2(0.4f, 0.47f), Resume, true);
             Button(pause.rectTransform, "REINICIAR", new Vector2(0.4f, 0.37f), Restart, false);
             Button(pause.rectTransform, "MENU PRINCIPAL", new Vector2(0.4f, 0.27f), BackToMenu, false);
+            // the way in for a gamepad, which has no free button for them
+            CompactButton(pause.rectTransform, "MOCHILA [Tab]", new Vector2(0.4f, 0.19f), () => { Resume(); if (InventoryView.Instance != null) InventoryView.Instance.OpenBackpack(); });
+            CompactButton(pause.rectTransform, "MAPA [M]", new Vector2(0.4f, 0.13f), () => { Resume(); if (TacticalMapView.Instance != null) TacticalMapView.Instance.Open(); });
             _pausePanel = pause.gameObject;
 
             // game over
@@ -680,8 +881,46 @@ namespace Combat
             Image panel = Panel("Options", parent, new Vector2(0.5f, 0.08f), new Vector2(0.94f, 0.92f), PanelColor);
             _optionsPanel = panel.gameObject;
             RectTransform rect = panel.rectTransform;
-            Label(rect, "OPÇÕES E ACESSIBILIDADE", 36, new Vector2(0.06f, 0.89f), new Vector2(0.94f, 0.97f), TextAlignmentOptions.Left, FontStyles.Bold, Accent);
+            Label(rect, "OPÇÕES", 36, new Vector2(0.06f, 0.89f), new Vector2(0.3f, 0.97f), TextAlignmentOptions.Left, FontStyles.Bold, Accent);
 
+            // three pages: picture and accessibility, sound and subtitles, display and graphics
+            RectTransform[] pages = new RectTransform[3];
+            string[] titles = { "IMAGEM", "ÁUDIO", "GRÁFICOS" };
+            var tabs = new Image[3];
+            for (int i = 0; i < pages.Length; i++)
+            {
+                pages[i] = Panel("Page_" + titles[i], rect, Vector2.zero, Vector2.one, new Color(0, 0, 0, 0)).rectTransform;
+                pages[i].gameObject.SetActive(i == 0);
+            }
+
+            for (int i = 0; i < pages.Length; i++)
+            {
+                int page = i;
+                Image tab = Panel("Tab_" + titles[i], rect, new Vector2(0.32f + i * 0.21f, 0.9f), new Vector2(0.51f + i * 0.21f, 0.96f), new Color(1, 1, 1, i == 0 ? 0.25f : 0.08f));
+                tab.raycastTarget = true;
+                tabs[i] = tab;
+                Label(tab.rectTransform, titles[i], 22, Vector2.zero, Vector2.one, TextAlignmentOptions.Center, FontStyles.Bold, Color.white);
+                tab.gameObject.AddComponent<Button>().onClick.AddListener(() =>
+                {
+                    for (int p = 0; p < pages.Length; p++)
+                    {
+                        pages[p].gameObject.SetActive(p == page);
+                        tabs[p].color = new Color(1, 1, 1, p == page ? 0.25f : 0.08f);
+                    }
+                });
+            }
+
+            BuildPictureOptions(pages[0]);
+            BuildSoundOptions(pages[1]);
+            BuildDisplayOptions(pages[2]);
+
+            Label(rect, "Brilho e granulação mudam na hora. \"Automático\" mostra todas as setas no Fácil e Normal e só as dos inimigos que te viram no Difícil e Pesadelo.",
+                18, new Vector2(0.06f, 0.015f), new Vector2(0.94f, 0.085f), TextAlignmentOptions.TopLeft, FontStyles.Normal, new Color(1, 1, 1, 0.6f)).textWrappingMode = TextWrappingModes.Normal;
+            _optionsPanel.SetActive(false);
+        }
+
+        private void BuildPictureOptions(RectTransform rect)
+        {
             int row = 0;
             OptionRow(rect, row++, "Brilho", () => Percent(GameSettings.Brightness, -1.0f, 1.0f),
                 step => GameSettings.Brightness = Mathf.Clamp(GameSettings.Brightness + step * 0.1f, -1.0f, 1.0f));
@@ -700,27 +939,87 @@ namespace Combat
             OptionRow(rect, row++, "Marcador de objetivo", () => GameSettings.ObjectiveHints ? "LIGADO" : "DESLIGADO",
                 step => GameSettings.ObjectiveHints = !GameSettings.ObjectiveHints);
 
-            Label(rect, "Brilho e granulação mudam na hora. \"Automático\" mostra todas as setas no Fácil e Normal e só as dos inimigos que te viram no Difícil e Pesadelo.",
-                18, new Vector2(0.06f, 0.015f), new Vector2(0.94f, 0.085f), TextAlignmentOptions.TopLeft, FontStyles.Normal, new Color(1, 1, 1, 0.6f)).textWrappingMode = TextWrappingModes.Normal;
-            _optionsPanel.SetActive(false);
+            // second column: the minimap
+            row = 0;
+            OptionRow(rect, row++, "Minimapa", () => GameSettings.Minimap ? "LIGADO" : "DESLIGADO",
+                step => GameSettings.Minimap = !GameSettings.Minimap, 1);
+            OptionRow(rect, row++, "Orientação do minimapa", () => GameSettings.MinimapRotates ? "CÂMERA" : "NORTE",
+                step => GameSettings.MinimapRotates = !GameSettings.MinimapRotates, 1);
+            OptionRow(rect, row++, "Zoom do minimapa", () => GameSettings.MinimapZoom == 0 ? "PERTO" : GameSettings.MinimapZoom == 1 ? "MÉDIO" : "LONGE",
+                step => GameSettings.MinimapZoom = (GameSettings.MinimapZoom + step + 3) % 3, 1);
         }
 
-        private void OptionRow(RectTransform parent, int row, string name, Func<string> value, Action<int> change)
+        private void BuildSoundOptions(RectTransform rect)
+        {
+            int row = 0;
+            OptionRow(rect, row++, "Legendas de diálogo", () => GameSettings.DialogueSubtitles ? "LIGADAS" : "DESLIGADAS",
+                step => GameSettings.DialogueSubtitles = !GameSettings.DialogueSubtitles, 1);
+            OptionRow(rect, row++, "Tamanho das legendas", () => Mathf.RoundToInt(GameSettings.SubtitleScale * 100.0f) + "%",
+                step => GameSettings.SubtitleScale = GameSettings.SubtitleScale + step * 0.1f, 1);
+            OptionRow(rect, row++, "Volume geral", () => Percent(GameSettings.MasterVolume, 0.0f, 1.0f),
+                step => GameSettings.MasterVolume = GameSettings.MasterVolume + step * 0.1f, 1);
+            OptionRow(rect, row++, "Música", () => Percent(GameSettings.MusicVolume, 0.0f, 1.0f),
+                step => GameSettings.MusicVolume = GameSettings.MusicVolume + step * 0.1f, 1);
+            OptionRow(rect, row++, "Efeitos", () => Percent(GameSettings.SfxVolume, 0.0f, 1.0f),
+                step => GameSettings.SfxVolume = GameSettings.SfxVolume + step * 0.1f, 1);
+            OptionRow(rect, row++, "Diálogos e rádio", () => Percent(GameSettings.DialogueVolume, 0.0f, 1.0f),
+                step => GameSettings.DialogueVolume = GameSettings.DialogueVolume + step * 0.1f, 1);
+            OptionRow(rect, row++, "Ambiente", () => Percent(GameSettings.AmbientVolume, 0.0f, 1.0f),
+                step => GameSettings.AmbientVolume = GameSettings.AmbientVolume + step * 0.1f, 1);
+            OptionRow(rect, row++, "Interface", () => Percent(GameSettings.UiVolume, 0.0f, 1.0f),
+                step => GameSettings.UiVolume = GameSettings.UiVolume + step * 0.1f, 1);
+        }
+
+        private void BuildDisplayOptions(RectTransform rect)
+        {
+            int row = 0;
+            int qualities = Mathf.Max(1, QualitySettings.names.Length);
+            OptionRow(rect, row++, "Qualidade geral", () => DisplayOptions.QualityName(GameSettings.Quality),
+                step => GameSettings.Quality = (GameSettings.Quality + step + qualities) % qualities);
+            OptionRow(rect, row++, "Resolução", () => DisplayOptions.ResolutionName(GameSettings.Resolution),
+                step =>
+                {
+                    int count = DisplayOptions.Resolutions.Count + 1;
+                    GameSettings.Resolution = (GameSettings.Resolution + 1 + step + count) % count - 1;
+                });
+            OptionRow(rect, row++, "Modo de janela", () => DisplayOptions.WindowModeName(GameSettings.WindowMode),
+                step => GameSettings.WindowMode = (GameSettings.WindowMode + step + 3) % 3);
+            OptionRow(rect, row++, "Campo de visão", () => (GameSettings.FieldOfViewOffset >= 0 ? "+" : "") + Mathf.RoundToInt(GameSettings.FieldOfViewOffset) + "°",
+                step => GameSettings.FieldOfViewOffset = GameSettings.FieldOfViewOffset + step * 2.0f);
+
+            row = 0;
+            OptionRow(rect, row++, "Distância das sombras", () => Mathf.RoundToInt(DisplayOptions.ShadowDistances[GameSettings.ShadowDistance]) + " m",
+                step => GameSettings.ShadowDistance = (GameSettings.ShadowDistance + step + 4) % 4, 1);
+            OptionRow(rect, row++, "Qualidade dos efeitos", () => GameSettings.EffectsQuality == 0 ? "BAIXA" : GameSettings.EffectsQuality == 1 ? "MÉDIA" : "ALTA",
+                step => GameSettings.EffectsQuality = (GameSettings.EffectsQuality + step + 3) % 3, 1);
+            OptionRow(rect, row++, "Limite de FPS", () => DisplayOptions.FrameLimitName(GameSettings.FrameLimit),
+                step => GameSettings.FrameLimit = (GameSettings.FrameLimit + step + DisplayOptions.FrameLimits.Length) % DisplayOptions.FrameLimits.Length, 1);
+            OptionRow(rect, row++, "VSync", () => GameSettings.VSync ? "LIGADO" : "DESLIGADO",
+                step => GameSettings.VSync = !GameSettings.VSync, 1);
+            OptionRow(rect, row++, "Pós-processamento", () => Percent(GameSettings.PostIntensity, 0.0f, 1.0f),
+                step => GameSettings.PostIntensity = GameSettings.PostIntensity + step * 0.1f, 1);
+            Label(rect, "Resolução e modo de janela valem no jogo compilado (o editor usa a janela Game). Com VSync ligado, o limite de FPS segue o monitor.",
+                18, new Vector2(0.04f, 0.38f), new Vector2(0.48f, 0.47f), TextAlignmentOptions.TopLeft, FontStyles.Normal, new Color(1, 1, 1, 0.55f)).textWrappingMode = TextWrappingModes.Normal;
+        }
+
+        // two columns of rows: name, <, value, >
+        private void OptionRow(RectTransform parent, int row, string name, Func<string> value, Action<int> change, int column = 0)
         {
             float y = 0.79f - row * 0.088f;
-            Label(parent, name, 24, new Vector2(0.06f, y), new Vector2(0.48f, y + 0.07f), TextAlignmentOptions.Left, FontStyles.Normal, new Color(1, 1, 1, 0.75f));
+            float x = column == 0 ? 0.04f : 0.52f;
+            Label(parent, name, 21, new Vector2(x, y), new Vector2(x + 0.2f, y + 0.07f), TextAlignmentOptions.Left, FontStyles.Normal, new Color(1, 1, 1, 0.75f));
             TextMeshProUGUI label = null;
-            SmallButton(parent, "<", new Vector2(0.5f, y), () =>
+            SmallButton(parent, "<", new Vector2(x + 0.205f, y), () =>
             {
                 change(-1);
                 label.text = value();
-            });
-            label = Label(parent, value(), 26, new Vector2(0.58f, y), new Vector2(0.84f, y + 0.07f), TextAlignmentOptions.Center, FontStyles.Bold, Color.white);
-            SmallButton(parent, ">", new Vector2(0.85f, y), () =>
+            }, 50.0f);
+            label = Label(parent, value(), 22, new Vector2(x + 0.265f, y), new Vector2(x + 0.38f, y + 0.07f), TextAlignmentOptions.Center, FontStyles.Bold, Color.white);
+            SmallButton(parent, ">", new Vector2(x + 0.385f, y), () =>
             {
                 change(1);
                 label.text = value();
-            });
+            }, 50.0f);
             _optionRefreshers.Add(() => label.text = value());
         }
 
@@ -1019,12 +1318,12 @@ namespace Combat
             return rect;
         }
 
-        private void SmallButton(RectTransform parent, string text, Vector2 anchor, Action onClick)
+        private void SmallButton(RectTransform parent, string text, Vector2 anchor, Action onClick, float size = 70.0f)
         {
             Image background = Panel("Arrow_" + text, parent, anchor, anchor, new Color(1, 1, 1, 0.08f));
             RectTransform rect = background.rectTransform;
             rect.pivot = new Vector2(0.0f, 0.0f);
-            rect.sizeDelta = new Vector2(70.0f, 70.0f);
+            rect.sizeDelta = new Vector2(size, size);
             var button = background.gameObject.AddComponent<Button>();
             button.onClick.AddListener(() =>
             {

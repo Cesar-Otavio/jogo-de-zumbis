@@ -94,6 +94,8 @@ namespace Combat
         private readonly List<Transform> _buildings = new List<Transform>();
         private GameObject _silhouette;
         private float _silhouetteUntil;
+        // the figure is made once and reused: cloning and stripping an enemy took ~20 ms in the middle of play
+        private GameObject _figure;
         private Light _spotlight;
         private float _spotlightStart;
 
@@ -112,9 +114,23 @@ namespace Combat
                 if (name.Contains("container")) _containers.Add(col.transform);
                 else if (name.Contains("hangar") || name.Contains("garage") || name.Contains("toilet") || name.Contains("tower") || name.Contains("shed")) _buildings.Add(col.transform);
             }
+
+            if (SilhouettePrefab != null)
+            {
+                _figure = BuildFigure(Vector3.down * 100.0f, Quaternion.identity);
+                _figure.SetActive(false);
+            }
         }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.EnvironmentalEventDirector.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             UpdateSilhouette();
             UpdateSpotlight();
@@ -349,7 +365,10 @@ namespace Combat
                 if (Physics.Linecast(_camera.transform.position, hit.position + Vector3.up * 1.4f, CombatLayers.Sight & ~(1 << CombatLayers.Player), QueryTriggerInteraction.Ignore)) continue;
 
                 where = hit.position;
-                _silhouette = BuildFigure(hit.position, Quaternion.LookRotation(Vector3.ProjectOnPlane(_player.position - hit.position, Vector3.up)));
+                if (_figure == null) return false;
+                _figure.transform.SetPositionAndRotation(hit.position, Quaternion.LookRotation(Vector3.ProjectOnPlane(_player.position - hit.position, Vector3.up)));
+                _figure.SetActive(true);
+                _silhouette = _figure;
                 _silhouetteUntil = Time.time + Random.Range(2.0f, 3.5f);
                 return _silhouette != null;
             }
@@ -414,7 +433,7 @@ namespace Combat
             bool close = _player != null && Vector3.Distance(_player.position, _silhouette.transform.position) < 14.0f;
             if (Time.time >= _silhouetteUntil || lookedAt || close)
             {
-                Destroy(_silhouette);
+                _silhouette.SetActive(false);
                 _silhouette = null;
             }
         }

@@ -138,12 +138,15 @@ namespace StarterAssets
         [Tooltip("Scales the sprint speed, e.g. lowered when badly hurt")]
         public float SprintLimit = 1.0f;
 
+        // extra offset of the camera target, e.g. leaning around a corner (local to the camera target's parent)
+        [System.NonSerialized] public Vector3 CameraTargetOffset;
         public bool IsCrouching { get; private set; }
         public float CrouchBlend { get; private set; }
 
         public float Stamina { get; private set; }
         public bool Exhausted { get; private set; }
         public bool IsRolling { get; private set; }
+        private Quaternion _rollTurnFrom = Quaternion.identity;
         public bool IsSprinting { get; private set; }
 
         // raised when a roll starts, so the combat code can grant invulnerability
@@ -182,6 +185,21 @@ public bool IsRespawning { get; set; } = false;
         private Quaternion _rollVisualRotation;
         private int _animIDRoll;
         private bool _hasRollParameter;
+        private static readonly int _animIDMoveX = Animator.StringToHash("MoveX");
+        private static readonly int _animIDMoveY = Animator.StringToHash("MoveY");
+        private static readonly int _animIDCrouched = Animator.StringToHash("Crouched");
+        private static readonly int _animIDProne = Animator.StringToHash("Prone");
+        private bool _hasDirectionalParameters;
+        private bool _hasCrouchAnimation;
+        private bool _hasProneAnimation;
+        // prone only exists when its animations do (see Docs/FASE3_ANIMACOES.md)
+        public bool ProneAvailable => _hasProneAnimation;
+        public bool IsProne { get; private set; }
+        [Header("Prone (needs the prone clips)")]
+        public float ProneSpeed = 0.7f;
+        public float ProneHeight = 0.55f;
+        public float ProneHoldTime = 0.6f;
+        private float _crouchHeldSince = -1.0f;
 
         // timeout deltatime
         private float _jumpTimeoutDelta;
@@ -282,11 +300,24 @@ public bool IsRespawning { get; set; } = false;
         foreach (AnimatorControllerParameter parameter in _animator.parameters)
         {
             if (parameter.nameHash == _animIDRoll) _hasRollParameter = true;
+            // optional parameters of the 2D locomotion controller (Tools > Combat > Phase 3 > 6):
+            // without them the 1D Speed blend keeps working as before
+            if (parameter.nameHash == _animIDMoveX) _hasDirectionalParameters = true;
+            if (parameter.nameHash == _animIDCrouched) _hasCrouchAnimation = true;
+            if (parameter.nameHash == _animIDProne) _hasProneAnimation = true;
         }
     }
 }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.ThirdPersonController.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             _hasAnimator = TryGetComponent(out _animator);
 
@@ -301,16 +332,20 @@ public bool IsRespawning { get; set; } = false;
                 return;
             }
 
+            UpdateProneInput();
             if (_input.crouch)
             {
                 _input.crouch = false;
-                SetCrouch(!IsCrouching, false);
+                // a press while prone gets up to a crouch (if there's room); otherwise it toggles crouch
+                if (IsProne) SetProne(false);
+                else SetCrouch(!IsCrouching, false);
             }
 
             if (_input.roll)
             {
                 _input.roll = false;
-                TryRoll();
+                // no rolling flat on the ground
+                if (!IsProne) TryRoll();
             }
 
             if (IsRolling)
@@ -321,6 +356,9 @@ public bool IsRespawning { get; set; } = false;
                 return;
             }
 
+            // no jumping from flat on the ground
+            if (IsProne) _input.jump = false;
+
             // jumping or sprinting gets out of a crouch, if there is room above
             if (IsCrouching && (_input.jump || (_input.sprint && _input.move != Vector2.zero)))
             {
@@ -328,13 +366,59 @@ public bool IsRespawning { get; set; } = false;
                 SetCrouch(false, false);
             }
 
-            UpdateCrouchShape();
-            JumpAndGravity();
-            GroundedCheck();
-            Move();
+            using (ShapeMarker.Auto()) UpdateCrouchShape();
+            using (JumpMarker.Auto()) JumpAndGravity();
+            using (GroundMarker.Auto()) GroundedCheck();
+            using (MoveMarker.Auto()) Move();
         }
 
+        // and its parts, to find what a hitch inside it was
+        private static readonly Unity.Profiling.ProfilerMarker ShapeMarker = new Unity.Profiling.ProfilerMarker("Combat.ThirdPersonController.Shape");
+        private static readonly Unity.Profiling.ProfilerMarker JumpMarker = new Unity.Profiling.ProfilerMarker("Combat.ThirdPersonController.Jump");
+        private static readonly Unity.Profiling.ProfilerMarker GroundMarker = new Unity.Profiling.ProfilerMarker("Combat.ThirdPersonController.Ground");
+        private static readonly Unity.Profiling.ProfilerMarker MoveMarker = new Unity.Profiling.ProfilerMarker("Combat.ThirdPersonController.Move");
+
         // ---------------------------------------------------------------- crouch
+
+        // holding crouch for a moment goes prone, only when the prone animations exist
+        private void UpdateProneInput()
+        {
+            if (!_hasProneAnimation) return;
+            if (_input.proneHeld)
+            {
+                if (_crouchHeldSince < 0.0f) _crouchHeldSince = Time.time;
+                if (!IsProne && Time.time - _crouchHeldSince >= ProneHoldTime && Grounded && !IsRolling) SetProne(true);
+            }
+            else
+            {
+                _crouchHeldSince = -1.0f;
+            }
+        }
+
+        public void SetProne(bool prone)
+        {
+            if (prone == IsProne) return;
+            if (prone)
+            {
+                IsProne = true;
+                IsCrouching = true;
+                return;
+            }
+
+            // getting up from the ground needs crouch room
+            if (!HasRoomFor(CrouchHeight)) return;
+            IsProne = false;
+        }
+
+        private bool HasRoomFor(float height)
+        {
+            float radius = _controller.radius * 0.9f;
+            Vector3 bottom = transform.position + Vector3.up * (_controller.height + radius * 0.2f);
+            Vector3 top = transform.position + Vector3.up * (height - radius);
+            if (top.y <= bottom.y) return true;
+            int mask = GroundLayers & ~(1 << gameObject.layer);
+            return !Physics.CheckCapsule(bottom, top, radius, mask, QueryTriggerInteraction.Ignore);
+        }
 
         // force: stand up even without room (climbing, respawn)
         public void SetCrouch(bool crouch, bool force)
@@ -360,20 +444,20 @@ public bool IsRespawning { get; set; } = false;
             float blend = Mathf.SmoothStep(0.0f, 1.0f, CrouchBlend);
 
             // the capsule shrinks from the top, the feet stay on the ground
-            float height = Mathf.Lerp(_standHeight, CrouchHeight, blend);
+            float height = Mathf.Lerp(_standHeight, IsProne ? ProneHeight : CrouchHeight, blend);
             _controller.height = height;
             _controller.center = new Vector3(_standCenter.x, _standCenter.y - (_standHeight - height) * 0.5f, _standCenter.z);
 
             if (_cameraTargetLocalSet)
             {
-                CinemachineCameraTarget.transform.localPosition = _cameraTargetLocal + Vector3.down * (CrouchCameraDrop * blend);
+                CinemachineCameraTarget.transform.localPosition = _cameraTargetLocal + Vector3.down * (CrouchCameraDrop * blend) + CameraTargetOffset;
             }
         }
 
         // lowers the hips while the feet stay where the animation put them, bending the knees
         private void OnAnimatorIK(int layerIndex)
         {
-            if (!_hasAnimator || CrouchBlend <= 0.001f || IsRolling) return;
+            if (!_hasAnimator || CrouchBlend <= 0.001f || IsRolling || _hasCrouchAnimation || IsProne) return;
             if (_climbing != null && _climbing.IsClimbing) return;
 
             float blend = Mathf.SmoothStep(0.0f, 1.0f, CrouchBlend);
@@ -449,8 +533,9 @@ public bool IsRespawning { get; set; } = false;
                 _rollDirection = transform.forward;
             }
 
-            transform.rotation = Quaternion.LookRotation(_rollDirection);
-            _targetRotation = transform.eulerAngles.y;
+            // the body swings round to the roll direction over the first moments instead of snapping
+            _rollTurnFrom = transform.rotation;
+            _targetRotation = Quaternion.LookRotation(_rollDirection).eulerAngles.y;
             if (IsCrouching) SetCrouch(false, true);
             IsRolling = true;
             _rollTime = 0.0f;
@@ -471,6 +556,7 @@ public bool IsRespawning { get; set; } = false;
             float travelled = RollEase(progress) - RollEase(previous);
             _verticalVelocity = Grounded ? -2.0f : _verticalVelocity + Gravity * Time.deltaTime;
             _controller.Move(_rollDirection * (travelled * RollDistance) + Vector3.up * (_verticalVelocity * Time.deltaTime));
+            transform.rotation = Quaternion.Slerp(_rollTurnFrom, Quaternion.LookRotation(_rollDirection), Mathf.SmoothStep(0.0f, 1.0f, Mathf.Clamp01(_rollTime / 0.12f)));
 
             // spin the model a full turn around its middle
             if (RollVisual != null)
@@ -515,7 +601,15 @@ public bool IsRespawning { get; set; } = false;
             }
         }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker LateUpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.ThirdPersonController.LateUpdate");
+
         private void LateUpdate()
+        {
+            using (LateUpdateMarker.Auto()) LateUpdateMarked();
+        }
+
+        private void LateUpdateMarked()
         {
             CameraRotation();
         }
@@ -591,10 +685,11 @@ public bool IsRespawning { get; set; } = false;
         private void Move()
         {
             // set target speed based on move speed, sprint speed and if sprint is pressed; sprinting spends stamina
-            bool sprinting = _input.sprint && !BlockSprint && !Exhausted && !IsCrouching && _input.move != Vector2.zero && Grounded;
+            bool sprinting = _input.sprint && !BlockSprint && !Exhausted && !IsCrouching && !IsProne && _input.move != Vector2.zero && Grounded;
             UpdateStamina(sprinting);
             float targetSpeed = (sprinting ? SprintSpeed * SprintLimit : MoveSpeed) * SpeedMultiplier;
             if (IsCrouching) targetSpeed = Mathf.Min(targetSpeed, CrouchSpeed * SpeedMultiplier);
+            if (IsProne) targetSpeed = Mathf.Min(targetSpeed, ProneSpeed * SpeedMultiplier);
 
             // a simplistic acceleration and deceleration designed to be easy to remove, replace, or iterate upon
 
@@ -673,6 +768,16 @@ public bool IsRespawning { get; set; } = false;
             if (_hasAnimator)
             {
                 _animator.SetFloat(_animIDSpeed, _animationBlend);
+                if (_hasDirectionalParameters)
+                {
+                    // the movement in the character's own frame, for the 2D blend tree (strafe, backwards, diagonals)
+                    Vector3 local = transform.InverseTransformDirection(targetDirection.normalized * _animationBlend);
+                    _animator.SetFloat(_animIDMoveX, local.x, 0.08f, Time.deltaTime);
+                    _animator.SetFloat(_animIDMoveY, local.z, 0.08f, Time.deltaTime);
+                }
+
+                if (_hasCrouchAnimation) _animator.SetBool(_animIDCrouched, IsCrouching);
+                if (_hasProneAnimation) _animator.SetBool(_animIDProne, IsProne);
                 // the run clip is authored for 5.3 m/s: play it faster at higher sprint speeds so the feet keep up
                 float playback = Mathf.Max(1.0f, _animationBlend / 5.335f);
                 _animator.SetFloat(_animIDMotionSpeed, inputMagnitude * playback);

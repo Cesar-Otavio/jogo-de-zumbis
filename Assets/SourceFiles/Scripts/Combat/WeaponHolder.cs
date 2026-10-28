@@ -38,7 +38,7 @@ namespace Combat
      */
     [DefaultExecutionOrder(40)]
     [RequireComponent(typeof(Animator))]
-    public class WeaponHolder : MonoBehaviour
+    public partial class WeaponHolder : MonoBehaviour
     {
         [Header("Pose")]
         public float ShoulderHeight = 1.36f;
@@ -68,6 +68,9 @@ namespace Combat
 
         // set by the owner every frame
         [NonSerialized] public Vector3 AimPoint;
+        // the last shot, for drawing it on other machines in co-op
+        [NonSerialized] public Vector3 LastShotFrom;
+        [NonSerialized] public Vector3 LastShotTo;
         [NonSerialized] public bool Aiming;
         [NonSerialized] public bool Sprinting;
         [NonSerialized] public bool Lowered;
@@ -161,6 +164,7 @@ namespace Combat
 
         public void Equip(WeaponInstance weapon)
         {
+            FinishGear();
             DestroyVisual(ref _visual);
             Current = weapon;
             IsReloading = false;
@@ -174,22 +178,7 @@ namespace Combat
                 return;
             }
 
-            _visual = BuildVisual(weapon.Data, "Weapon_" + weapon.Data.DisplayName);
-            _visualHidden = false;
-            _magazine = FindDeep(_visual, weapon.Data.MagazinePart);
-            _cyclingPart = FindDeep(_visual, weapon.Data.CyclingPart);
-            if (_magazine != null)
-            {
-                _magazineRestPosition = _magazine.localPosition;
-                _magazineRestRotation = _magazine.localRotation;
-                _magazineCenter = PartCenter(_magazine);
-            }
-
-            if (_cyclingPart != null)
-            {
-                _cyclingRestPosition = _cyclingPart.localPosition;
-                _cyclingCenter = PartCenter(_cyclingPart);
-            }
+            AdoptVisual(BuildVisual(weapon.Data, "Weapon_" + weapon.Data.DisplayName));
 
             // the weapon comes up from the low ready position
             _equipBlend = 0.0f;
@@ -201,8 +190,31 @@ namespace Combat
             }
         }
 
+        // the visual of the weapon in the hands: finds its moving parts
+        private void AdoptVisual(Transform visual)
+        {
+            _visual = visual;
+            _visualHidden = false;
+            _magazine = FindDeep(_visual, Current.Data.MagazinePart);
+            _cyclingPart = FindDeep(_visual, Current.Data.CyclingPart);
+            if (_magazine != null)
+            {
+                _magazine.gameObject.SetActive(true);
+                _magazineRestPosition = _magazine.localPosition;
+                _magazineRestRotation = _magazine.localRotation;
+                _magazineCenter = PartCenter(_magazine);
+            }
+
+            if (_cyclingPart != null)
+            {
+                _cyclingRestPosition = _cyclingPart.localPosition;
+                _cyclingCenter = PartCenter(_cyclingPart);
+            }
+        }
+
         public WeaponInstance Unequip()
         {
+            FinishGear();
             WeaponInstance weapon = Current;
             DestroyVisual(ref _visual);
             Current = null;
@@ -216,6 +228,7 @@ namespace Combat
             if (_backData == data) return;
             DestroyVisual(ref _backVisual);
             _backData = data;
+            _backSide = 0;
             if (data != null) _backVisual = BuildVisual(data, "BackWeapon_" + data.DisplayName);
         }
 
@@ -290,26 +303,51 @@ namespace Combat
 
         // ---------------------------------------------------------------- update
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.WeaponHolder.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        // and its parts, to find what a hitch inside it was
+        private static readonly Unity.Profiling.ProfilerMarker BlendMarker = new Unity.Profiling.ProfilerMarker("Combat.WeaponHolder.Blend");
+        private static readonly Unity.Profiling.ProfilerMarker GearMarker = new Unity.Profiling.ProfilerMarker("Combat.WeaponHolder.Gear");
+        private static readonly Unity.Profiling.ProfilerMarker FiringMarker = new Unity.Profiling.ProfilerMarker("Combat.WeaponHolder.Firing");
+        private static readonly Unity.Profiling.ProfilerMarker ReloadMarker = new Unity.Profiling.ProfilerMarker("Combat.WeaponHolder.Reload");
+        private static readonly Unity.Profiling.ProfilerMarker PoseMarker = new Unity.Profiling.ProfilerMarker("Combat.WeaponHolder.Pose");
+        private static readonly Unity.Profiling.ProfilerMarker BackMarker = new Unity.Profiling.ProfilerMarker("Combat.WeaponHolder.Back");
+
+        private void UpdateMarked()
         {
             float dt = Time.deltaTime;
             if (dt <= 0.0f) return;
 
-            UpdateBlends(dt);
-            UpdateSprings(dt);
+            using (BlendMarker.Auto())
+            {
+                UpdateBlends(dt);
+                UpdateSprings(dt);
+            }
+
+            using (GearMarker.Auto()) UpdateGear(dt);
 
             if (Current == null)
             {
                 _ikWeight = Mathf.MoveTowards(_ikWeight, 0.0f, dt * 6.0f);
-                PoseBackWeapon();
+                using (BackMarker.Auto()) PoseBackWeapon();
                 return;
             }
 
-            UpdateFiring(dt);
-            if (IsReloading) UpdateReload(dt);
-            UpdateManualCycle();
-            PoseWeapon(dt);
-            PoseBackWeapon();
+            using (FiringMarker.Auto()) UpdateFiring(dt);
+            using (ReloadMarker.Auto())
+            {
+                if (IsReloading) UpdateReload(dt);
+                UpdateManualCycle();
+            }
+
+            using (PoseMarker.Auto()) PoseWeapon(dt);
+            using (BackMarker.Auto()) PoseBackWeapon();
         }
 
         private void UpdateBlends(float dt)
@@ -450,6 +488,7 @@ namespace Combat
                 weaponRotation = Quaternion.Slerp(weaponRotation, backRotation, h);
             }
 
+            ApplyGearMotion(ref weaponPosition, ref weaponRotation, dt);
             _visual.SetPositionAndRotation(weaponPosition, weaponRotation);
             if (_visualHidden != HideVisual)
             {
@@ -547,21 +586,16 @@ namespace Combat
             return Vector3.Lerp(well, support, Mathf.SmoothStep(0, 1, (t - 0.65f) / 0.35f));
         }
 
+        // the gun's place on the body (see WeaponHolder.Gear): holster, back or chest by weapon class
         private void BackPose(WeaponData data, int slot, out Vector3 position, out Quaternion rotation)
         {
-            Quaternion yaw = Quaternion.Euler(0.0f, transform.eulerAngles.y, 0.0f);
-            // slung diagonally across the back, barrel up over the shoulder
-            Vector3 barrel = new Vector3(slot == 0 ? -0.55f : 0.55f, 0.85f, 0.0f);
-            rotation = yaw * Quaternion.LookRotation(-barrel, Vector3.back);
-            Vector3 center = (data.GripPoint + data.MuzzlePoint) * 0.5f;
-            Vector3 anchor = transform.position + yaw * new Vector3(0.0f, 1.12f, -0.2f - slot * 0.05f);
-            position = anchor - rotation * center;
+            CarryPose(data, slot, out position, out rotation);
         }
 
         private void PoseBackWeapon()
         {
             if (_backVisual == null) return;
-            BackPose(_backData, 1, out Vector3 position, out Quaternion rotation);
+            CarryPose(_backData, _backSide, out Vector3 position, out Quaternion rotation);
             _backVisual.SetPositionAndRotation(position, rotation);
         }
 
@@ -579,7 +613,7 @@ namespace Combat
             float baseSpread = Mathf.Lerp(data.HipSpread, data.AimSpread, AimBlend) + data.MoveSpread * MoveSpeed01;
             CurrentSpread = baseSpread + _bloom;
 
-            if (Holstered) return;
+            if (Holstered || Busy) return;
 
             if (IsReloading)
             {
@@ -607,6 +641,16 @@ namespace Combat
             }
         }
 
+        // a shot's parts, for the performance probe
+        private static readonly Unity.Profiling.ProfilerMarker RayMarker = new Unity.Profiling.ProfilerMarker("Combat.WeaponHolder.Shot.Ray");
+        private static readonly Unity.Profiling.ProfilerMarker CastMarker = new Unity.Profiling.ProfilerMarker("Combat.WeaponHolder.Shot.Cast");
+        private static readonly Unity.Profiling.ProfilerMarker ImpactMarker = new Unity.Profiling.ProfilerMarker("Combat.WeaponHolder.Shot.Impact");
+        private static readonly Unity.Profiling.ProfilerMarker DamageMarker = new Unity.Profiling.ProfilerMarker("Combat.WeaponHolder.Shot.Damage");
+        private static readonly Unity.Profiling.ProfilerMarker HitMarker = new Unity.Profiling.ProfilerMarker("Combat.WeaponHolder.Shot.HitEvent");
+        private static readonly Unity.Profiling.ProfilerMarker ShotFxMarker = new Unity.Profiling.ProfilerMarker("Combat.WeaponHolder.Shot.Effects");
+        private static readonly Unity.Profiling.ProfilerMarker FiredMarker = new Unity.Profiling.ProfilerMarker("Combat.WeaponHolder.Shot.FiredEvent");
+        private static readonly Unity.Profiling.ProfilerMarker GunshotMarker = new Unity.Profiling.ProfilerMarker("Combat.WeaponHolder.Shot.Gunshot");
+
         private void Shoot()
         {
             WeaponData data = Current.Data;
@@ -626,9 +670,12 @@ namespace Combat
 
             Vector3 toTarget = AimPoint - origin;
             Vector3 direction = toTarget.sqrMagnitude > 1.0f ? toTarget.normalized : barrel;
-            for (int i = 0; i < Mathf.Max(1, data.Pellets); i++)
+            using (RayMarker.Auto())
             {
-                FireRay(origin, muzzle, RandomInCone(direction, CurrentSpread));
+                for (int i = 0; i < Mathf.Max(1, data.Pellets); i++)
+                {
+                    FireRay(origin, muzzle, RandomInCone(direction, CurrentSpread));
+                }
             }
 
             _bloom = Mathf.Min(data.MaxBloom, _bloom + data.SpreadPerShot);
@@ -640,6 +687,7 @@ namespace Combat
                 UnityEngine.Random.Range(-1.0f, 1.0f) * data.KickYaw * 25.0f,
                 UnityEngine.Random.Range(-1.0f, 1.0f) * data.KickYaw * 15.0f) * kick;
 
+            ShotFxMarker.Begin();
             CombatEffects fx = CombatEffects.Instance;
             if (fx != null)
             {
@@ -652,6 +700,8 @@ namespace Combat
                 }
             }
 
+            ShotFxMarker.End();
+
             if (data.ManualCycle)
             {
                 // the pump / bolt is worked a moment after the shot
@@ -663,8 +713,10 @@ namespace Combat
                 EjectShell();
             }
 
-            Fired?.Invoke(Current);
-            CombatEvents.ReportGunshot(muzzle, _health != null ? _health.Team : 0, data.Suppressed, gameObject);
+            LastShotFrom = muzzle;
+            LastShotTo = origin + direction * Mathf.Min(data.Range, toTarget.magnitude > 1.0f ? toTarget.magnitude : data.Range);
+            using (FiredMarker.Auto()) Fired?.Invoke(Current);
+            using (GunshotMarker.Auto()) CombatEvents.ReportGunshot(muzzle, _health != null ? _health.Team : 0, data.Suppressed, gameObject);
         }
 
         private void StartManualCycle(float delay, bool ejectShell)
@@ -719,7 +771,8 @@ namespace Combat
         private void FireRay(Vector3 origin, Vector3 muzzle, Vector3 direction)
         {
             WeaponData data = Current.Data;
-            int count = Physics.RaycastNonAlloc(origin, direction, HitBuffer, data.Range, ShotMask(), QueryTriggerInteraction.Ignore);
+            int count;
+            using (CastMarker.Auto()) count = Physics.RaycastNonAlloc(origin, direction, HitBuffer, data.Range, ShotMask(), QueryTriggerInteraction.Ignore);
 
             // nearest hit that isn't part of the shooter
             int best = -1;
@@ -740,6 +793,7 @@ namespace Combat
 
                 if (hitbox != null && hitbox.Owner != null)
                 {
+                    DamageMarker.Begin();
                     bool wasDead = hitbox.Owner.IsDead;
                     float multiplier = IsPlayer || hitbox.Owner.Team == Factions.Player ? DamageMultiplier : DamageMultiplierVsAI;
                     float damage = data.Damage * hitbox.Multiplier * multiplier;
@@ -754,9 +808,10 @@ namespace Combat
                         Headshot = hitbox.IsHead
                     });
 
+                    DamageMarker.End();
                     if (!wasDead)
                     {
-                        Hit?.Invoke(new HitReport { Target = hitbox.Owner, Damage = damage, Headshot = hitbox.IsHead, Killed = hitbox.Owner.IsDead });
+                        using (HitMarker.Auto()) Hit?.Invoke(new HitReport { Target = hitbox.Owner, Damage = damage, Headshot = hitbox.IsHead, Killed = hitbox.Owner.IsDead });
                     }
 
                     if (hitbox.Body != null && !hitbox.Body.isKinematic)
@@ -766,8 +821,11 @@ namespace Combat
 
                     if (fx != null)
                     {
-                        if (hitbox.Flesh) fx.FleshImpact(hit.point, hit.normal, direction);
-                        else fx.Impact(hit.point, hit.normal, true, hit.collider.transform);
+                        using (ImpactMarker.Auto())
+                        {
+                            if (hitbox.Flesh) fx.FleshImpact(hit.point, hit.normal, direction);
+                            else fx.Impact(hit.point, hit.normal, true, hit.collider.transform);
+                        }
                     }
                 }
                 else
@@ -777,7 +835,10 @@ namespace Combat
                         hit.rigidbody.AddForceAtPosition(direction * data.HitForce, hit.point, ForceMode.Impulse);
                     }
 
-                    if (fx != null) fx.Impact(hit.point, hit.normal, false, hit.collider.transform);
+                    if (fx != null)
+                    {
+                        using (ImpactMarker.Auto()) fx.Impact(hit.point, hit.normal, hit.collider);
+                    }
                 }
             }
 
@@ -949,8 +1010,9 @@ namespace Combat
 
             Vector3 leftRotation = data.Hold == HoldStyle.Pistol ? PistolLeftHandRotation : LeftHandRotation;
             float leftRotationWeight = IsReloading ? 0.3f : 0.8f;
-            _animator.SetIKPositionWeight(AvatarIKGoal.LeftHand, weight);
-            _animator.SetIKRotationWeight(AvatarIKGoal.LeftHand, weight * leftRotationWeight);
+            _animator.SetIKPositionWeight(AvatarIKGoal.LeftHand, weight * _supportHandWeight);
+            _animator.SetIKRotationWeight(AvatarIKGoal.LeftHand, weight * leftRotationWeight * _supportHandWeight);
+            if (Busy) GearBodyIK();
             _animator.SetIKPosition(AvatarIKGoal.LeftHand, _leftHandTarget);
             _animator.SetIKRotation(AvatarIKGoal.LeftHand, _handFrame * Quaternion.Euler(leftRotation));
 

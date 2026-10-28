@@ -111,6 +111,7 @@ GameObject:
   - component: {fileID: 8604203315407296445}
   - component: {fileID: 964320061122912139}
   - component: {fileID: 5767873801600288670}
+  - component: {fileID: 561120203991449244}
   m_Layer: 9
   m_Name: Zombie
   m_TagString: Untagged
@@ -246,6 +247,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d9d2b46d370c6e8449ec16bb9d7ca1e2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Combat.RagdollController
+  SettleTime: 3.5
 --- !u!114 &964320061122912139
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -300,6 +302,24 @@ MonoBehaviour:
   WalkNoise: 7
   RunNoise: 16
   LandNoise: 11
+--- !u!114 &561120203991449244
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 554154450848281866}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8af37368d8f249445aa19fa7b77eb55b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Combat.HitReactor
+  DegreesPerDamage: 0.9
+  MaxBend: 22
+  StaggerDamage: 45
+  StaggerBend: 32
+  Stiffness: 120
+  Damping: 11
 --- !u!1 &799996368828864802
 GameObject:
   m_ObjectHideFlags: 0

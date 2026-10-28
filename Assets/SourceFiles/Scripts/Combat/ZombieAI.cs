@@ -57,6 +57,9 @@ namespace Combat
         [System.NonSerialized] public float HoldUntil;
 
         public ZombieVariant AppliedVariant { get; private set; }
+        // co-op: what a copy on another machine needs to look the same (attacks started, the animator's speed)
+        public int AttackCount { get; private set; }
+        public float AnimationSpeed => _animator != null ? _animator.GetFloat(_animIDSpeed) : 0.0f;
         public ZombieKind Kind => AppliedVariant != null ? AppliedVariant.Kind : ZombieKind.Common;
         public bool IsDead => _dead;
         public bool IsStaggered => Time.time < _staggerUntil;
@@ -191,7 +194,23 @@ namespace Combat
 
         // ---------------------------------------------------------------- update
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.ZombieAI.Update");
+        // and its parts, to find what a hitch inside it was
+        private static readonly Unity.Profiling.ProfilerMarker GroanMarker = new Unity.Profiling.ProfilerMarker("Combat.ZombieAI.Groan");
+        private static readonly Unity.Profiling.ProfilerMarker MoveMarker = new Unity.Profiling.ProfilerMarker("Combat.ZombieAI.Move");
+        private static readonly Unity.Profiling.ProfilerMarker DoorMarker = new Unity.Profiling.ProfilerMarker("Combat.ZombieAI.Door");
+        private static readonly Unity.Profiling.ProfilerMarker SwingMarker = new Unity.Profiling.ProfilerMarker("Combat.ZombieAI.Swing");
+        private static readonly Unity.Profiling.ProfilerMarker SwingAnimMarker = new Unity.Profiling.ProfilerMarker("Combat.ZombieAI.SwingAnim");
+        private static readonly Unity.Profiling.ProfilerMarker BlowMarker = new Unity.Profiling.ProfilerMarker("Combat.ZombieAI.Blow");
+        private static readonly Unity.Profiling.ProfilerMarker AnimatorMarker = new Unity.Profiling.ProfilerMarker("Combat.ZombieAI.Animator");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             if (_dead)
             {
@@ -206,7 +225,7 @@ namespace Combat
                 return;
             }
 
-            UpdateGroans();
+            using (GroanMarker.Auto()) UpdateGroans();
 
             bool attacking = IsAttacking;
             bool staggered = IsStaggered;
@@ -224,6 +243,7 @@ namespace Combat
                 return;
             }
 
+            MoveMarker.Begin();
             switch (_perception.State)
             {
                 case AwarenessState.Chase:
@@ -247,9 +267,11 @@ namespace Combat
                     break;
             }
 
+            MoveMarker.End();
+
             if (!attacking) _perception.SetAttacking(false);
-            UpdateAttack();
-            UpdateAnimator();
+            using (BlowMarker.Auto()) UpdateAttack();
+            using (AnimatorMarker.Auto()) UpdateAnimator();
         }
 
         private void UpdateGroans()
@@ -295,7 +317,9 @@ namespace Combat
                 return;
             }
 
-            if (BatterDoor(targetPosition)) return;
+            bool door;
+            using (DoorMarker.Auto()) door = BatterDoor(targetPosition);
+            if (door) return;
 
             _agent.isStopped = false;
             _agent.speed = ChaseSpeed;
@@ -456,6 +480,12 @@ namespace Combat
 
         private void StartAttack(Health target, IBreakable door)
         {
+            using (SwingMarker.Auto()) StartAttackMarked(target, door);
+        }
+
+        private void StartAttackMarked(Health target, IBreakable door)
+        {
+            AttackCount++;
             _attackStarted = Time.time;
             _attackLanded = false;
             _attackTarget = target;
@@ -465,9 +495,12 @@ namespace Combat
             // slow, heavy blows play the swing slower: the long wind-up is the warning
             if (_animator != null)
             {
-                _animator.speed = Mathf.Clamp(0.6f / Mathf.Max(AttackHitTime, 0.1f), 0.45f, 1.2f);
-                _slowSwing = true;
-                _animator.SetTrigger(_animIDAttack);
+                using (SwingAnimMarker.Auto())
+                {
+                    _animator.speed = Mathf.Clamp(0.6f / Mathf.Max(AttackHitTime, 0.1f), 0.45f, 1.2f);
+                    _slowSwing = true;
+                    _animator.SetTrigger(_animIDAttack);
+                }
             }
 
             CombatEffects fx = CombatEffects.Instance;

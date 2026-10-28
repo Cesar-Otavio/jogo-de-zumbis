@@ -29,6 +29,7 @@ namespace Combat
         public float BaseIntensity => _baseIntensity;
         public bool IsOn => _light != null && _light.enabled && _light.intensity > _baseIntensity * 0.2f;
         public float Range => _light != null ? _light.range : 0.0f;
+        public Light Light => _light;
 
         private Light _light;
         private float _baseIntensity;
@@ -76,7 +77,15 @@ namespace Combat
             _forcedFlickerUntil = Time.time + duration;
         }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.LightFlicker.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             if (Dead) return;
 

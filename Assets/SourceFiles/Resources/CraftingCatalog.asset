@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22aebec11eae0f846b657ca0521f945c, type: 3}
+  m_Name: CraftingCatalog
+  m_EditorClassIdentifier: Assembly-CSharp::Combat.CraftingCatalog
+  Recipes:
+  - {fileID: 11400000, guid: a6767e0ce497d8d46b59ad7bd5550f34, type: 2}
+  - {fileID: 11400000, guid: 471776d50cc97be4895ef2ce410c48b5, type: 2}
+  - {fileID: 11400000, guid: 5d729bd676e6faf42abd8d434881e2c0, type: 2}
+  - {fileID: 11400000, guid: 6c196c325bba95e4a857ed523d7efe1e, type: 2}
+  - {fileID: 11400000, guid: 4c6f1ad6c9bb8b14e8597df14cf7a766, type: 2}
+  - {fileID: 11400000, guid: 1c3f623b35ea1a24bb8a7475bb9a5549, type: 2}

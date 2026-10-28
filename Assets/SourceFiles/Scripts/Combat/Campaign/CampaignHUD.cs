@@ -25,6 +25,7 @@ namespace Combat
         private EnemySpawner _spawner;
 
         private TextMeshProUGUI _tracker;
+        private Image _trackerCard;
         private RectTransform _marker;
         private TextMeshProUGUI _markerText;
         private TextMeshProUGUI _credits;
@@ -32,6 +33,8 @@ namespace Combat
         private float _creditsPopupTime = -10.0f;
         private readonly Image[] _slots = new Image[6];
         private readonly TextMeshProUGUI[] _slotTexts = new TextMeshProUGUI[6];
+        private readonly Image[] _slotIcons = new Image[6];
+        private readonly TextMeshProUGUI[] _slotKeys = new TextMeshProUGUI[6];
         private TextMeshProUGUI _intermission;
         private GameObject _bossBar;
         private Image _bossFill;
@@ -44,6 +47,8 @@ namespace Combat
         private float _radioStarted = -100.0f;
         private GameObject _reader;
         private TextMeshProUGUI _readerTitle;
+        private Image _readerIcon;
+        private TextMeshProUGUI _readerItem;
         private TextMeshProUGUI _readerBody;
         private float _timeScaleBeforeReader = 1.0f;
         private GameObject _choice;
@@ -83,6 +88,12 @@ namespace Combat
             _root = UiKit.Canvas("CampaignHUD", transform, 60);
             _canvas = _root.gameObject;
 
+            // the tracker sits on a card that grows with its text
+            _trackerCard = UiKit.Panel("TrackerCard", _root, new Vector2(0.0f, 1.0f), new Vector2(0.0f, 1.0f), new Color(0.055f, 0.06f, 0.07f, 0.55f));
+            _trackerCard.rectTransform.pivot = new Vector2(0.0f, 1.0f);
+            Image edge = UiKit.Panel("Edge", _trackerCard.rectTransform, Vector2.zero, new Vector2(0.0f, 1.0f), new Color(1.0f, 0.78f, 0.3f, 0.7f));
+            edge.rectTransform.pivot = new Vector2(0.0f, 0.5f);
+            edge.rectTransform.sizeDelta = new Vector2(3.0f, 0.0f);
             _tracker = UiKit.Text(_root, "", 22, new Vector2(0.02f, 0.5f), new Vector2(0.4f, 0.9f), TextAlignmentOptions.TopLeft, Color.white);
             _tracker.textWrappingMode = TextWrappingModes.Normal;
 
@@ -97,13 +108,24 @@ namespace Combat
             _credits = UiKit.Text(_root, "", 26, new Vector2(0.7f, 0.86f), new Vector2(0.969f, 0.9f), TextAlignmentOptions.Right, UiKit.Accent);
             _creditsPopup = UiKit.Text(_root, "", 22, new Vector2(0.7f, 0.82f), new Vector2(0.969f, 0.86f), TextAlignmentOptions.Right, UiKit.Accent);
 
-            // quick bar, above the health bar
+            // quick bar, above the health bar: icon, key and count per slot
             for (int i = 0; i < 6; i++)
             {
-                Image slot = UiKit.Box("Slot", _root, new Vector2(0.0f, 0.0f), new Vector2(92.0f + i * 66.0f, 215.0f), new Vector2(60.0f, 46.0f), new Color(0, 0, 0, 0.45f));
+                Image slot = UiKit.Box("Slot", _root, new Vector2(0.0f, 0.0f), new Vector2(92.0f + i * 66.0f, 215.0f), new Vector2(60.0f, 60.0f), new Color(0, 0, 0, 0.45f));
                 _slots[i] = slot;
-                _slotTexts[i] = UiKit.Text(slot.rectTransform, "", 15, Vector2.zero, Vector2.one, TextAlignmentOptions.Center, Color.white, true);
+                var icon = new GameObject("Icon", typeof(RectTransform), typeof(Image)).GetComponent<Image>();
+                icon.rectTransform.SetParent(slot.rectTransform, false);
+                icon.rectTransform.anchorMin = icon.rectTransform.anchorMax = new Vector2(0.5f, 0.56f);
+                icon.rectTransform.sizeDelta = new Vector2(38.0f, 38.0f);
+                icon.preserveAspect = true;
+                icon.raycastTarget = false;
+                icon.sprite = ItemCatalog.IconOf((QuickItem)i);
+                _slotIcons[i] = icon;
+                _slotKeys[i] = UiKit.Text(slot.rectTransform, (i + 1).ToString(), 13, new Vector2(0.06f, 0.62f), new Vector2(0.5f, 0.98f), TextAlignmentOptions.TopLeft, UiKit.Muted, true);
+                _slotTexts[i] = UiKit.Text(slot.rectTransform, "", 16, new Vector2(0.4f, 0.0f), new Vector2(0.94f, 0.36f), TextAlignmentOptions.BottomRight, Color.white, true);
             }
+
+            gameObject.AddComponent<PickupFeedView>().Build(_root);
 
             _intermission = UiKit.Text(_root, "", 24, new Vector2(0.25f, 0.8f), new Vector2(0.75f, 0.85f), TextAlignmentOptions.Center, UiKit.Accent, true);
 
@@ -132,10 +154,21 @@ namespace Combat
 
             // the document reader on its own canvas above everything, the game paused behind it
             RectTransform readerRoot = UiKit.Canvas("Reader", transform, 130);
-            Image reader = UiKit.Panel("Document", readerRoot, new Vector2(0.25f, 0.12f), new Vector2(0.75f, 0.88f), new Color(0.86f, 0.82f, 0.72f, 0.97f));
-            _readerTitle = UiKit.Text(reader.rectTransform, "", 34, new Vector2(0.06f, 0.84f), new Vector2(0.94f, 0.96f), TextAlignmentOptions.TopLeft, new Color(0.15f, 0.1f, 0.05f), true);
+            Image reader = UiKit.Panel("Document", readerRoot, new Vector2(0.25f, 0.12f), new Vector2(0.75f, 0.88f), new Color(0.86f, 0.82f, 0.72f, 1.0f));
+            // the item the document is (or came with), as an ink stamp beside the title
+            _readerIcon = new GameObject("ItemIcon", typeof(RectTransform), typeof(Image)).GetComponent<Image>();
+            _readerIcon.rectTransform.SetParent(reader.rectTransform, false);
+            _readerIcon.rectTransform.anchorMin = new Vector2(0.05f, 0.84f);
+            _readerIcon.rectTransform.anchorMax = new Vector2(0.15f, 0.96f);
+            _readerIcon.rectTransform.offsetMin = _readerIcon.rectTransform.offsetMax = Vector2.zero;
+            _readerIcon.preserveAspect = true;
+            _readerIcon.raycastTarget = false;
+            _readerIcon.color = new Color(0.22f, 0.16f, 0.1f, 0.85f);
+            _readerItem = UiKit.Text(reader.rectTransform, "", 18, new Vector2(0.17f, 0.8f), new Vector2(0.94f, 0.85f), TextAlignmentOptions.TopLeft, new Color(0.35f, 0.27f, 0.18f));
+            _readerItem.outlineWidth = 0.0f;
+            _readerTitle = UiKit.Text(reader.rectTransform, "", 34, new Vector2(0.17f, 0.84f), new Vector2(0.94f, 0.96f), TextAlignmentOptions.TopLeft, new Color(0.15f, 0.1f, 0.05f), true);
             _readerTitle.outlineWidth = 0.0f;
-            _readerBody = UiKit.Text(reader.rectTransform, "", 24, new Vector2(0.06f, 0.1f), new Vector2(0.94f, 0.82f), TextAlignmentOptions.TopLeft, new Color(0.12f, 0.1f, 0.08f));
+            _readerBody = UiKit.Text(reader.rectTransform, "", 24, new Vector2(0.06f, 0.1f), new Vector2(0.94f, 0.78f), TextAlignmentOptions.TopLeft, new Color(0.12f, 0.1f, 0.08f));
             _readerBody.outlineWidth = 0.0f;
             _readerBody.textWrappingMode = TextWrappingModes.Normal;
             TextMeshProUGUI close = UiKit.Text(reader.rectTransform, "[E] ou [Esc] fechar", 20, new Vector2(0.06f, 0.02f), new Vector2(0.94f, 0.08f), TextAlignmentOptions.Right, new Color(0.3f, 0.25f, 0.2f));
@@ -164,6 +197,11 @@ namespace Combat
         private void OnDocument(string id, Story.Entry entry)
         {
             _readerTitle.text = entry.Title;
+            ItemDefinition item = ItemCatalog.FindByStory(id);
+            _readerIcon.sprite = item != null && item.Icon != null ? item.Icon : ItemCatalog.IconOf("lab_doc");
+            _readerIcon.enabled = _readerIcon.sprite != null;
+            string found = $"Documentos encontrados: {Progression.DocumentsFound}/{Story.Documents.Count}";
+            _readerItem.text = item != null ? $"{item.DisplayName.ToUpperInvariant()}  ·  {found}" : found;
             _readerBody.text = $"<i>{entry.Author}</i>\n\n{entry.Text}";
             _reader.SetActive(true);
             ReaderOpen = true;
@@ -191,7 +229,15 @@ namespace Combat
 
         // ---------------------------------------------------------------- update
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateProfilerMarker = new Unity.Profiling.ProfilerMarker("Combat.CampaignHUD.Update");
+
         private void Update()
+        {
+            using (UpdateProfilerMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             if (ReaderOpen && Keyboard.current != null && (Keyboard.current.eKey.wasPressedThisFrame || Keyboard.current.escapeKey.wasPressedThisFrame)) CloseReader();
 
@@ -219,8 +265,16 @@ namespace Combat
             if (missions == null || missions.Active.Count == 0)
             {
                 _tracker.text = "";
+                _trackerCard.enabled = false;
                 return;
             }
+
+            // card under the text, sized to it (one frame behind the text, which is fine)
+            Vector2 size = _tracker.GetRenderedValues(false);
+            RectTransform trackerRect = _tracker.rectTransform;
+            _trackerCard.enabled = size.y > 1.0f;
+            _trackerCard.rectTransform.anchoredPosition = new Vector2(_root.rect.width * 0.02f - 16.0f, -_root.rect.height * 0.1f + 12.0f);
+            _trackerCard.rectTransform.sizeDelta = new Vector2(size.x + 34.0f, size.y + 24.0f);
 
             var text = new StringBuilder();
             foreach (MissionRun run in missions.Active)
@@ -311,9 +365,12 @@ namespace Combat
                 var item = (QuickItem)i;
                 int count = _inventory.Count(item);
                 bool selected = _inventory.Selected == item;
-                _slots[i].color = selected ? new Color(1.0f, 0.78f, 0.3f, 0.45f) : new Color(0, 0, 0, 0.45f);
-                _slotTexts[i].text = $"<size=80%>{i + 1}</size> {InventoryManager.Short[i]}\n<size=120%>{count}</size>";
-                _slotTexts[i].alpha = count > 0 ? 1.0f : 0.4f;
+                _slots[i].color = selected ? new Color(1.0f, 0.78f, 0.3f, 0.32f) : new Color(0.05f, 0.06f, 0.07f, 0.55f);
+                _slotTexts[i].text = count.ToString();
+                _slotTexts[i].alpha = count > 0 ? 1.0f : 0.35f;
+                // without the item the icon goes grey and faint, still showing what the slot is for
+                _slotIcons[i].color = count > 0 ? (selected ? UiKit.Accent : Color.white) : new Color(1.0f, 1.0f, 1.0f, 0.22f);
+                _slotKeys[i].color = selected ? UiKit.Accent : UiKit.Muted;
             }
         }
 
@@ -334,7 +391,8 @@ namespace Combat
                 ? "A próxima onda começa quando você sair da loja"
                 : $"INTERVALO {Mathf.CeilToInt(left)}s   <size=80%><color=#FFFFFF>[L] loja   [N] próxima onda agora</color></size>";
 
-            if (endlessBreak && Keyboard.current != null && Keyboard.current.nKey.wasPressedThisFrame && !ShopManager.IsOpen) _spawner.SkipIntermission();
+            // co-op: only the host can cut the break short (it runs the waves)
+            if (endlessBreak && Net.HasAuthority && Keyboard.current != null && Keyboard.current.nKey.wasPressedThisFrame && !ShopManager.IsOpen) _spawner.SkipIntermission();
         }
 
         private void UpdateBoss()
@@ -345,7 +403,18 @@ namespace Combat
                 if (active != null && !active.Health.IsDead) boss = active;
             }
 
-            _bossBar.SetActive(boss != null);
+            // co-op client: the boss is the host's; its replica carries what the bar shows
+            EnemyReplica remote = boss == null ? EnemyReplica.ActiveBoss : null;
+            if (remote != null)
+            {
+                _bossBar.SetActive(true);
+                _bossFill.rectTransform.anchorMax = new Vector2(remote.Health.Normalized, 1.0f);
+                _bossFill.color = remote.BossVulnerable ? new Color(1.0f, 0.75f, 0.2f) : remote.BossLit ? new Color(1.0f, 0.95f, 0.6f) : new Color(0.85f, 0.15f, 0.12f);
+                string remoteState = remote.BossVulnerable ? "  <color=#FFC74D>VULNERÁVEL</color>" : remote.BossLit ? "  <color=#FFF2A0>EXPOSTA À LUZ</color>" : "";
+                _bossName.text = remote.Boss.DisplayName.ToUpperInvariant() + remoteState;
+            }
+
+            _bossBar.SetActive(boss != null || remote != null);
             if (boss != null)
             {
                 _bossFill.rectTransform.anchorMax = new Vector2(boss.Health.Normalized, 1.0f);

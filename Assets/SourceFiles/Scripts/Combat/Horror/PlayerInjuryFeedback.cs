@@ -49,6 +49,7 @@ namespace Combat
         private AudioSource Loop(AudioClip clip)
         {
             var source = gameObject.AddComponent<AudioSource>();
+            AudioRouting.Route(source, AudioRouting.Channel.Sfx);
             source.clip = clip;
             source.loop = true;
             source.spatialBlend = 0.0f;
@@ -75,7 +76,15 @@ namespace Combat
             _volume.sharedProfile = profile;
         }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.PlayerInjuryFeedback.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             float health = _health.Normalized;
             bool dead = _health.IsDead;

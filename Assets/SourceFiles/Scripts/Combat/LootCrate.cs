@@ -18,6 +18,8 @@ namespace Combat
         [Range(0, 1)] public float ItemChance = 0.45f;
 
         public bool IsOpen { get; private set; }
+        // what a chest found pays
+        public const int Credits = 15;
         public Vector3 Center => transform.position + Vector3.up * 0.4f;
 
         private Transform _lid;
@@ -84,7 +86,15 @@ namespace Combat
             if (material != null) part.GetComponent<MeshRenderer>().sharedMaterial = material;
         }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.LootCrate.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             if (_lid == null) return;
 
@@ -94,9 +104,34 @@ namespace Combat
             if (_beacon != null) _beacon.intensity = IsOpen ? 0.0f : 0.8f + Mathf.Sin(Time.time * 3.0f) * 0.3f;
         }
 
-        public void Open(PlayerCombat player)
+        // weighted: scrap, cloth and wiring are everywhere, tactical parts are rare
+        private static readonly (string id, float weight)[] Materials =
+        {
+            ("scrap", 5.0f), ("cloth", 4.0f), ("wiring", 3.0f), ("med_supplies", 2.5f), ("electronics", 2.0f),
+            ("mech_parts", 2.0f), ("chemicals", 1.5f), ("tactical_parts", 0.8f)
+        };
+
+        private static string RandomMaterial()
+        {
+            float total = 0.0f;
+            foreach (var m in Materials) total += m.weight;
+            float pick = Random.value * total;
+            foreach (var m in Materials)
+            {
+                pick -= m.weight;
+                if (pick <= 0.0f) return m.id;
+            }
+
+            return "scrap";
+        }
+
+        public void Open(PlayerCombat player) => Open(player, true);
+
+        // payOpener false: co-op host opening it for a client, whose account the host pays instead
+        public void Open(PlayerCombat player, bool payOpener)
         {
             if (IsOpen) return;
+            if (NetWorld.Redirect(this, NetWorld.ActCrate)) return;
 
             IsOpen = true;
             _openTime = Time.time;
@@ -123,14 +158,37 @@ namespace Combat
                 ItemPickup.Spawn(items[Random.Range(0, items.Length)], 1, transform.position + transform.forward * 0.8f, 60.0f);
             }
 
+            // crafting materials: common things often, rare parts sometimes, fewer on hard difficulties
+            int materials = Random.value < 0.75f * GameDifficulty.Settings.Supplies ? Random.Range(1, 3) : 0;
+            for (int i = 0; i < materials; i++)
+            {
+                string id = RandomMaterial();
+                Vector3 at = transform.position + transform.forward * -0.8f + side * (i == 0 ? 0.4f : -0.4f) + Vector3.up * 0.05f;
+                WorldItem.Spawn(id, id == "scrap" || id == "cloth" ? Random.Range(1, 3) : 1, at);
+            }
+
             // a chest found pays a few credits too
-            RunState.AddCredits(15, "baú");
+            if (!payOpener) return;
+            RunState.AddCredits(Credits, "baú");
+            ItemCatalog catalog = ItemCatalog.Instance;
+            PickupFeed.Report("credits", catalog != null ? catalog.CreditsIcon : null, "Créditos militares", Credits, PickupFeed.TintOf(ItemCategory.Currency));
         }
 
         // a new wave: shut and restock
         public void Restock()
         {
             IsOpen = false;
+        }
+
+        // co-op client: the host's chest opened (or closed for a new wave)
+        public void MirrorOpen(bool open)
+        {
+            if (open == IsOpen) return;
+            IsOpen = open;
+            if (!open) return;
+            _openTime = Time.time;
+            CombatEffects fx = CombatEffects.Instance;
+            if (fx != null) fx.PlaySound(fx.CrateOpenSound, Center, 0.9f);
         }
 
         private WeaponData PickWeapon()

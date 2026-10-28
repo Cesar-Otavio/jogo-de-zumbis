@@ -90,28 +90,55 @@ namespace Combat
         public int CapacityOf(QuickItem item) => Capacity[(int)item] + ExtraCapacity;
         public bool IsFull(QuickItem item) => Count(item) >= CapacityOf(item);
 
-        // returns how many actually fit
+        // returns how many were kept: on the quick bar first, what doesn't fit goes into the backpack
         public int Add(QuickItem item, int amount, bool notify)
         {
             int room = CapacityOf(item) - Count(item);
             int added = Mathf.Clamp(amount, 0, room);
             _counts[(int)item] += added;
-            if (added > 0)
+            int stored = Backpack.Add(ItemCatalog.IdOf(item), amount - added);
+            if (added + stored > 0)
             {
-                if (notify && _player != null) _player.ShowNotice($"+{added} {Names[(int)item]}");
+                if (notify) PickupFeed.Quick(item, added + stored);
+                if (notify && stored > 0 && _player != null) _player.ShowNotice($"Barra cheia: {stored} na mochila");
                 Changed?.Invoke();
             }
             else if (notify && _player != null)
             {
-                _player.ShowNotice($"{Names[(int)item]}: sem espaço");
+                PickupFeed.Full(ItemCatalog.NameOf(ItemCatalog.IdOf(item), Names[(int)item]), ItemCatalog.IconOf(item));
             }
 
-            return added;
+            return added + stored;
         }
+
+        // room on the bar and in the backpack together
+        public bool CanTake(QuickItem item) => !IsFull(item) || Backpack.RoomFor(ItemCatalog.IdOf(item)) > 0;
 
         public bool Take(QuickItem item)
         {
             if (Count(item) <= 0) return false;
+            _counts[(int)item]--;
+            // a spare from the backpack takes the used one's place
+            if (Backpack.Remove(ItemCatalog.IdOf(item), 1)) _counts[(int)item]++;
+            Changed?.Invoke();
+            return true;
+        }
+
+        // backpack -> quick bar, as many as fit; returns how many moved
+        public int MoveFromBackpack(QuickItem item)
+        {
+            string id = ItemCatalog.IdOf(item);
+            int moved = Mathf.Min(Backpack.Count(id), CapacityOf(item) - Count(item));
+            if (moved <= 0 || !Backpack.Remove(id, moved)) return 0;
+            _counts[(int)item] += moved;
+            Changed?.Invoke();
+            return moved;
+        }
+
+        // quick bar -> backpack, one at a time
+        public bool MoveToBackpack(QuickItem item)
+        {
+            if (Count(item) <= 0 || Backpack.Add(ItemCatalog.IdOf(item), 1) < 1) return false;
             _counts[(int)item]--;
             Changed?.Invoke();
             return true;
@@ -135,7 +162,15 @@ namespace Combat
 
         private bool Busy => _player.Health.IsDead || !_player.enabled || _controller.IsRolling || (_climbing != null && _climbing.IsClimbing) || ShopManager.IsOpen;
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.InventoryManager.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             if (_input.nextItem)
             {
@@ -164,6 +199,8 @@ namespace Combat
             }
 
             bool throwable = IsThrowable(Selected);
+            // on a gamepad LB also leans while aiming a gun: then it isn't an item
+            if (LeanController.Player != null && LeanController.Player.Holding) _input.useItem = false;
             if (_input.useItem)
             {
                 if (throwable && Count(Selected) > 0)

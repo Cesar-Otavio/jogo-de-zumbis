@@ -129,7 +129,15 @@ namespace Combat
             return new Bounds(bounds.center, new Vector3(Mathf.Abs(size.x), Mathf.Abs(size.y), Mathf.Abs(size.z)));
         }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.InteractiveDoor.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             if (IsBroken || Leaf == null) return;
             float target = IsOpen ? 1.0f : 0.0f;
@@ -150,6 +158,7 @@ namespace Combat
         public void Interact(PlayerCombat player)
         {
             if (IsBroken) return;
+            if (NetWorld.Redirect(this, NetWorld.ActDoor)) return;
 
             // the player's own barricade can always come down again: a route is never sealed for good
             if (IsBarricaded)
@@ -173,6 +182,58 @@ namespace Combat
             SetOpen(!IsOpen);
             // doors aren't quiet
             NoiseSystem.Emit(transform.position, 9.0f, NoiseCategory.Door, player != null ? Factions.Player : Factions.Environment, player != null ? player.gameObject : gameObject);
+        }
+
+        // ---------------------------------------------------------------- co-op
+
+        // the host using it for a client's player: true if a barricade came down with its kit to give back
+        public bool RemoteInteract(out string notice)
+        {
+            notice = null;
+            if (IsBroken) return false;
+            if (IsBarricaded)
+            {
+                bool refund = Barricade >= MaxBarricade * 0.5f;
+                Barricade = 0.0f;
+                ApplyPose();
+                notice = refund ? "Barricada removida (kit recuperado)" : "Barricada removida";
+                return refund;
+            }
+
+            if (Locked || !HasPower)
+            {
+                Play(LockedSound, 0.8f);
+                notice = Locked ? $"{Capitalized} trancada" : "Sem energia";
+                return false;
+            }
+
+            SetOpen(!IsOpen);
+            NoiseSystem.Emit(transform.position, 9.0f, NoiseCategory.Door, Factions.Player, gameObject);
+            return false;
+        }
+
+        // bit 0 open, bit 1 locked, bit 2 broken, bits 3-7 barricade (0-31)
+        public byte PackState()
+        {
+            int barricade = MaxBarricade > 0.0f ? Mathf.CeilToInt(Mathf.Clamp01(Barricade / MaxBarricade) * 31.0f) : 0;
+            return (byte)((IsOpen ? 1 : 0) | (Locked ? 2 : 0) | (IsBroken ? 4 : 0) | (barricade << 3));
+        }
+
+        // co-op client: the host's door
+        public void MirrorState(byte state)
+        {
+            Locked = (state & 2) != 0;
+            if ((state & 4) != 0 && !IsBroken)
+            {
+                Break(transform.forward);
+                return;
+            }
+
+            if (IsBroken) return;
+            Barricade = (state >> 3) / 31.0f * MaxBarricade;
+            bool open = (state & 1) != 0;
+            if (open != IsOpen) SetOpen(open);
+            else ApplyPose();
         }
 
         public void SetOpen(bool open)

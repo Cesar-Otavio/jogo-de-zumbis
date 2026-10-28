@@ -20,6 +20,16 @@ namespace Combat
         SingleShell
     }
 
+    // what kind of gun it is: decides where it's carried when not in the hands
+    public enum WeaponClass
+    {
+        Pistol,
+        SubmachineGun,
+        Shotgun,
+        Rifle,
+        Sniper
+    }
+
     // Everything that makes one gun feel different from another
     [CreateAssetMenu(menuName = "Combat/Weapon Data", fileName = "Weapon_")]
     public class WeaponData : ScriptableObject
@@ -28,6 +38,13 @@ namespace Combat
         public string DisplayName = "Weapon";
         public GameObject Model;
         public HoldStyle Hold = HoldStyle.Rifle;
+        public WeaponClass Class = WeaponClass.Rifle;
+
+        [Header("Presentation")]
+        public Sprite Icon;
+        [Tooltip("e.g. \".45 ACP\", \"5,45 mm\", \"calibre 12\"")]
+        public string AmmoName = "munição";
+        public Sprite AmmoIcon;
 
         [Header("Firing")]
         public FireMode Mode = FireMode.Auto;

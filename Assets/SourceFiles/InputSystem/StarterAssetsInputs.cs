@@ -29,6 +29,15 @@ namespace StarterAssets
 		// held while aiming a throw, released to throw
 		public bool useItem;
 		public bool nextItem;
+		public bool flashlight;
+		// held; they only lean while aiming, otherwise the same keys keep their usual job
+		public bool leanLeft;
+		public bool leanRight;
+		// the crouch button held down (prone, when available)
+		public bool proneHeld;
+		// pressed: open/close the tactical map (M) and the backpack (Tab)
+		public bool map;
+		public bool inventory;
 
 		[Header("Movement Settings")]
 		public bool analogMovement;
@@ -136,6 +145,36 @@ namespace StarterAssets
 		public void OnNextItem(InputValue value)
 		{
 			if (value.isPressed) nextItem = true;
+		}
+
+		public void OnFlashlight(InputValue value)
+		{
+			if (value.isPressed) flashlight = true;
+		}
+
+		public void OnMap(InputValue value)
+		{
+			if (value.isPressed) map = true;
+		}
+
+		public void OnInventory(InputValue value)
+		{
+			if (value.isPressed) inventory = true;
+		}
+
+		public void OnLeanLeft(InputValue value)
+		{
+			leanLeft = value.isPressed;
+		}
+
+		public void OnLeanRight(InputValue value)
+		{
+			leanRight = value.isPressed;
+		}
+
+		public void OnProne(InputValue value)
+		{
+			proneHeld = value.isPressed;
 		}
 #endif
 

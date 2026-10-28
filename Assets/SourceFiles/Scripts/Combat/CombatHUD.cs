@@ -28,6 +28,11 @@ namespace Combat
         private Color _hitColor;
         private float _hitScale;
 
+        private static readonly Color CardColor = new Color(0.055f, 0.06f, 0.07f, 0.58f);
+        private GameObject _weaponCard;
+        private Image _weaponIcon;
+        private Image _otherIcon;
+        private Image _healthIcon;
         private TextMeshProUGUI _weaponName;
         private TextMeshProUGUI _ammo;
         private TextMeshProUGUI _reserve;
@@ -122,6 +127,9 @@ namespace Combat
             _scorePopupTime = Time.time;
         }
 
+        // other HUD pieces (the minimap) follow this
+        public bool Visible => _visible;
+
         // the main menu hides the HUD
         public void SetVisible(bool visible)
         {
@@ -163,8 +171,9 @@ namespace Combat
             BuildHealth();
 
             _prompt = Label("Prompt", _root, new Vector2(0.5f, 0.0f), new Vector2(0.0f, 230.0f), 30, TextAlignmentOptions.Center);
-            _kills = Label("Kills", _root, new Vector2(1.0f, 1.0f), new Vector2(-60.0f, -50.0f), 34, TextAlignmentOptions.Right);
-            _notice = Label("Notice", _root, new Vector2(0.5f, 0.5f), new Vector2(0.0f, 120.0f), 36, TextAlignmentOptions.Center);
+            Card("ScoreCard", new Vector2(1.0f, 1.0f), new Vector2(-220.0f, -92.0f), new Vector2(360.0f, 140.0f), false);
+            _kills = Label("Kills", _root, new Vector2(1.0f, 1.0f), new Vector2(-60.0f, -50.0f), 28, TextAlignmentOptions.Right);
+            _notice = Label("Notice", _root, new Vector2(0.5f, 0.5f), new Vector2(0.0f, 150.0f), 28, TextAlignmentOptions.Center);
             _notice.fontStyle = FontStyles.Bold;
             _controls = Label("Controls", _root, new Vector2(0.0f, 0.0f), new Vector2(60.0f, 170.0f), 20, TextAlignmentOptions.Left);
             _controls.text = "<b>LMB</b> atirar   <b>RMB</b> mirar   <b>R</b> recarregar   <b>E</b> usar   <b>Q</b> trocar   <b>C</b> agachar   <b>Ctrl</b> rolar   <b>V</b> golpe   <b>B</b> empurrar   <b>F</b> lanterna";
@@ -178,7 +187,7 @@ namespace Combat
             _waveBanner.color = Accent;
             _waveBanner.alpha = 0.0f;
 
-            _score = Label("Score", _root, new Vector2(1.0f, 1.0f), new Vector2(-60.0f, -92.0f), 30, TextAlignmentOptions.Right);
+            _score = Label("Score", _root, new Vector2(1.0f, 1.0f), new Vector2(-60.0f, -90.0f), 26, TextAlignmentOptions.Right);
             _scorePopup = Label("ScorePopup", _root, new Vector2(0.5f, 0.5f), new Vector2(150.0f, 40.0f), 34, TextAlignmentOptions.Left);
             _scorePopup.fontStyle = FontStyles.Bold;
             _scorePopup.color = Accent;
@@ -444,15 +453,32 @@ namespace Combat
             _hitMarker.gameObject.SetActive(false);
         }
 
+        // translucent graphite card with a thin accent edge: the base of every HUD block
+        private Image Card(string name, Vector2 anchor, Vector2 center, Vector2 size, bool accentLeft)
+        {
+            Image card = Panel(name, _root, anchor, anchor, center, size, CardColor);
+            Image edge = Panel("Edge", card.rectTransform, accentLeft ? Vector2.zero : new Vector2(1.0f, 0.0f), accentLeft ? new Vector2(0.0f, 1.0f) : Vector2.one,
+                Vector2.zero, new Vector2(3.0f, 0.0f), new Color(1.0f, 1.0f, 1.0f, 0.22f));
+            edge.rectTransform.pivot = new Vector2(accentLeft ? 0.0f : 1.0f, 0.5f);
+            return card;
+        }
+
         private void BuildAmmo()
         {
-            _weaponName = Label("WeaponName", _root, new Vector2(1.0f, 0.0f), new Vector2(-60.0f, 150.0f), 26, TextAlignmentOptions.Right);
+            _weaponCard = Card("WeaponCard", new Vector2(1.0f, 0.0f), new Vector2(-260.0f, 128.0f), new Vector2(440.0f, 208.0f), false).gameObject;
+            _weaponIcon = Panel("WeaponIcon", _root, new Vector2(1.0f, 0.0f), new Vector2(1.0f, 0.0f), new Vector2(-60.0f, 196.0f), new Vector2(150.0f, 62.0f), Color.white);
+            _weaponIcon.rectTransform.pivot = new Vector2(1.0f, 0.5f);
+            _weaponIcon.preserveAspect = true;
+            _otherIcon = Panel("OtherIcon", _root, new Vector2(1.0f, 0.0f), new Vector2(1.0f, 0.0f), new Vector2(-60.0f, 258.0f), new Vector2(64.0f, 28.0f), new Color(1.0f, 1.0f, 1.0f, 0.5f));
+            _otherIcon.rectTransform.pivot = new Vector2(1.0f, 0.5f);
+            _otherIcon.preserveAspect = true;
+            _weaponName = Label("WeaponName", _root, new Vector2(1.0f, 0.0f), new Vector2(-224.0f, 196.0f), 22, TextAlignmentOptions.Right);
             _weaponName.color = Accent;
             _ammo = Label("Ammo", _root, new Vector2(1.0f, 0.0f), new Vector2(-170.0f, 90.0f), 72, TextAlignmentOptions.Right);
             _ammo.fontStyle = FontStyles.Bold;
             _reserve = Label("Reserve", _root, new Vector2(1.0f, 0.0f), new Vector2(-60.0f, 80.0f), 34, TextAlignmentOptions.Right);
             _reserve.color = new Color(1.0f, 1.0f, 1.0f, 0.7f);
-            _otherWeapon = Label("OtherWeapon", _root, new Vector2(1.0f, 0.0f), new Vector2(-60.0f, 190.0f), 20, TextAlignmentOptions.Right);
+            _otherWeapon = Label("OtherWeapon", _root, new Vector2(1.0f, 0.0f), new Vector2(-136.0f, 258.0f), 18, TextAlignmentOptions.Right);
             _otherWeapon.color = new Color(1.0f, 1.0f, 1.0f, 0.55f);
 
             Image back = Panel("ReloadBar", _root, new Vector2(1.0f, 0.0f), new Vector2(1.0f, 0.0f), new Vector2(-160.0f, 45.0f), new Vector2(200.0f, 6.0f), new Color(0, 0, 0, 0.5f));
@@ -463,12 +489,18 @@ namespace Combat
 
         private void BuildHealth()
         {
+            Card("VitalsCard", Vector2.zero, new Vector2(250.0f, 82.0f), new Vector2(430.0f, 112.0f), true);
+            ItemCatalog catalog = ItemCatalog.Instance;
+            Image healthIcon = Panel("HealthIcon", _root, Vector2.zero, Vector2.zero, new Vector2(74.0f, 100.0f), new Vector2(24.0f, 24.0f), new Color(0.35f, 0.95f, 0.55f));
+            healthIcon.sprite = catalog != null ? catalog.HealthIcon : null;
+            healthIcon.preserveAspect = true;
+            _healthIcon = healthIcon;
             Image back = Panel("Health", _root, new Vector2(0.0f, 0.0f), new Vector2(0.0f, 0.0f), new Vector2(240.0f, 70.0f), new Vector2(360.0f, 16.0f), new Color(0, 0, 0, 0.55f));
             _healthLag = Panel("Lag", back.rectTransform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, new Color(1.0f, 0.9f, 0.8f, 0.8f));
             _healthLag.rectTransform.pivot = new Vector2(0.0f, 0.5f);
             _healthFill = Panel("Fill", back.rectTransform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, new Color(0.35f, 0.95f, 0.55f));
             _healthFill.rectTransform.pivot = new Vector2(0.0f, 0.5f);
-            _healthText = Label("HealthText", _root, new Vector2(0.0f, 0.0f), new Vector2(60.0f, 100.0f), 30, TextAlignmentOptions.Left);
+            _healthText = Label("HealthText", _root, new Vector2(0.0f, 0.0f), new Vector2(94.0f, 100.0f), 30, TextAlignmentOptions.Left);
             _healthText.fontStyle = FontStyles.Bold;
             _lives = Label("Lives", _root, new Vector2(0.0f, 0.0f), new Vector2(420.0f, 100.0f), 24, TextAlignmentOptions.Right);
 
@@ -580,7 +612,15 @@ namespace Combat
 
         // ---------------------------------------------------------------- update
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.CombatHUD.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             if (Player == null || !_visible) return;
 
@@ -641,7 +681,8 @@ namespace Combat
 
             _controls.alpha = Mathf.Clamp01(1.0f - (Time.timeSinceLevelLoad - 15.0f) / 3.0f) * 0.75f;
 
-            _deathScreen.SetActive(dead);
+            // co-op: the team panel takes over (watching a teammate, back next wave)
+            _deathScreen.SetActive(dead && !Net.Active);
             if (dead)
             {
                 _deathTimer.text = Player.AllowRespawn
@@ -664,7 +705,8 @@ namespace Combat
             }
 
             GameFlow flow = GameFlow.Instance;
-            _lives.gameObject.SetActive(flow != null && flow.Current != GameFlow.State.Menu);
+            // co-op has no lives of its own: the team panel tells who is up
+            _lives.gameObject.SetActive(flow != null && flow.Current != GameFlow.State.Menu && !Net.Active);
             if (flow != null) _lives.text = $"VIDAS <b>{Mathf.Max(0, flow.LivesLeft)}</b>";
         }
 
@@ -741,10 +783,20 @@ namespace Combat
             _ammo.gameObject.SetActive(armed);
             _reserve.gameObject.SetActive(armed);
             _reloadBar.SetActive(armed && holder.IsReloading);
+            _weaponCard.SetActive(armed);
+            _weaponIcon.gameObject.SetActive(armed && weapon.Data.Icon != null);
+            if (armed) _weaponIcon.sprite = weapon.Data.Icon;
+            // while the hands are busy putting a gun away or drawing one, the readout dims
+            _weaponIcon.color = new Color(1.0f, 1.0f, 1.0f, armed && holder.Busy ? 0.45f : 0.92f);
 
             WeaponInstance other = Player.Other;
             _otherWeapon.gameObject.SetActive(other != null && !dead);
-            if (other != null) _otherWeapon.text = $"[Q] {other.Data.DisplayName}";
+            _otherIcon.gameObject.SetActive(other != null && !dead && other.Data.Icon != null);
+            if (other != null)
+            {
+                _otherWeapon.text = $"[Q] {other.Data.DisplayName}";
+                _otherIcon.sprite = other.Data.Icon;
+            }
 
             if (!armed) return;
 
@@ -767,6 +819,7 @@ namespace Combat
             _healthFill.rectTransform.anchorMax = new Vector2(health, 1.0f);
             _healthLag.rectTransform.anchorMax = new Vector2(_lagValue, 1.0f);
             _healthFill.color = Color.Lerp(Danger, new Color(0.35f, 0.95f, 0.55f), Mathf.InverseLerp(0.2f, 0.6f, health));
+            if (_healthIcon != null) _healthIcon.color = _healthFill.color;
             _healthText.text = Mathf.CeilToInt(Player.Health.Current).ToString();
         }
 

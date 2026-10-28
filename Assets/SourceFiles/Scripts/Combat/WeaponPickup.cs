@@ -22,6 +22,8 @@ namespace Combat
 
         public bool Highlighted { get; set; }
         public Vector3 Center => _visual != null ? _visual.position : transform.position;
+        // where the model is right now, so the hands can take it from there
+        public Pose VisualPose => _visual != null ? new Pose(_visual.position, _visual.rotation) : new Pose(transform.position, transform.rotation);
 
         private Transform _visual;
         private Light _glow;
@@ -39,6 +41,8 @@ namespace Combat
             All.Remove(this);
         }
 
+        private void OnDestroy() => NetWorld.Unregister(this);
+
         private void Start()
         {
             _born = Time.time;
@@ -50,6 +54,7 @@ namespace Combat
 
             if (Magazine < 0) Magazine = Data.MagazineSize;
             if (Reserve < 0) Reserve = Data.StartReserve;
+            NetWorld.Register(this);
 
             GameObject visual = Instantiate(Data.Model, transform);
             visual.name = "Visual";
@@ -103,7 +108,15 @@ namespace Combat
             body.angularVelocity = Random.insideUnitSphere * 3.0f;
         }
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.WeaponPickup.Update");
+
         private void Update()
+        {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
         {
             _highlight = Mathf.MoveTowards(_highlight, Highlighted ? 1.0f : 0.0f, Time.deltaTime * 5.0f);
 

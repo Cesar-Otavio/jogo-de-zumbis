@@ -164,6 +164,8 @@ namespace Combat
         {
             Data.CampaignChapter = 0;
             Save();
+            // a new campaign starts with the base unexplored
+            MapDiscovery.Forget();
         }
 
         public static void CompleteCampaign()

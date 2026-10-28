@@ -1,0 +1,203 @@
+run discover_wave (development build, 4.0.1)
+cpu AMD Ryzen 7 5700U with Radeon Graphics  (16 threads), gpu AMD Radeon(TM) Graphics (Direct3D11, 5042 MB), ram 10085 MB
+screen 1280x720 Windowed, display 1920x1080, quality PC, pipeline PC_RPAsset, profile current
+frame timing stats True, gpu samples 545/545
+frames 545: avg 18.02 ms, median 17.49, p95 20.31, p99 35.61, max 84.33
+cpu main 17.54 ms, render thread 3.09 ms, gpu 8.66 ms (p95 gpu 17.26)
+lights visible 80.39, with shadows 31.50, living characters 31.00
+
+counters (average / max per frame):
+  Draw Calls Count: 1123.19 / 1306.00
+  SetPass Calls Count: 209.75 / 229.00
+  Triangles Count: 596450.84 / 801520.00
+  Shadow Casters Count: 711.46 / 986.00
+  Visible Skinned Meshes Count: 20.33 / 37.00
+  SRP Batcher Draw Calls Count: 861.98 / 1039.00
+  Render Textures Count: 29.05 / 30.00
+  GC Allocated In Frame: 3002.86 / 63800.00
+  GC Allocation In Frame Count: 47.25 / 109.00
+  Total Used Memory: 662716286.22 / 695069653.00
+  GC Used Memory: 10354274.64 / 10887168.00
+  Gfx Used Memory: 395029949.21 / 426921103.00
+
+main thread markers (average ms per frame):
+  PlayerLoop: 17.52
+  Update.ScriptRunBehaviourUpdate: 2.12
+  PreLateUpdate.ScriptRunBehaviourLateUpdate: 0.28
+  FixedUpdate.ScriptRunBehaviourFixedUpdate: 0.00
+  FixedUpdate.PhysicsFixedUpdate: 2.76
+  Physics.Simulate: 1.11
+  Animators.Update: 0.98
+  PreLateUpdate.DirectorUpdateAnimationBegin: 0.41
+  NavMeshManager: 0.72
+  PostLateUpdate.PlayerUpdateCanvases: 0.84
+  UGUI.Rendering.UpdateBatches: 0.80
+  Camera.Render: 0.00
+  CullScriptable: 0.79
+  Gfx.WaitForPresentOnGfxThread: 0.01
+  Gfx.PresentFrame: -16923618415.59
+  Audio.FMODSystemUpdate: 0.12
+  ParticleSystem.Update: 0.07
+  NetworkEarlyUpdate: 0.00
+  NetworkPreUpdate: 0.01
+  NetworkPostLateUpdate: 0.01
+  GC.Collect: 0.01
+
+gpu passes (average ms per frame):
+  MainLightShadow: 0.95
+  AdditionalLightsShadow: 0.63
+  DrawOpaqueObjects: 0.00
+  Draw Opaque Objects: 0.00
+  DrawTransparentObjects: 0.00
+  Draw Transparent Objects: 0.00
+  UberPostProcess: 0.00
+  Uber Post Process: 0.00
+  Bloom: 0.00
+  DepthPrepass: 0.00
+  Depth Prepass: 0.00
+  CopyDepth: 0.00
+  Copy Depth: 0.00
+  CopyColor: 0.00
+  Copy Color: 0.00
+  DrawSkybox: 0.00
+  Draw Skybox: 0.00
+  UI Rendering: 0.00
+  Render 2D Lights: 0.00
+
+all samplers with gpu time (average ms per frame):
+  FrameTime.GPU: 12.68
+  UniversalRenderPipeline.RenderSingleCameraInternal: RobotCamera: 12.30
+  ExecuteRenderGraph: 12.30
+  SSAO: 1.86
+  MainLightShadow: 0.95
+  AdditionalLightsShadow: 0.63
+  ColorGradingLUT: 0.04
+  Camera.Render: 0.01
+  Setup Forward Lights: 0.00
+  Setup Camera Properties: 0.00
+  LightCookies: 0.00
+  UpdateReflectionProbeAtlas: 0.00
+  Set Motion Vector Global Matrices: 0.00
+  Initialize Frame: 0.00
+
+samplers with the most cpu time (average ms per frame, any thread, nested):
+  EndJob: 864700691.03
+  BeginJob: 864700691.03
+  ScheduleJob: 154087052.76
+  WaitForCompleted: 114794030.68
+  ScheduleAllocJob: 64033298.98
+  Component.SetGameObject: 52453766.78
+  KickJobs: 33867264.09
+  Object.Register: 27437354.83
+  Object.SetName: 9482026.96
+  Object.Unregister: 4034905.06
+  System Total Used Memory: 9814.94
+  Video Memory Bytes: 5287.97
+  App Committed Memory: 1336.06
+  Total Reserved Memory: 1262.16
+  Total Used Memory: 662.72
+  App Resident Memory: 507.16
+  System Used Memory: 507.16
+  Gfx Used Memory: 395.03
+  Gfx Reserved Memory: 395.03
+  Texture Memory: 351.84
+  Idle: 199.59
+  Render Textures Bytes: 83.27
+  Mesh Memory: 39.91
+  Used Buffers Bytes: 36.51
+  EngineJob: 22.47
+  Audio Used Memory: 19.66
+  Audio Reserved Memory: 19.66
+  CPU Total Frame Time: 18.30
+  Main Thread: 17.53
+  CPU Main Thread Frame Time: 17.53
+  PlayerLoop: 17.52
+  AudioClip Memory: 16.14
+  Semaphore.WaitForSignal: 13.58
+  Gfx.WaitForGfxCommandsFromMainThread: 13.49
+  GC Reserved Memory: 12.84
+  GC Used Memory: 10.35
+  Physics Used Memory: 9.28
+  GPU Frame Time: 8.68
+  PostLateUpdate.FinishFrameRendering: 5.37
+  Inl_UniversalRenderTotal: 5.16
+  Inl_RenderCameraStack: 5.11
+  UniversalRenderPipeline.RenderSingleCameraInternal: RobotCamera: 4.19
+  ExecuteRenderGraph: 4.15
+  Profiler Used Memory: 4.06
+  Profiler Reserved Memory: 4.06
+  RenderLoop: 3.39
+  WaitForJobGroupID: 3.30
+  CPU Render Thread Frame Time: 3.09
+  FixedUpdate.PhysicsFixedUpdate: 2.76
+  Inl_UniversalRenderPipeline.RenderSingleCameraInternal: RobotCamera: 2.74
+  Inl_ScriptableRenderContext.Submit: 2.19
+  Update.ScriptRunBehaviourUpdate: 2.12
+  BehaviourUpdate: 2.12
+  Shadows.CullShadowCastersLocal: 1.87
+  Shadows.Draw: 1.68
+  Shadows.CullShadowCastersWithoutUmbra: 1.51
+  Audio.Thread: 1.43
+  Physics.SyncTransforms: 1.39
+  Material Memory: 1.37
+  Physics.PrepareSimulationStage: 1.36
+  Shadows.DrawSRPBatcher: 1.22
+  Physics.SyncColliderTransformBatchJob: 1.17
+  Physics.RunSimulationStage: 1.11
+  Physics.Simulate: 1.11
+  CoroutinesDelayedCalls: 1.11
+  PxScene.simulate: 1.09
+  Update.ScriptRunDelayedDynamicFrameRate: 1.07
+  TilingJob (Burst): 1.04
+  Physics.SyncRigidbodyTransformBatchJob: 1.01
+  RenderLoop.Sort: 1.00
+  RenderLoop.DrawSRPBatcher: 1.00
+  Director.ProcessFrame: 0.98
+  Animators.Update: 0.98
+  AdditionalLightsShadow: 0.97
+  TileRangeExpansionJob (Burst): 0.96
+  RenderLoop.Draw: 0.94
+  PostLateUpdate.PlayerUpdateCanvases: 0.84
+  UIEvents.WillRenderCanvases: 0.80
+  UGUI.Rendering.UpdateBatches: 0.80
+  CullScriptable: 0.79
+  PreLateUpdate.DirectorUpdateAnimationEnd: 0.77
+  ExecuteRenderQueueJob: 0.77
+  RenderLoop.Prepare: 0.76
+  TransformChangeSystem: 0.76
+  DrawBuffersBatchMode: 0.76
+  NavMeshManager: 0.72
+  AnimationClip Memory: 0.71
+  PreUpdate.AIUpdate: 0.71
+  Animator.EvaluateRetargeter: 0.68
+  MainLightShadow: 0.66
+  Inl_ExecuteRenderGraph: 0.66
+  Inl_RecordRenderGraph: 0.66
+  Shadows.PrepareDrawShadows: 0.65
+  StdShadow.ApplyShader: 0.65
+  Inl_On Record Render Graph: 0.64
+  EndRenderQueueExtraction: 0.64
+  Profiler.Default: 0.61
+  Gfx.PresentFrame: 0.60
+  Triangles Count: 0.60
+  UI.RenderOverlays: 0.60
+  Canvas.RenderOverlays: 0.59
+  Render: 0.59
+  PostLateUpdate.ProfilerEndFrame: 0.58
+  Profiler.FlushCounters: 0.57
+  UpdateRendererBoundingVolumes: 0.52
+  SRPBatcher.Flush: 0.48
+  Profiler.FlushMemoryCounters: 0.48
+  Director.PrepareFrameJob: 0.46
+  Physics Used Memory (2D): 0.44
+  Animator.ProcessGraph: 0.43
+  PlayableOutput.PrepareFrame: 0.42
+  PreLateUpdate.DirectorUpdateAnimationBegin: 0.41
+  PostLateUpdate.UpdateAllRenderers: 0.40
+  Shadows.ExecuteDrawShadows: 0.38
+  UIEvents.CanvasManagerRenderOverlays: 0.37
+  PostLateUpdate.UpdateAudio: 0.37
+  AudioManager.Update: 0.37
+  Shadows.CullShadowCastersLocalDetail: 0.36
+  Animator.ProcessAnimations: 0.36
+  FMOD Lowpass: 0.35

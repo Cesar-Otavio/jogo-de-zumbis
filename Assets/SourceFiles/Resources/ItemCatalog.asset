@@ -1,0 +1,53 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9a8e6149c8f76a64a9b493202d8fa749, type: 3}
+  m_Name: ItemCatalog
+  m_EditorClassIdentifier: Assembly-CSharp::Combat.ItemCatalog
+  Items:
+  - {fileID: 11400000, guid: 758c3c30081b8cb4d90f378fbf9cf2cf, type: 2}
+  - {fileID: 11400000, guid: 9bc48d1b0ea31d44c8551e90e1409219, type: 2}
+  - {fileID: 11400000, guid: 70646ba16a74e414791eeb022f7c11ee, type: 2}
+  - {fileID: 11400000, guid: 770bcf2be09957941b9b0f87ef5d1372, type: 2}
+  - {fileID: 11400000, guid: 47d6ae1f068015442ba61cd1ffb7c770, type: 2}
+  - {fileID: 11400000, guid: 30750ff24e1825f4fa1c6a8ed430e190, type: 2}
+  - {fileID: 11400000, guid: 04d5df47687f2d743a76e487393c854e, type: 2}
+  - {fileID: 11400000, guid: 84a82399260aed3488fb51d0e5915a9e, type: 2}
+  - {fileID: 11400000, guid: f54558b90c60c034d8313e95e272bf9f, type: 2}
+  - {fileID: 11400000, guid: f6049d9447c990542b7d156193d96345, type: 2}
+  - {fileID: 11400000, guid: dd5d08bdb061a28488ab60946e6776a7, type: 2}
+  - {fileID: 11400000, guid: f75a733e53f810241832a201911dda0e, type: 2}
+  - {fileID: 11400000, guid: e7826942812e6764f834b7dd6415f6b0, type: 2}
+  - {fileID: 11400000, guid: 864022aaf15d6ea4391325944cf6595b, type: 2}
+  - {fileID: 11400000, guid: a36523f8bf851be4eaeaa87ae197cf33, type: 2}
+  - {fileID: 11400000, guid: ac4719245b62a124381bfd0da2103c86, type: 2}
+  - {fileID: 11400000, guid: 15dba71e183f9424c824df80084f725e, type: 2}
+  - {fileID: 11400000, guid: 091fc7a854f9481469fc8d20d0dfd5ae, type: 2}
+  - {fileID: 11400000, guid: 289930ab9dc5fd846b53608f0def00af, type: 2}
+  - {fileID: 11400000, guid: 4ff725446ea272c45ab3f0bf7f187a8a, type: 2}
+  - {fileID: 11400000, guid: bac73e5373fad66499fb889ac0e5edab, type: 2}
+  - {fileID: 11400000, guid: 2f954865c1970e84f83f64cbcf535712, type: 2}
+  - {fileID: 11400000, guid: f24b8976a404e9f44a595282eef07dee, type: 2}
+  - {fileID: 11400000, guid: 00c85b47fdb3f4844ab8b703e1005528, type: 2}
+  - {fileID: 11400000, guid: 751cca71f32205b44ba8d1575d8afe97, type: 2}
+  - {fileID: 11400000, guid: d4326b6872e52d3428c93ac49a4d6faf, type: 2}
+  - {fileID: 11400000, guid: 7969862ca5c61b1409c3558c60e9b509, type: 2}
+  - {fileID: 11400000, guid: 05905214b08db2546826a7674dcbb978, type: 2}
+  - {fileID: 11400000, guid: b6417412ba53b1a418601f2ce1dc7999, type: 2}
+  - {fileID: 11400000, guid: 5f7f1d4179a2ff84cb8b9c3c15b99383, type: 2}
+  CreditsIcon: {fileID: 21300000, guid: c0f6964bc4112a246af6c9aba94777c9, type: 3}
+  HealthIcon: {fileID: 21300000, guid: 8fde974ba09f42d448e02a910e7732f1, type: 3}
+  ArmorIcon: {fileID: 21300000, guid: 5aa9feb3d3bb3db4c9c14df2ef2fac1f, type: 3}
+  UpgradeIcon: {fileID: 21300000, guid: afe2ad88072a89c4a9d90c644bc6b86f, type: 3}
+  StaminaIcon: {fileID: 21300000, guid: 0539699093bd41d49b7e6b6a34a73a60, type: 3}
+  CapacityIcon: {fileID: 21300000, guid: 3db8448c706716f40a174aabbc77f594, type: 3}
+  WorkbenchIcon: {fileID: 21300000, guid: 1124f13b943924a4eb371506cd67c585, type: 3}
+  FallbackIcon: {fileID: 21300000, guid: 1aebfa4d41749ed4397bf40422993b68, type: 3}

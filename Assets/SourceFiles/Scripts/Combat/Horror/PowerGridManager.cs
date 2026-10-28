@@ -171,6 +171,7 @@ namespace Combat
                 for (int i = 0; i < Mathf.Min(2, sector.Lamps.Count); i++)
                 {
                     AudioSource hum = sector.Lamps[i * Mathf.Max(1, sector.Lamps.Count / 2)].gameObject.AddComponent<AudioSource>();
+                    AudioRouting.Route(hum, AudioRouting.Channel.Ambient);
                     hum.clip = HumLoop;
                     hum.loop = true;
                     hum.spatialBlend = 1.0f;
@@ -188,6 +189,8 @@ namespace Combat
             if (AlarmLoop != null)
             {
                 var alarm = new GameObject("Alarm").AddComponent<AudioSource>();
+                // the alarm is a warning: an effect, not ambience (it isn't ducked)
+                AudioRouting.Route(alarm, AudioRouting.Channel.Sfx);
                 alarm.transform.SetParent(root, false);
                 alarm.transform.position = sector.Center + Vector3.up * 6.0f;
                 alarm.clip = AlarmLoop;
@@ -331,14 +334,24 @@ namespace Combat
 
         // ---------------------------------------------------------------- update
 
+        // time spent here, for the performance probe (Diagnostics/PerfProbe)
+        private static readonly Unity.Profiling.ProfilerMarker UpdateMarker = new Unity.Profiling.ProfilerMarker("Combat.PowerGridManager.Update");
+
         private void Update()
         {
+            using (UpdateMarker.Auto()) UpdateMarked();
+        }
+
+        private void UpdateMarked()
+        {
             bool playing = GameFlow.Instance == null || GameFlow.Instance.Current == GameFlow.State.Playing;
+            // co-op client: the power is the host's (NetWorld mirrors its sectors); no faults of its own here
+            bool own = !Net.IsClientOnly;
 
             for (int i = 0; i < Sectors.Length; i++)
             {
                 PowerSector sector = Sectors[i];
-                if (sector.State == PowerState.Emergency && sector.BlackoutAt > 0.0f && Time.time >= sector.BlackoutAt) SetState(i, PowerState.Blackout);
+                if (own && sector.State == PowerState.Emergency && sector.BlackoutAt > 0.0f && Time.time >= sector.BlackoutAt) SetState(i, PowerState.Blackout);
 
                 // ringing alarms draw the infected
                 if (sector.AlarmUntil > 0.0f)
@@ -359,7 +372,7 @@ namespace Combat
 
             // the clock only runs during a game: the menu doesn't count towards the first failure
             if (!playing) _nextFailure = Mathf.Max(_nextFailure, Time.time + FirstFailureDelay);
-            if (playing && RandomFailures && AllowFailures && Time.time >= _nextFailure && Sectors.Length > 0)
+            if (own && playing && RandomFailures && AllowFailures && Time.time >= _nextFailure && Sectors.Length > 0)
             {
                 _nextFailure = Time.time + UnityEngine.Random.Range(FailureInterval.x, FailureInterval.y);
                 // never more than half of the base down at once
