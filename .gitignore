@@ -27,3 +27,15 @@
 *.aab
 *.unitypackage
 crashlytics-buildid.txt
+
+# Third-party Asset Store packs: their licenses forbid redistributing the files, so they stay out of the
+# public repository (the built game may include them). See README.md, "Pacotes de terceiros".
+/[Aa]ssets/Tiny Teacup Studio/
+/[Aa]ssets/Tiny Teacup Studio.meta
+/[Aa]ssets/Low Poly Weapons VOL.1/
+/[Aa]ssets/Low Poly Weapons VOL.1.meta
+/[Aa]ssets/Kevin Iglesias/
+/[Aa]ssets/Kevin Iglesias.meta
+/[Aa]ssets/Survivalist/*
+!/[Aa]ssets/Survivalist/StarterAssets/
+!/[Aa]ssets/Survivalist/StarterAssets.meta

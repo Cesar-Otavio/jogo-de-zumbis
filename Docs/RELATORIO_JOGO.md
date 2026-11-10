@@ -129,7 +129,7 @@ A Fase 7 ("Definitive Edition", Marcos 1 a 10) começou do checkpoint `fase7-che
 | 7 — Campanha cooperativa | ⛔ | não iniciado (o cooperativo só tem o Infinito) |
 | 8 — UI, acessibilidade, experiência | 🟡 | HUD de equipe e qualidade ✅. **Falta**: conferir teclas físicas e gamepad (seu), tela de opções, remapeamento |
 | 9 — Testes automatizados | ⛔ | Unity Test Framework não instalado; há testes automáticos próprios de rede e desempenho (seção 16) |
-| 10 — Distribuição | ⛔ | builds de teste existem; nome do produto, versão na tela e licenças não tratados |
+| 10 — Distribuição | 🟡 | nome do produto trocado, README, GDD e zip de entrega prontos (10/11); versão na tela e licenças não tratados |
 
 ---
 
@@ -147,7 +147,7 @@ A Fase 7 ("Definitive Edition", Marcos 1 a 10) começou do checkpoint `fase7-che
 | Idioma | português (sem pacote de localização) |
 | Salvamento | `PlayerPrefs`: progresso, recordes, traje, opções, névoa do mapa, dados do multiplayer |
 | Versão | `4.0.1` (não aparece na tela) |
-| Nome do produto | **ainda o do template** ("Tutorial no Editor do Guia de Configuração", empresa "DefaultCompany"). Aparece na pasta do `Player.log` |
+| Nome do produto | **Base Militar - Sobreviva à Noite**, empresa "Cesar Otavio" (trocados em 10/11; antes eram os do template) |
 
 ### 3.1 Builds
 
@@ -590,7 +590,6 @@ Os valores são ajustáveis no `NetworkManager`. São um **ponto de partida** a 
 | P2 | Apagão depois da mudança das luzes dos postes | conferir em jogo |
 | P2 | Tela de opções com Baixo/Médio/Alto | conferir visualmente |
 | P3 | Aviso "Light.shadowResolution… Built-In" da lanterna | cosmético |
-| P3 | Nome do produto e da empresa ainda são do template | trocar no Marco 10 (muda a pasta do save; fazer com cuidado) |
 
 Nenhum P0 conhecido.
 
@@ -633,7 +632,7 @@ Nenhum P0 conhecido.
 14. Diário, salvamento no meio do capítulo, remapeamento de teclas.
 15. Localização em inglês (as chaves `dlg.*` já existem).
 16. Áudio de gameplay: substituir os sons provisórios por sintetizados melhores, sem serviço externo.
-17. Marco 10: versão na tela, nome do produto, lista de licenças, pacote de distribuição.
+17. Marco 10: versão na tela e lista de licenças (nome, README, GDD e zip já feitos).
 
 ### 18.4 Itens provisórios que precisam de troca
 
@@ -641,7 +640,6 @@ Nenhum P0 conhecido.
 - Visual dos materiais no chão (caixa com ícone).
 - Sons de impacto em madeira, terra e água.
 - Sons das telas de inventário (reaproveitados).
-- Nome e empresa do produto (do template).
 
 ### 18.5 Melhorias que recomendo (não pedidas, mas valem a pena)
 
@@ -650,7 +648,6 @@ Nenhum P0 conhecido.
 | **Aquecimento de efeitos e shaders na carga** | elimina as travas de "primeira vez" que ainda restam | baixo |
 | **Testes automáticos** (Unity Test Framework) | o projeto tem 127 scripts e nenhum teste unitário; cada mudança hoje depende de testes manuais e da sonda | médio |
 | **Merge na `main` com tag** | a `main` está 5 fases atrás; um acidente na branch atual seria caro | baixo (decisão sua) |
-| **Trocar o nome do produto** antes de distribuir | hoje o save e o log ficam numa pasta com o nome do template | baixo, com migração do save |
 | **IL2CPP** (instalação pelo Unity Hub) | código nativo, sem JIT, geralmente mais rápido em CPU. **Não há prova** de que resolva os picos atuais (o JIT foi descartado) | médio; instalação sua |
 | **Otimizar a CPU com muitos inimigos** antes de expandir o mapa ou somar inimigos | a thread principal é o limite com 30 infectados | médio |
 | **Assar a iluminação** dos postes (lightmaps) | tiraria o custo de luzes em tempo real, mas muda o visual e o apagão; precisa de teste | alto |
@@ -675,7 +672,7 @@ Nenhum P0 conhecido.
 ## 20. O que me mandar — checklist
 
 - [ ] **Decisão 1** (próximo foco).
-- [ ] **Teste em 2 PCs**: copie `Builds/Win64` para os dois. Num, MULTIJOGADOR → Criar sala; no outro, Entrar com o IP mostrado no lobby (LAN primeiro, depois Radmin). Me mande o que aconteceu e o `Player.log` de cada um (`%USERPROFILE%\AppData\LocalLow\DefaultCompany\Tutorial no Editor do Guia de Configuração\Player.log`).
+- [ ] **Teste em 2 PCs**: copie `Builds/Win64` para os dois. Num, MULTIJOGADOR → Criar sala; no outro, Entrar com o IP mostrado no lobby (LAN primeiro, depois Radmin). Me mande o que aconteceu e o `Player.log` de cada um (`%USERPROFILE%\AppData\LocalLow\Cesar Otavio\Base Militar - Sobreviva à Noite\Player.log`).
 - [ ] **Teclado e controle**: Tab, M, E (inclusive segurar para reanimar), Q/E mirando, Esc e gamepad funcionam?
 - [ ] **Áudio**: durante uma fala de rádio no meio de uma onda, dá para ouvir os infectados chegando?
 - [ ] **Gráficos**: Baixo, Médio e Alto estão aceitáveis?
