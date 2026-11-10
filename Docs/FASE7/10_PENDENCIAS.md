@@ -19,7 +19,7 @@ Nenhum P0 conhecido.
 
 | # | Pedido | Para destravar |
 |---|---|---|
-| 1 | **Teste em dois PCs**: copie `Builds/Win64` para os dois. Num, MULTIJOGADOR → Criar sala; no outro, Entrar com o IP mostrado no lobby (LAN primeiro, depois Radmin VPN). Mande o resultado e o `Player.log` de cada um (`%USERPROFILE%\AppData\LocalLow\DefaultCompany\Tutorial no Editor do Guia de Configuração\Player.log`; o nome da empresa e do produto ainda são os do template, um ajuste do Marco 10) | validar o multiplayer de verdade (Marco 2) |
+| 1 | **Teste em dois PCs**: copie `Builds/Win64` para os dois. Num, MULTIJOGADOR → Criar sala; no outro, Entrar com o IP mostrado no lobby (LAN primeiro, depois Radmin VPN). Mande o resultado e o `Player.log` de cada um (`%USERPROFILE%\AppData\LocalLow\Cesar Otavio\Base Militar - Sobreviva à Noite\Player.log`) | validar o multiplayer de verdade (Marco 2) |
 | 2 | **Teclas e controle**: Tab, M, E, Q/E mirando, Esc e um gamepad. Confirmar se funcionam | Marco 8 |
 | 3 | **Opções ▸ Gráficos**: trocar a QUALIDADE entre Baixo/Médio/Alto e dizer se a imagem está aceitável em cada uma | validar os níveis novos |
 | 4 | **Clipes Mixamo** (lista em `Docs/FASE3_ASSETS.md` §3.1) | Marco 3 |
